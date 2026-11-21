@@ -1,0 +1,5 @@
+.DS_Store
+
+# 받은 참고 문서는 저장소에 넣지 않는다 (RULES.md 7절).
+# references/ 바로 아래의 목록과 스크립트만 관리한다.
+references/*/
