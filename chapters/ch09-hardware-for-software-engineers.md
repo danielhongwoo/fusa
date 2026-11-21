@@ -6,6 +6,7 @@
 |---|---|
 | Part | II. Hazard에서 소프트웨어 요구사항까지 |
 | 쓰는 단계 | 단계 2 (살 붙이기) |
+| 목표 분량 | 10-12쪽 |
 | 상태 | 미착수 |
 
 ### 핵심 질문
@@ -14,13 +15,19 @@
 
 ### 다룰 내용
 
-- random hardware failure, failure rate, failure mode
-- single-point fault, latent fault, multiple-point fault
-- diagnostic coverage
-- 하드웨어 지표 읽는 법: SPFM, LFM, PMHF (ISO 26262), HFT, SFF, PFD, PFH (IEC 61508)
-- 하드웨어 safety mechanism: lockstep core, ECC, 전압과 clock 감시
-- 소프트웨어가 맡는 진단: startup test, 주기적 self test
-- MCU safety manual 읽는 법
+- 하드웨어 고장의 종류: permanent, transient, latent. random과 systematic의 구분 다시 보기
+- 하드웨어가 잡아 주는 것과 소프트웨어의 몫: lockstep core, ECC, 전압과 clock 감시
+- MCU safety manual에서 찾는 것: assumption of use, 소프트웨어가 해야 하는 진단, 고장률과 diagnostic coverage 표의 위치
+- 소프트웨어가 하는 진단: startup test, 주기적 self test (RAM, flash의 CRC, ADC 기준 전압, clock, watchdog 점검)
+- 지표 읽는 법: SPFM, LFM, PMHF (ISO 26262), HFT, SFF, PFD, PFH (IEC 61508)
+
+### 검토에서 더한 항목 (2026-11-22)
+
+괄호 안은 지적 번호이고, 검토 기록은 `reviews/2026-11-22-plan/`에 있다. 규격의 내용에 관한 항목은 쓰기 전에 확인한다 (RULES.md 5절).
+
+- 지표의 계산은 하지 않는다. 읽는 법만 2-3쪽으로 다룬다 (E-03, F-27)
+- demand mode와 등급의 뜻은 3장에서 다룬다 (F-13)
+- MCU와 차량 E/E의 기초는 부록 E에서 다룬다 (E-01, F-24)
 
 ### 예제 산출물
 
@@ -28,7 +35,7 @@
 
 ### 근거
 
-ISO 26262-5, -11; IEC 61508-2
+ISO 26262-5, -11; IEC 61508-1, -2, -6
 
 ## 본문
 

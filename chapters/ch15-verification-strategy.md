@@ -4,8 +4,9 @@
 
 | 항목 | 내용 |
 |---|---|
-| Part | IV. 안전함을 보이기 |
+| Part | IV. 안전함을 보이고 유지하기 |
 | 쓰는 단계 | 단계 2 (살 붙이기) |
+| 목표 분량 | 12쪽 |
 | 상태 | 미착수 |
 
 ### 핵심 질문
@@ -20,6 +21,13 @@
 - abstract interpretation
 - formal verification 개관: model checking, 정리 증명, contract 기반 검증
 - integrity level에 따른 방법 선택
+
+### 검토에서 더한 항목 (2026-11-22)
+
+괄호 안은 지적 번호이고, 검토 기록은 `reviews/2026-11-22-plan/`에 있다. 규격의 내용에 관한 항목은 쓰기 전에 확인한다 (RULES.md 5절).
+
+- formal verification은 CBMC로 감시 함수 1개를 증명하는 것으로 보인다 (E-19)
+- abstract interpretation은 도구가 무엇을 보장하는가까지만 쓴다 (F-27)
 
 ### 예제 산출물
 

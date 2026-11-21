@@ -6,6 +6,7 @@
 |---|---|
 | Part | I. 사고방식과 기본 개념 |
 | 쓰는 단계 | 단계 2 (살 붙이기) |
+| 목표 분량 | 8-10쪽 |
 | 상태 | 미착수 |
 
 ### 핵심 질문
@@ -21,6 +22,13 @@
 - 규격의 구조: part, clause, normative와 informative, shall과 should, work product, 방법 표의 추천 등급
 - 규격이 정해 주는 것과 개발자 판단에 맡기는 것
 - compliance, assessment, certification의 차이
+
+### 검토에서 더한 항목 (2026-11-22)
+
+괄호 안은 지적 번호이고, 검토 기록은 `reviews/2026-11-22-plan/`에 있다. 규격의 내용에 관한 항목은 쓰기 전에 확인한다 (RULES.md 5절).
+
+- 규격 지도를 세 묶음으로 그린다: IEC 61508을 분야에 맞춘 규격, IEC 61508을 참조하는 규격, 계보가 다른 규격 (F-10)
+- Part마다 요구사항 (normative)인지 해설 (informative)인지 표로 보인다 (F-18)
 
 ### 예제 산출물
 

@@ -1,6 +1,6 @@
 # 소프트웨어 엔지니어를 위한 기능 안전 (Functional Safety) - 가제
 
-책 개요, 초안 v0.3 (2026-11-22)
+책 개요, 초안 v0.4 (2026-11-22, 검토 반영)
 
 이 문서는 무엇을 쓰는지를 정한다: 독자, 범위, 예제, 목차.
 어떻게 쓰는지는 [PLAN.md](PLAN.md)에, 쓸 때 지키는 규칙은 [RULES.md](RULES.md)에, 참고 문서는 [references/](references/README.md)에 있다.
@@ -35,6 +35,7 @@
 - 하드웨어 설계와 정량 분석의 상세 (읽는 법까지만 다룬다)
 - 특정 상용 tool의 사용법
 - 규격 원문의 대체. 이 책은 규격을 읽기 위한 안내서이고, 규격 문장과 표를 옮겨 싣지 않는다.
+- 임베디드 개발 자체. 이 책을 읽는 데 필요한 만큼만 부록 E와 장 안의 상자에서 다룬다.
 
 ## 2. 범위
 
@@ -43,7 +44,7 @@
 
 | 항목 | 선택 | 이유 |
 |---|---|---|
-| 개념의 뿌리 | IEC 61508 | 분야 공통의 기본 규격이고 대부분의 분야별 규격이 여기서 갈라져 나왔다 |
+| 개념의 뿌리 | IEC 61508 | 분야 공통의 기본 규격이고, ISO 26262, IEC 62061, IEC 61511 같은 분야별 규격의 공통 기반이다. ISO 13849, DO-178C, IEC 62304는 계보가 다르다 |
 | 주 분야 | 자동차, ISO 26262 | 소프트웨어 관련 요구가 구체적이고 공개 자료가 가장 많다 |
 | 보조 분야 | 로봇 (20장), 드론 (21장) | 위험을 따지는 방식이 자동차와 달라, 비교하면 개념이 분명해진다 |
 | 그 밖의 분야 | 22장에서 비교 | 항공, 철도, 의료기기, 공정 |
@@ -61,26 +62,38 @@ Part I-IV는 자동차를 기준으로 쓴다. 로봇과 드론은 Part V에서 
 |---|---|---|---|
 | 위험을 따지는 단위 | 제품의 기능 (item) | 기계와 작업 | 운용 (operation) |
 | 위험 평가 방법 | HARA | ISO 12100 risk assessment | SORA |
-| 등급 | ASIL A-D | PL a-e 또는 SIL 1-3 | SAIL I-VI (운용 단위의 등급) |
-| 소프트웨어 요구의 출처 | ISO 26262-6 | ISO 13849-1, IEC 62061, IEC 61508-3 | ASTM F3201, 고위험 운용은 DO-178C |
-| 대표적인 safe state | 기능 축소 또는 정지 | 정지 (protective stop) | 정지할 수 없음: 복귀, 착륙, 비행 종료 |
+| 위험 평가의 결과 | safety goal의 ASIL (A-D) | safety function에 요구되는 PL (a-e) 또는 SIL (1-3) | 운용의 SAIL (I-VI) |
+| 소프트웨어의 엄격함을 정하는 것 | 요구사항이 물려받은 ASIL | 그 safety function의 PL 또는 SIL | SAIL이 높을수록 요구가 커진다. SAIL IV는 DAL C 수준, SAIL V와 VI는 failure condition의 심각도에 따른 DAL B-D |
+| 규격이 등급을 미리 정해 주는가 | 아니다. HARA로 정한다 | 로봇 규격이 safety function과 요구 등급을 정해 두는 경우가 많다 | SORA가 SAIL마다 요구를 정해 둔다 |
+| 소프트웨어 요구의 출처 | ISO 26262-6 | ISO 13849-1, IEC 62061, IEC 61508-3 | EU: Special Condition Light-UAS와 그 means of compliance. 고위험 운용은 항공 규격 (ARP4754B, DO-178C)을 따른다. 미국: ASTM F3201 |
+| safe state와 그에 이르는 방법 | 토크 제한, 기능 축소, 정지. 조향과 제동처럼 끌 수 없는 기능도 있다 | 정지. 다만 정지에도 거리, 시간, 짐, 경사가 걸린다 | 공중에서 동력을 끊는 것은 safe state가 아니다. 제자리 비행, 복귀, 착륙처럼 기능을 유지하는 대응이 필요하다. 비행 종료는 지상의 위험을 가두는 마지막 수단이다 |
 
 주의할 점
+- SAIL은 제품이나 기능의 등급이 아니라 운용의 등급이다. ASIL과 같은 종류의 값으로 읽지 않는다.
 - 로봇에는 소프트웨어 개발 과정을 다루는 전용 규격이 없다. 로봇 규격은 필요한 safety function과 등급을 정하고, 만드는 방법은 기계류 제어 규격에 맡긴다.
 - 드론에는 ISO 26262에 해당하는 단일 규격이 없다. 규제와 운용 위험 평가가 중심이고 나라마다 다르다. 이 책은 EU 체계 (SORA)를 기준으로 삼는다.
 - 드론 쪽은 제도가 빠르게 바뀐다. 21장은 쓰는 시점에 다시 확인한다.
+- 이 표에서 드론 열의 등급 관련 내용은 받은 EASA 문서로 확인했다. 자동차와 로봇 열은 규격 원문으로 확인하지 않았다.
 
 ## 3. 관통 예제 (running example)
 
 책 전체에서 시스템 하나를 hazard 분석부터 safety case까지 끌고 간다. 장마다 이 예제의 산출물이 하나씩 쌓인다.
 
-- 제안: 구동 토크 제어 (drive torque control). 가속 페달 입력을 받아 구동 모터의 토크 명령을 만드는 소프트웨어.
+- 제안: 구동 토크 제어 (drive torque control). 가속 페달 입력을 받아 구동 모터의 토크 요구를 만드는 소프트웨어.
 - 대표 hazard: 의도하지 않은 가속 (unintended acceleration).
 - 고른 이유
   - 위험이 직관적이어서 자동차 지식이 없어도 이해할 수 있다.
-  - 공개된 감시 구조가 있다 (E-Gas monitoring concept: 엔진 제어기용으로 자동차 회사들이 공개한 3단계 감시 구조).
-  - 1장의 실제 사례(Toyota unintended acceleration)와 이어진다.
+  - 감시 구조의 본보기가 있다 (E-Gas monitoring concept: 엔진 제어기용 3단계 감시 구조). 다만 원문은 아직 구하지 못했다. 구할 때까지 이 구조에 관한 문장은 `(확인 필요)`이고, AUTOSAR 공개 문서의 설명을 2차 자료로 쓴다.
+  - 1장의 Toyota 사례와 같은 hazard를 다룬다. 그 사례의 원인은 공식 조사와 재판의 결론이 갈린다.
   - 센서와 모터를 PC에서 시뮬레이션할 수 있어 개발 보드 없이 실습할 수 있다.
+
+### 예제의 범위
+
+- item의 경계: 차량 제어기 (VCU)가 가속 페달에서 토크 요구를 만들어 inverter에 보내는 경로까지다. inverter와 모터는 가정 (assumption of use)으로 받는 외부 요소다.
+- HARA에 올리는 hazard: 의도하지 않은 가속, 의도하지 않은 감속 (회생 제동), 잘못된 방향, 정지 상태에서의 의도하지 않은 출발, 구동력 상실. 책 전체에서 끌고 가는 것은 의도하지 않은 가속 하나다.
+- safe state: "토크 0"이 아니라 "토크 요구를 허용 범위 안으로 제한하고, inverter에 토크 없는 상태로의 전환을 요청하는 것"이다. 전기 모터는 끄는 방법에 따라 원치 않는 제동 토크가 생길 수 있어서, inverter 쪽의 전략은 가정 목록에 남긴다 `(확인 필요)`.
+- 예제의 등급과 수치는 설명을 위한 가정이다. 운전자가 제동하면 제동이 우선한다는 것 같은 가정에 따라 달라진다.
+- PC 시뮬레이션은 논리를 검증할 뿐이다. 감시 기능의 독립성, 실제 실행 시간, 하드웨어의 동작은 보여 주지 못한다.
 
 산출물의 흐름:
 
@@ -90,7 +103,8 @@ flowchart TD
     B --> C["safety goal"]
     C --> D["functional safety concept"]
     D --> E["technical safety concept"]
-    E --> F["software safety requirements"]
+    E --> E2["safety analysis (FTA, DFA)"]
+    E2 --> F["software safety requirements"]
     F --> G["software architecture"]
     G --> H["safety mechanism 구현"]
     H --> I["test"]
@@ -101,61 +115,62 @@ flowchart TD
 
 20장과 21장에서는 작은 예제를 하나씩 따로 쓴다. 위험 평가에서 구조 설계까지만 가고, 관통 예제와 나란히 놓고 비교한다.
 
-- 로봇: 자율 이동 로봇의 protective stop. 사람이 감지 영역에 들어오면 정지하는 기능.
-- 드론: 소형 multicopter의 geofence와 조종 link 상실 대응. 정해진 공역을 벗어나지 않고, 통신이 끊기면 미리 정한 동작으로 넘어가는 기능.
+- 로봇: 자율 이동 로봇의 속도에 따른 보호 영역 전환과 정지. 안전 기능은 인증된 센서와 safety controller가 수행한다. 이 예제는 일반 소프트웨어가 안전 기능에서 하는 일과 하지 않는 일의 경계를 보인다.
+- 드론: 소형 multicopter의 조종 link 상실, geofence 이탈, 위치 상실에 대한 대응. 고장이 나면 미리 정한 동작 (제자리 비행, 복귀, 착륙) 가운데 하나로 넘어가는 기능이다.
 
 ## 4. 목차
 
 장마다 파일 하나가 `chapters/`에 있다. 장의 계획 (다룰 내용, 예제 산출물, 근거)은 각 파일의 앞부분에 있다.
+목표 쪽수의 합은 290쪽 안팎이다. 2026-11-22 검토에서 정한 값이고, 단계 1을 마친 뒤에 다시 본다.
 
 ### Part I. 사고방식과 기본 개념
 
-| 장 | 제목 | 핵심 질문 |
-|---|---|---|
-| 1 | [소프트웨어가 사람을 다치게 할 때](chapters/ch01-accidents.md) | 소프트웨어는 닳지도 부러지지도 않는데 어떻게 사고를 일으키는가? |
-| 2 | [기본 개념과 용어](chapters/ch02-concepts-and-terms.md) | safety, reliability, availability, security는 어떻게 다른가? |
-| 3 | [Risk와 integrity level](chapters/ch03-risk-and-integrity-level.md) | 얼마나 안전해야 충분한가? 그 답이 어떻게 개발 방법의 엄격함으로 바뀌는가? |
-| 4 | [규격 지도와 규격 읽는 법](chapters/ch04-standards-map.md) | 규격은 왜 이렇게 많고 서로 어떤 관계인가? 규격 문장은 어떻게 읽어야 하는가? |
+| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|
+| 1 | [소프트웨어가 사람을 다치게 할 때](chapters/ch01-accidents.md) | 소프트웨어는 닳지도 부러지지도 않는데 어떻게 사고를 일으키는가? | 12 |
+| 2 | [기본 개념과 용어](chapters/ch02-concepts-and-terms.md) | safety, reliability, availability, security는 어떻게 다른가? | 10 |
+| 3 | [Risk와 integrity level](chapters/ch03-risk-and-integrity-level.md) | 얼마나 안전해야 충분한가? 그 답이 어떻게 개발 방법의 엄격함으로 바뀌는가? | 12 |
+| 4 | [규격 지도와 규격 읽는 법](chapters/ch04-standards-map.md) | 규격은 왜 이렇게 많고 서로 어떤 관계인가? 규격 문장은 어떻게 읽어야 하는가? | 8-10 |
 
 ### Part II. Hazard에서 소프트웨어 요구사항까지
 
-| 장 | 제목 | 핵심 질문 |
-|---|---|---|
-| 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? |
-| 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? |
-| 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? |
-| 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? |
-| 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? |
+| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|
+| 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? | 10 |
+| 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 16 |
+| 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 16 |
+| 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? | 14 |
+| 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? | 10-12 |
 
 ### Part III. 안전한 소프트웨어 만들기
 
-| 장 | 제목 | 핵심 질문 |
-|---|---|---|
-| 10 | [Software safety requirements](chapters/ch10-software-safety-requirements.md) | 검증할 수 있는 안전 요구사항은 어떻게 쓰는가? |
-| 11 | [Software architecture for safety](chapters/ch11-software-architecture.md) | 일부가 고장 나도 안전한 구조는 어떻게 만드는가? |
-| 12 | [Software safety mechanism](chapters/ch12-safety-mechanisms.md) | 고장을 제때 감지하고 반응하는 구체적 수단은 무엇인가? |
-| 13 | [Coding for safety](chapters/ch13-coding.md) | 언어와 코딩 습관은 안전에 얼마나 기여하는가? |
-| 14 | [플랫폼: RTOS, OS, multicore](chapters/ch14-platform.md) | 내 코드 아래에 있는 소프트웨어와 프로세서는 믿을 수 있는가? |
+| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|
+| 10 | [Software safety requirements](chapters/ch10-software-safety-requirements.md) | 검증할 수 있는 안전 요구사항은 어떻게 쓰는가? | 14 |
+| 11 | [Software architecture for safety](chapters/ch11-software-architecture.md) | 일부가 고장 나도 안전한 구조는 어떻게 만드는가? | 18 |
+| 12 | [Software safety mechanism](chapters/ch12-safety-mechanisms.md) | 고장을 제때 감지하고 반응하는 구체적 수단은 무엇인가? | 20 |
+| 13 | [Coding for safety](chapters/ch13-coding.md) | 언어와 코딩 습관은 안전에 얼마나 기여하는가? | 16 |
+| 14 | [플랫폼: RTOS, OS, multicore](chapters/ch14-platform.md) | 내 코드 아래에 있는 소프트웨어와 프로세서는 믿을 수 있는가? | 12 |
 
-### Part IV. 안전함을 보이기
+### Part IV. 안전함을 보이고 유지하기
 
-| 장 | 제목 | 핵심 질문 |
-|---|---|---|
-| 15 | [Verification 전략: review, 정적 분석, formal method](chapters/ch15-verification-strategy.md) | 테스트만으로 부족한 것은 무엇이고, 무엇으로 메우는가? |
-| 16 | [Testing](chapters/ch16-testing.md) | 언제 "충분히 테스트했다"고 말할 수 있는가? |
-| 17 | [Tool과 기존 소프트웨어](chapters/ch17-tools-and-existing-software.md) | 내가 만들지 않은 것 (compiler, code generator, library, open source)을 어떻게 믿는가? |
-| 18 | [변경, 형상, 릴리스 이후](chapters/ch18-change-and-configuration.md) | 한 번 안전하다고 보인 소프트웨어를 바꿀 때 무엇을 다시 해야 하는가? |
-| 19 | [Safety case와 assessment](chapters/ch19-safety-case.md) | 흩어진 산출물이 어떻게 "안전하다"는 하나의 주장이 되는가? |
+| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|
+| 15 | [Verification 전략: review, 정적 분석, formal method](chapters/ch15-verification-strategy.md) | 테스트만으로 부족한 것은 무엇이고, 무엇으로 메우는가? | 12 |
+| 16 | [Testing](chapters/ch16-testing.md) | 언제 "충분히 테스트했다"고 말할 수 있는가? | 18 |
+| 17 | [Tool과 기존 소프트웨어](chapters/ch17-tools-and-existing-software.md) | 내가 만들지 않은 것 (compiler, code generator, library, open source)을 어떻게 믿는가? | 12 |
+| 18 | [변경, 형상, 릴리스 이후](chapters/ch18-change-and-configuration.md) | 한 번 안전하다고 보인 소프트웨어를 바꿀 때 무엇을 다시 해야 하는가? | 12 |
+| 19 | [Safety case와 assessment](chapters/ch19-safety-case.md) | 흩어진 산출물이 어떻게 "안전하다"는 하나의 주장이 되는가? | 12 |
 
 ### Part V. 넓히기
 
-| 장 | 제목 | 핵심 질문 |
-|---|---|---|
-| 20 | [로봇: 기계류 안전의 방식](chapters/ch20-robots.md) | 사람 옆에서 움직이는 기계의 안전은 자동차와 무엇이 같고 무엇이 다른가? |
-| 21 | [드론: 운용 위험 기반의 방식](chapters/ch21-drones.md) | 멈출 수 없는 기계는 어떻게 안전해지는가? 제품이 아니라 운용을 기준으로 위험을 따지면 무엇이 달라지는가? |
-| 22 | [그 밖의 분야의 소프트웨어 안전 규격](chapters/ch22-other-domains.md) | 같은 문제를 다른 분야는 어떻게 다르게 푸는가? |
-| 23 | [Functional safety의 경계](chapters/ch23-boundaries.md) | 고장이 없어도 위험할 수 있다면, functional safety는 어디까지 책임지는가? |
-| 24 | [실무에 적용하기](chapters/ch24-in-practice.md) | 배운 것을 내 프로젝트에 어디서부터 적용할 것인가? |
+| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|
+| 20 | [로봇: 기계류 안전의 방식](chapters/ch20-robots.md) | 사람 옆에서 움직이는 기계의 안전은 자동차와 무엇이 같고 무엇이 다른가? | 14 |
+| 21 | [드론: 운용 위험 기반의 방식](chapters/ch21-drones.md) | 동력을 끊는 것이 안전하지 않은 기계는 어떻게 안전해지는가? 제품이 아니라 운용을 기준으로 위험을 따지면 무엇이 달라지는가? | 14 |
+| 22 | [그 밖의 분야의 소프트웨어 안전 규격](chapters/ch22-other-domains.md) | 같은 문제를 다른 분야는 어떻게 다르게 푸는가? | 8 |
+| 23 | [Functional safety의 경계](chapters/ch23-boundaries.md) | 고장이 없어도 위험할 수 있다면, functional safety는 어디까지 책임지는가? | 8 |
+| 24 | [실무에 적용하기](chapters/ch24-in-practice.md) | 배운 것을 내 프로젝트에 어디서부터 적용할 것인가? | 6 |
 
 ### 부록
 
@@ -165,3 +180,4 @@ flowchart TD
 | B | [규격 조항 대응표](chapters/appendix-b-clause-map.md) |
 | C | [관통 예제의 산출물](chapters/appendix-c-example-artifacts.md) |
 | D | [참고 문헌](chapters/appendix-d-references.md) |
+| E | [임베디드 시스템과 차량 E/E 최소 지식](chapters/appendix-e-embedded-basics.md) |
