@@ -353,3 +353,31 @@
 | C-EX-026 | to_permille의 signed overflow, CRC 변환 셋, clang-tidy 경고 7개, compile되지 않는 변이, 상수 이름을 쓴 test, cppcheck MISRA 7.3 거짓 경보 | example/drive-torque/docs/test-report.md 6절, 7절; notes/tool-check.md | 1차 | 2026-11-23 |
 | C-EX-027 | 증명 성질 4, 8, 13, 14가 망가진 상태 값에서도 성립한다. 증명은 C 코드의 논리이고 기계어를 덮지 않는다 | example/drive-torque/docs/test-report.md 5절; test/proof/harness.c | 1차 | 2026-11-23 |
 | C-EX-028 | 현재 cppcheck 지적 없음, clang-tidy 경고 0 | `make static`을 2026-11-23에 돌림 | 1차 | 2026-11-23 |
+| C-12-007 | E2E 규격의 통신 고장과 주된 수단 (Table 6.1): 되풀이, 잃음, 늦음, 순서 - counter. 끼어듦, 주소가 틀림 - data ID. 둔갑 - data ID와 CRC. 손상, 받는 쪽마다 다른 정보 - CRC. 일부만 받음 - counter. 경로가 막힘 - counter (잃음이나 timeout) | autosar-e2e-protocol (R25-11), 32-33쪽 | 1차 | 2026-11-23 |
+| C-12-008 | Profile 1은 지연을 counter가 아니라 정기적인 송신과 timeout의 감시에 맡긴다 (Table 6.3) | autosar-e2e-protocol, 83쪽 | 1차 | 2026-11-23 |
+| C-12-009 | Profile 2는 메시지의 지연을 검출하지 않고, timeout 같은 보호는 검사 함수를 부르는 쪽이 구현해야 한다 | autosar-e2e-protocol, 107쪽 | 1차 | 2026-11-23 |
+| C-12-010 | E2E 보호는 profile이 시간 표시를 넣지 않으므로 data가 지금의 것인지를 보장하지 않는다 | autosar-safety-measures (R25-11), 42쪽 | 1차 | 2026-11-23 |
+| C-12-011 | Profile 1과 2는 호환성 때문에만 유지하는 legacy이고, 새 프로젝트는 Profile 11과 22를 쓴다 | autosar-e2e-protocol, 82쪽, 107쪽 | 1차 | 2026-11-23 |
+| C-12-012 | Profile 1의 CRC는 CRC-8-SAE J1850의 다항식 0x1D이고 처음 값과 XOR 값은 0x00이다 | autosar-e2e-protocol, 83쪽, 86쪽 | 1차 | 2026-11-23 |
+| C-12-013 | Profile 1의 data ID는 16 bit이고, dataIdMode 0, 1, 2에서는 전송하지 않고 CRC의 계산에만 넣는다 (implicit transmission) | autosar-e2e-protocol, 82쪽 | 1차 | 2026-11-23 |
+| C-12-014 | Profile 1은 CRC가 맞는 첫 메시지에서 counter를 검사하지 않고 INITIAL을 알린다 | autosar-e2e-protocol, 96쪽 (그림 6.60), 103쪽 | 1차 | 2026-11-23 |
+| C-12-015 | Profile 1은 검사를 부를 때마다 MaxDeltaCounter를 1 올리고 (14까지), 새 data가 없으면 허용 폭이 넓어진다. Profile 11의 MaxDeltaCounter는 정한 값이고 검사 흐름에 증가 단계가 없다 | autosar-e2e-protocol, 96쪽, 104쪽, 179쪽 (그림 6.112), 182쪽 | 1차 | 2026-11-23 |
+| C-12-016 | CRC가 틀린 메시지 (ERROR, WRONGCRC)와 새 data 없음은 counter의 기준 (State->Counter, LastValidCounter)을 바꾸지 않는다 | autosar-e2e-protocol, 47쪽 (그림 6.21), 96쪽 (그림 6.60), 179쪽 (그림 6.112) | 1차 | 2026-11-23 |
+| C-12-017 | CRC의 오류는 counter의 오류와 달리 거짓 경보일 가능성이 낮고, 더 엄격한 반응이 맞으며, 받는 쪽이 참는 CRC 오류의 수를 제한해야 한다 | autosar-e2e-protocol, 32쪽 | 1차 | 2026-11-23 |
+| C-12-018 | FTTI = tFD + tFR이고 tFD는 E2E의 debounce 시간이다. 상태 기계의 창 크기를 FTTI에서 고르는 식을 준다 | autosar-e2e-protocol, 244쪽 | 1차 (규격의 FTTI를 설명) | 2026-11-23 |
+| C-12-019 | 고른 profile의 검출 능력이 충분함을 하드웨어 고장률, bit 오류율, node 수, 반복률, gateway를 따져 사용자가 보여야 한다 | autosar-e2e-protocol, 14쪽. autosar-safety-measures, 42쪽 | 1차 | 2026-11-23 |
+| C-12-020 | E2E 보호가 잡는 고장에는 아래 통신 층 (RTE, COM, network stack)의 체계적 결함이 든다. CAN과 FlexRay의 CRC는 통신 제어기의 하드웨어가 준다 | autosar-e2e-protocol, 13쪽, 86쪽 | 1차 | 2026-11-23 |
+| C-12-021 | alive supervision은 너무 자주도 드물게도 실행되지 않는지, deadline supervision은 두 checkpoint 사이의 시간이 최소와 최대 안인지, logical supervision은 control flow의 오류를 본다 | autosar-safety-measures, 23-24쪽, 28쪽 | 1차 | 2026-11-23 |
+| C-12-022 | checkpoint가 성글면 검출 능력이 제한된다. deadline supervision은 끝의 checkpoint가 아예 오지 않는 것을 검출하지 않는다 | autosar-safety-measures, 27쪽 | 1차 | 2026-11-23 |
+| C-12-023 | AUTOSAR 개요는 시간 감시를 ISO 26262-6의 Annex D (D.2.2 Timing and execution)에 잇는다 | autosar-safety-measures, 28쪽 | 2차 (ISO 26262:2018) | 2026-11-23 |
+| C-12-024 | watchdog을 interrupt로 다시 걸지 말라. 실제 process가 막혀도 interrupt는 살아 있을 수 있다 | nasa-gb-8719-13, 94쪽 | 1차 | 2026-11-23 |
+| C-12-025 | 쓴 값을 다른 함수가 되읽어 확인한다 (read-back) | nasa-gb-8719-13, 95쪽 | 1차 | 2026-11-23 |
+| C-12-026 | 중요한 변수를 여러 사본으로 두고 견주며, 2-out-of-3, 기본값, 묶은 변수의 CRC를 쓴다. CRC나 오류 정정 부호로 중요한 data의 손상을 찾는다 | nasa-gb-8719-13, 94쪽, 140쪽 | 1차 | 2026-11-23 |
+| C-12-027 | ROM 검사는 켤 때 CPU 자가 시험 다음에 하고, 자기 프로그램을 고칠 수 있으면 주기적으로 한다 | nasa-gb-8719-13, 93쪽 | 1차 | 2026-11-23 |
+| C-12-028 | Toyota의 제어기는 watchdog을 다시 거는 함수를 가장 낮은 우선순위 task에서 돌렸다 | nasa-toyota-ua-report, 146쪽 | 1차 | 2026-11-23 |
+| C-12-029 | H-bridge는 main과 sub CPU 둘의 입력이 모두 있어야 동작하고, CPU reset 동안 출력이 low로 끌려 구동이 꺼진다. sub CPU는 이중 처리 경로가 아니고 독립된 하드웨어 enable을 준다 | nasa-toyota-ua-report, 144쪽, 146쪽 | 1차 | 2026-11-23 |
+| C-12-030 | 특정한 저항성 단락에서 DTC 2121을 지우고 MIL을 끄면, 단락이 그대로인데 DTC와 MIL이 다시 켜지지 않고 동작은 그대로다 | nasa-toyota-ua-report, 81쪽 | 1차 | 2026-11-23 |
+| C-12-031 | 두 pedal 신호를 허용 폭 안에 놓는 고장은 고장으로 검출되지 않고 유효한 명령으로 읽힌다 | nasa-toyota-ua-report, 101쪽 | 1차 | 2026-11-23 |
+| C-12-032 | Toyota의 고장 표에 brake switch의 두 극이 맞지 않을 때의 DTC가 있다 | nasa-toyota-ua-report, 78쪽 (표 6.5.2.2-1) | 1차 | 2026-11-23 |
+| C-12-033 | 페달 신호를 확인할 수 없으면 평소보다 느린 상승률로 토크를 허용하는 safe state를 예로 든다 | nhtsa-etc-ev-fsa, 67쪽 | 1차 | 2026-11-23 |
+| C-12-034 | 한 제어기가 정한 간격으로 입력 묶음을 주고 정한 시간 안의 옳은 답으로 다른 제어기의 건전성을 확인한다 (quizzer, seed-and-key) | nhtsa-etc-ev-fsa, 74쪽 각주 24 | 1차 | 2026-11-23 |
