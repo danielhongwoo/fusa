@@ -33,10 +33,17 @@
 - FTTI는 hazard의 시간 성질로만 다룬다. 시간 구간을 나누는 것은 7장에서 한다 (F-12)
 - ASIL을 정하는 표는 구조와 읽는 법만 설명한다 (F-03)
 
+## 책의 성격에 따른 조정 (2026-11-22)
+
+이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다 (RULES.md 5.6절).
+
+- severity, exposure, controllability의 등급 정의와 ASIL을 정하는 규칙은 2차 자료에 근거했음을 밝힌다.
+- 예제의 판정은 방법을 보이기 위한 것이다. 규격의 요구사항을 만족하는지 확인한 것이 아니다.
+
 ## 예제 산출물
 
 item definition (E/E 구성도와 item의 경계 포함), HARA 표, safety goal과 safe state, FTTI 가정값
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-3; IEC 61508-5

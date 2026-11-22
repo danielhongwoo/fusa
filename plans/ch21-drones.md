@@ -38,7 +38,7 @@
 
 소형 multicopter 운용 하나의 SAIL 결정, link 상실과 geofence 이탈과 위치 상실에 대한 상태 기계 설계. 세 분야의 safe state 비교표
 
-## 근거
+## 관련 규격과 자료
 
 JARUS SORA 2.5; EU 규정 2019/947과 EASA AMC, GM; EASA Special Condition Light-UAS; ASTM F3201; ASTM F3269; EUROCAE ED-280; DO-178C
 

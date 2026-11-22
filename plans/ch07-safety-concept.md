@@ -31,10 +31,16 @@ safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 �
 - E-Gas 구조에서 기능 쪽과 감시 쪽의 등급이 정해지는 방식. decomposition과 coexistence의 차이 (F-14)
 - fault reaction과 warning, fault 기록 (E-10)
 
+## 책의 성격에 따른 조정 (2026-11-22)
+
+이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다 (RULES.md 5.6절).
+
+- decomposition의 조건, 시간 구간의 이름과 관계 같은 규격의 세부 규칙은 2차 자료로 확인한 범위에서만 쓴다. 용어의 정의는 ISO Online Browsing Platform에서 확인한다.
+
 ## 예제 산출물
 
 functional safety concept, technical safety concept (3단계 감시 구조, 하드웨어 가정 목록, 시간 예산표, decomposition 또는 coexistence 판단)
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-3, -4, -9

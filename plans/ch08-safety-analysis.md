@@ -32,7 +32,7 @@
 
 FTA 1개, 소프트웨어 수준 FMEA 1개, STPA control structure
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-9, ISO 26262-6 Annex E; IEC 61508-7; STPA Handbook
 

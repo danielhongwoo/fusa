@@ -41,7 +41,7 @@
 
 safety mechanism 구현, mechanism마다 덮는 fault 목록
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-6; IEC 61508-7; AUTOSAR 공개 문서
 

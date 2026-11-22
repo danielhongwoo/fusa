@@ -28,11 +28,17 @@
 - 한 쪽짜리 safety case가 FTA, 독립성 분석, test를 증거로 가리키게 한다 (F-06)
 - 5장과 겹치지 않게, 평가자가 safety case에서 무엇을 보는가에 집중한다 (F-16)
 
+## 책의 성격에 따른 조정 (2026-11-22)
+
+이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다 (RULES.md 5.6절).
+
+- confirmation review, audit, assessment에 관한 규격의 세부 요구는 개념 수준으로 다룬다 (2차 자료). safety case를 만드는 법은 받은 GSN 문서를 근거로 삼는다.
+
 ## 예제 산출물
 
 예제 전체의 safety case
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-2; GSN Community Standard; UL 4600
 

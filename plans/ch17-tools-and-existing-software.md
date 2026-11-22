@@ -30,10 +30,16 @@
 - compiler가 안전 관련 코드를 바꾸는 사례 1개 (E-09)
 - 예제 toolchain의 분류표에 qualification되지 않았음을 밝힌다 (E-17)
 
+## 책의 성격에 따른 조정 (2026-11-22)
+
+이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다 (RULES.md 5.6절).
+
+- tool confidence level, component qualification, proven in use의 세부 절차는 개념 수준으로 다룬다 (2차 자료).
+
 ## 예제 산출물
 
 예제 toolchain의 tool 분류표, 외부 component 하나의 사용 근거
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-8, -10; IEC 61508-3; DO-330

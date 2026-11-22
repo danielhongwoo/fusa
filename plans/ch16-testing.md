@@ -35,11 +35,17 @@
 - back-to-back test와 model-based development의 연결 (F-25)
 - safety validation은 한 문단으로 소개한다 (F-28)
 
+## 책의 성격에 따른 조정 (2026-11-22)
+
+이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다 (RULES.md 5.6절).
+
+- 등급에 따라 어떤 test 방법과 coverage가 권장되는지는 2차 자료에 근거했음을 밝힌다. coverage의 의미와 한계에 무게를 둔다.
+
 ## 예제 산출물
 
 test specification, coverage 보고서, fault injection test 3건 이상 (센서 고착, 통신 값 정지, task 지연), 반응 시간 측정
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-6; IEC 61508-3; NASA MC/DC tutorial
 

@@ -30,7 +30,7 @@ safety, reliability, availability, security는 어떻게 다른가?
 
 예제 시스템에서 무엇이 hazard이고 무엇이 fault, failure인지 정리한 표
 
-## 근거
+## 관련 규격과 자료
 
 IEC 61508-4, ISO 26262-1, Avizienis 외 (2004)
 

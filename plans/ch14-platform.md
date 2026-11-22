@@ -38,7 +38,7 @@
 
 task 설계와 timing 예산, 플랫폼 선택의 근거
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-6; AMC 20-193 (multicore); AUTOSAR 공개 문서
 

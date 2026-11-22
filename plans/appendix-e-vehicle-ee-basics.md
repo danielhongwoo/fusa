@@ -24,6 +24,6 @@
 
 관통 예제의 E/E 구성도 (6장의 item definition과 함께 쓴다)
 
-## 근거
+## 관련 규격과 자료
 
 받은 문서: autosar-safety-measures, autosar-e2e-protocol

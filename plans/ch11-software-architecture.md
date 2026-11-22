@@ -38,6 +38,6 @@
 
 software architecture (응용, 감시, HAL의 3층과 task table. 정적 view와 동적 view), partitioning 결정의 근거, 독립성 주장 목록
 
-## 근거
+## 관련 규격과 자료
 
 ISO 26262-6 (Annex D 포함), -9; IEC 61508-3 (Annex F 포함); E-Gas monitoring concept
