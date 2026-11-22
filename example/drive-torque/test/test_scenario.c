@@ -9,7 +9,7 @@
 #include "vcu.h"
 #include "test.h"
 
-#define LOG_CAP 8000
+#define LOG_CAP 10000
 static sample_t log_buf[LOG_CAP];
 static sample_t log_ref[LOG_CAP]; /* 고장이 없는 실행. 차량 수준의 차이를 재는 기준이다 */
 
@@ -508,6 +508,19 @@ static void tc_113(void)
     CHECK(t_off >= 0);
     CHECK((t_off - (int)T_FAULT) <= 110);
     CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+    {
+        /* VCU의 검사 (SWR-19)도 이 고장을 본다. inverter가 스스로 토크를 내리는 것이 더 빨라서,
+         * 범위를 벗어난 주기가 3번 이어지기 전에 범위 안으로 돌아온다.
+         * 끊어도 되는 경우이므로 끊었는지는 판정하지 않고 재기만 한다 */
+        int worst = 0;
+        for (int i = 0; i < n; i++) {
+            if ((int)log_buf[i].diag.inverter_out_cycles > worst) {
+                worst = (int)log_buf[i].diag.inverter_out_cycles;
+            }
+        }
+        printf("  측정 FI-14: VCU의 검사가 범위를 벗어났다고 센 주기는 이어서 %d번, 구동 허용 차단 %s\n", worst,
+               log_buf[n - 1].diag.latched ? "함" : "안 함");
+    }
     printf("  측정 FI-14: 페달을 놓은 때부터 모터의 토크가 5%% 아래로 내려갈 때까지 %d ms (고장이 없으면 %d ms), "
            "가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n",
            t_off - (int)T_FAULT, first_motor_off(log_ref, n_ref, T_FAULT) - (int)T_FAULT, max_excess, over_ms);
@@ -601,8 +614,9 @@ static void tc_114(void)
 }
 
 /*
- * TC-115: SWR-18 fault injection FI-16
+ * TC-115: SWR-18, SWR-19 fault injection FI-16
  * inverter의 상태 메시지가 끊긴다. 마지막 메시지에서 50 ms가 지난 다음 주기부터 무효다.
+ * 무효인 주기가 10번 이어지면 구동 허용 신호를 끊는다. inverter가 요구대로 내는지 확인할 수 없기 때문이다.
  */
 static void tc_115(void)
 {
@@ -614,14 +628,30 @@ static void tc_115(void)
     scenario_t sc = { "fi-16", 3000u, driver, 2, &fault, 1, NULL };
     int n = scenario_run(&sc, log_buf, LOG_CAP);
     int wrong = 0;
+    int bad = 0;
+    /* 무효인 주기: 2050, 2060, ..., 2140 ms. 10번째에 끊는다 */
+    const int t_cut = (int)T_FAULT + 140;
 
     for (int i = 10; i < n; i++) {
+        const sample_t *s = &log_buf[i];
         bool want = (i < ((int)T_FAULT + 50));
-        if (log_buf[i].diag.inverter_valid != want) {
+        if (s->diag.inverter_valid != want) {
             wrong++;
+        }
+        if (i < t_cut) {
+            /* 끊기 전에는 아무것도 달라지지 않는다 */
+            if ((s->torque_out != ((i >= 300) ? 750 : s->torque_out)) || s->diag.latched || (s->warning != 0u)) {
+                bad++;
+            }
+        } else if ((s->torque_out != 0) || s->enable || (s->warning != 2u) || !s->diag.latched) {
+            bad++;
+        } else {
+            /* 끊은 뒤: 토크 0, 구동 허용 신호 차단, 경고 */
         }
     }
     CHECK_EQ(wrong, 0);
+    CHECK_EQ(bad, 0);
+    printf("  측정 FI-16: 메시지가 끊긴 때부터 구동 허용 차단까지 %d ms\n", t_cut - (int)T_FAULT);
 }
 
 static int is_gear_r(const sample_t *s) { return s->diag.gear == GEAR_R; }
@@ -827,12 +857,29 @@ static void tc_119(void)
     CHECK_EQ(log_buf[n - 1].diag.gear, GEAR_N);
 }
 
+static int is_latched(const sample_t *s) { return s->diag.latched; }
+
+/* 구동 허용 차단이 된 뒤로 토크 0, 구동 허용 신호 차단, 경고가 유지되는가. 어긴 줄의 수를 돌려준다 */
+static int bad_after_cut(const sample_t *log, int n, int t_cut)
+{
+    int bad = 0;
+
+    for (int i = 0; i < n; i++) {
+        if (((int)log[i].t_ms >= t_cut)
+            && ((log[i].torque_out != 0) || log[i].enable || (log[i].warning != 2u))) {
+            bad++;
+        }
+    }
+    return bad;
+}
+
 /*
- * NC-002: 대조. inverter가 메시지를 검사하지 않으면 FI-13과 FI-14는 SG-01을 어긴다.
- * 그래서 TC-112와 TC-113의 "SG-01이 지켜졌다"는 메시지의 보호와 inverter의 검사 (가정 A-21)가 한 일이다.
- * 요구사항을 검증하는 test가 아니므로 추적에 넣지 않는다.
+ * TC-120: SWR-19 fault injection FI-20
+ * FI-13, FI-14와 같은 전송 중의 고장인데, inverter가 메시지를 검사하지 않는다 (가정 A-21이 틀린 경우).
+ * inverter는 바뀐 값이나 옛 값을 그대로 쓴다. inverter가 알린 토크가 VCU가 보낸 토크의 범위를 벗어나므로
+ * VCU가 3주기 뒤에 구동 허용 신호를 끊는다. 가정 하나가 틀려도 다른 수단이 SG-01을 지킨다.
  */
-static void nc_002(void)
+static void tc_120(void)
 {
     static const driver_point_t hold[] = {
         { 0u, 0.0, false, GEAR_D },
@@ -845,29 +892,241 @@ static void nc_002(void)
     };
     fault_event_t corrupt = { T_FAULT, FAULT_TORQUE_MSG_CORRUPT, 1000 };
     fault_event_t repeat = { T_FAULT - 5u, FAULT_TORQUE_MSG_REPEAT, 0 };
-    scenario_t sc_ref1 = { "nc-002-ref1", 3000u, hold, 2, NULL, 0, inverter_does_not_check };
-    scenario_t sc1 = { "nc-002-corrupt", 3000u, hold, 2, &corrupt, 1, inverter_does_not_check };
-    scenario_t sc_ref2 = { "nc-002-ref2", 3000u, release, 3, NULL, 0, inverter_does_not_check };
-    scenario_t sc2 = { "nc-002-repeat", 3000u, release, 3, &repeat, 1, inverter_does_not_check };
+    scenario_t sc_ref1 = { "fi-20-ref1", 3000u, hold, 2, NULL, 0, inverter_does_not_check };
+    scenario_t sc1 = { "fi-20-corrupt", 3000u, hold, 2, &corrupt, 1, inverter_does_not_check };
+    scenario_t sc_ref2 = { "fi-20-ref2", 3000u, release, 3, NULL, 0, inverter_does_not_check };
+    scenario_t sc2 = { "fi-20-repeat", 3000u, release, 3, &repeat, 1, inverter_does_not_check };
     int over_ms = 0;
     double max_excess;
+    int t_cut;
     int n;
 
+    /* 값이 100 Nm 커진 채 inverter에 닿는다 */
     (void)scenario_run(&sc_ref1, log_ref, LOG_CAP);
     n = scenario_run(&sc1, log_buf, LOG_CAP);
     max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
-    CHECK(max_excess > 1.0);
-    CHECK(over_ms > 200);
-    printf("  측정 대조 (inverter가 검사하지 않음, 값이 바뀜): 가속의 차이는 가장 클 때 %.2f m/s^2, "
-           "1.0 m/s^2를 넘은 시간 %d ms\n", max_excess, over_ms);
+    t_cut = first_time(log_buf, n, 0u, is_latched);
+    /* 3번째로 범위를 벗어난 주기 (30 ms 뒤)에 끊는다 */
+    CHECK_EQ(t_cut, (int)T_FAULT + 30);
+    CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
+    CHECK(over_ms <= 200);
+    CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+    printf("  측정 FI-20 (값이 바뀜, inverter가 검사하지 않음): 차단까지 %d ms, 가속의 차이는 가장 클 때 %.2f m/s^2, "
+           "1.0 m/s^2를 넘은 시간 %d ms\n", t_cut - (int)T_FAULT, max_excess, over_ms);
+    (void)scenario_write_csv("build/out/fi-20.csv", log_buf, n);
 
+    /* 운전자가 페달을 놓았는데 옛 메시지 (75 Nm)가 되풀이된다.
+     * 보낸 토크의 기록 (50 ms)에서 75 Nm가 빠진 뒤에야 범위를 벗어나므로, 판정은 50 ms 늦게 시작한다 */
     (void)scenario_run(&sc_ref2, log_ref, LOG_CAP);
     n = scenario_run(&sc2, log_buf, LOG_CAP);
     max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+    t_cut = first_time(log_buf, n, 0u, is_latched);
+    CHECK_EQ(t_cut, (int)T_FAULT + 70);
+    CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
+    CHECK(over_ms <= 200);
+    CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+    /* 이 경우가 시간 예산표 (docs/technical-safety-concept.md 9.4절)의 M4 줄이다: 합 151 ms */
+    CHECK((first_motor_off(log_buf, n, T_FAULT) - (int)T_FAULT) <= 151);
+    printf("  측정 FI-20 (되풀이, inverter가 검사하지 않음): 차단까지 %d ms, 모터의 토크가 5%% 아래로 내려갈 때까지 %d ms, "
+           "가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n", t_cut - (int)T_FAULT,
+           first_motor_off(log_buf, n, T_FAULT) - (int)T_FAULT, max_excess, over_ms);
+}
+
+/*
+ * TC-121: SWR-19 fault injection FI-21
+ * inverter가 요구보다 100 Nm 더 낸다 (inverter 안의 고장). 알리는 토크는 실제 토크다.
+ * fault를 넣는 시각을 주기 안에서 0-9 ms로 바꿔 가며 본다.
+ */
+static void tc_121(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    scenario_t sc_ref = { "fi-21-ref", 3000u, driver, 2, NULL, 0, NULL };
+    int n_ref = scenario_run(&sc_ref, log_ref, LOG_CAP);
+    int worst_cut_ms = 0;
+    int worst_over_ms = 0;
+    int worst_off_ms = 0;
+    double worst_excess = 0.0;
+
+    for (time_ms_t phase = 0u; phase < 10u; phase++) {
+        fault_event_t fault = { T_FAULT + phase, FAULT_INVERTER_TORQUE_OFFSET, 1000 };
+        scenario_t sc = { "fi-21", 3000u, driver, 2, &fault, 1, NULL };
+        int n = scenario_run(&sc, log_buf, LOG_CAP);
+        int over_ms = 0;
+        double max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+        int t_cut = first_time(log_buf, n, 0u, is_latched);
+        int t_off = first_motor_off(log_buf, n, fault.t_ms);
+
+        CHECK_EQ(n, n_ref);
+        CHECK(t_cut >= 0);
+        CHECK(t_off >= 0);
+        CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
+        /* 끊기 전까지 VCU가 보낸 토크는 그대로다. 틀린 것은 inverter다 */
+        CHECK_EQ(log_buf[t_cut - 1].torque_out, 750);
+        if ((t_cut - (int)fault.t_ms) > worst_cut_ms) {
+            worst_cut_ms = t_cut - (int)fault.t_ms;
+        }
+        if ((t_off - (int)fault.t_ms) > worst_off_ms) {
+            worst_off_ms = t_off - (int)fault.t_ms;
+        }
+        if (over_ms > worst_over_ms) {
+            worst_over_ms = over_ms;
+        }
+        if (max_excess > worst_excess) {
+            worst_excess = max_excess;
+        }
+        if (phase == 5u) {
+            (void)scenario_write_csv("build/out/fi-21.csv", log_buf, n);
+        }
+    }
+    /* 시간 예산표 (docs/technical-safety-concept.md 9.4절)의 합 151 ms와 SG-01의 200 ms 안에 있다 */
+    CHECK(worst_cut_ms <= 50);
+    CHECK(worst_off_ms <= 151);
+    CHECK(worst_over_ms <= 200);
+    printf("  측정 FI-21: fault부터 차단까지 가장 나쁜 경우 %d ms, 모터의 토크가 5%% 아래로 내려갈 때까지 %d ms, "
+           "가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n",
+           worst_cut_ms, worst_off_ms, worst_excess, worst_over_ms);
+}
+
+/* TC-122가 쓰는 시간표: inverter가 100 Nm 더 내면서, 알리는 값에서는 그만큼을 뺀다 */
+static void hidden_inverter_fault(time_ms_t t_ms)
+{
+    if (t_ms == T_FAULT) {
+        hal_sim_set_fault(FAULT_INVERTER_TORQUE_OFFSET, 1000);
+        hal_sim_set_fault(FAULT_INVERTER_REPORT_OFFSET, -1000);
+    }
+}
+
+/*
+ * TC-122: SWR-19 fault injection FI-22 (알려진 한계)
+ * inverter가 요구보다 100 Nm 더 내는데, 알리는 토크도 같은 원인으로 틀려서 요구한 값과 같게 보인다.
+ * VCU는 알아채지 못하고 SG-01을 어긴다. 가정 A-23 (알리는 값은 토크 요구를 쓰는 길과 따로 구한다)이 틀린 경우다.
+ */
+static void tc_122(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    scenario_t sc_ref = { "fi-22-ref", 3000u, driver, 2, NULL, 0, NULL };
+    scenario_t sc = { "fi-22", 3000u, driver, 2, NULL, 0, hidden_inverter_fault };
+    int n_ref = scenario_run(&sc_ref, log_ref, LOG_CAP);
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int over_ms = 0;
+    double max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+
+    CHECK_EQ(n, n_ref);
+    CHECK(!log_buf[n - 1].diag.latched);
+    CHECK(log_buf[n - 1].enable);
+    CHECK_EQ(log_buf[n - 1].warning, 0);
     CHECK(max_excess > 1.0);
     CHECK(over_ms > 200);
-    printf("  측정 대조 (inverter가 검사하지 않음, 되풀이): 가속의 차이는 가장 클 때 %.2f m/s^2, "
-           "1.0 m/s^2를 넘은 시간 %d ms\n", max_excess, over_ms);
+    printf("  측정 FI-22 (알려진 한계): 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n",
+           max_excess, over_ms);
+}
+
+/* TC-123이 쓰는 것: 알리는 값의 오차와 묵은 정도 */
+static int32_t report_offset;
+static bool report_stale;
+static double inverter_tau_ms = 20.0;
+
+static void slow_inaccurate_report(time_ms_t t_ms)
+{
+    if (t_ms == 0u) {
+        hal_sim_inverter_tau(inverter_tau_ms);
+        if (report_offset != 0) {
+            hal_sim_set_fault(FAULT_INVERTER_REPORT_OFFSET, report_offset);
+        }
+        if (report_stale) {
+            hal_sim_set_fault(FAULT_INVERTER_REPORT_STALE, 0);
+        }
+    }
+}
+
+/*
+ * TC-123: SWR-19 고장이 없으면 끊지 않는다 (SG-02 쪽)
+ * 토크가 가장 크게 바뀌는 운전을 한다: 끝까지 밟았다 놓기, 끝까지 밟은 채 브레이크, 페달을 빠르게 밟았다 놓기,
+ * 서서 D와 R을 오가기. inverter가 알리는 값이 가정 (A-23)의 끝에 있는 경우도 본다: 10 Nm 크거나 작고, 한 주기 묵었다.
+ * 범위를 벗어난 주기가 이어진 가장 큰 횟수를 잰다. 3이면 끊는다.
+ */
+static void tc_123(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { 200u, 1.0, false, GEAR_D },   /* 끝까지 밟는다 */
+        { 1500u, 0.0, false, GEAR_D },  /* 놓는다: 250 Nm에서 한 주기에 0 */
+        { 2000u, 1.0, false, GEAR_D },
+        { 3000u, 1.0, true, GEAR_D },   /* 밟은 채 브레이크 */
+        { 3500u, 1.0, false, GEAR_D },
+        { 3530u, 0.0, false, GEAR_D },  /* 30 ms마다 밟았다 놓는다 */
+        { 3560u, 1.0, false, GEAR_D },
+        { 3590u, 0.0, false, GEAR_D },
+        { 3620u, 1.0, false, GEAR_D },
+        { 3650u, 0.0, false, GEAR_D },
+        { 3700u, 0.0, true, GEAR_D },   /* 세운다 */
+        { 7000u, 1.0, false, GEAR_R },  /* 서서 R로, 끝까지 밟는다 */
+        { 7300u, 0.0, true, GEAR_R },
+        { 8000u, 1.0, false, GEAR_D },  /* 다시 D로 */
+    };
+    static const int32_t offsets[] = { 0, 100, -100 };
+    int worst_all = 0;
+
+    for (int stale = 0; stale < 2; stale++) {
+        for (int k = 0; k < 3; k++) {
+            scenario_t sc = { "no-false-cut", 8500u, driver, 15, NULL, 0, slow_inaccurate_report };
+            int worst = 0;
+            int bad = 0;
+            int n;
+
+            report_offset = offsets[k];
+            report_stale = (stale != 0);
+            n = scenario_run(&sc, log_buf, LOG_CAP);
+            for (int i = 0; i < n; i++) {
+                const sample_t *s = &log_buf[i];
+                if ((int)s->diag.inverter_out_cycles > worst) {
+                    worst = (int)s->diag.inverter_out_cycles;
+                }
+                if (s->diag.latched || (s->warning != 0u) || ((s->t_ms >= 20u) && !s->enable)
+                    || (s->diag.clamp_count != 0u)) {
+                    bad++;
+                }
+            }
+            CHECK_EQ(bad, 0);
+            CHECK(worst < 3);
+            /* 운전이 뜻한 대로 되었는지: 서 있다가 R을 받아들였고, 끝에는 D로 달린다 */
+            CHECK_EQ(log_buf[7200].diag.gear, GEAR_R);
+            CHECK_EQ(log_buf[n - 1].diag.gear, GEAR_D);
+            printf("  측정 거짓 차단의 여유: 알리는 값의 오차 %+d Nm, %s: 범위를 벗어난 주기가 이어진 횟수는 가장 클 때 %d (3이면 끊는다)\n",
+                   (int)(offsets[k] / 10), report_stale ? "한 주기 묵음" : "묵지 않음", worst);
+            if (worst > worst_all) {
+                worst_all = worst;
+            }
+        }
+    }
+    CHECK(worst_all < 3);
+
+    /* 알려진 한계: 판정의 값은 inverter의 응답이 가정 (A-16: 시정수 20 ms)대로일 때에만 맞다.
+     * 시정수가 25 ms이고 알리는 값이 10 Nm 크고 한 주기 묵으면, 고장이 없는데 250 Nm에서 0으로 내리는 한 번에 끊는다 */
+    {
+        scenario_t sc = { "false-cut", 8500u, driver, 15, NULL, 0, slow_inaccurate_report };
+        int n;
+        int t_cut;
+
+        report_offset = 100;
+        report_stale = true;
+        inverter_tau_ms = 25.0;
+        n = scenario_run(&sc, log_buf, LOG_CAP);
+        t_cut = first_time(log_buf, n, 0u, is_latched);
+        CHECK(t_cut > 1500);
+        CHECK(t_cut < 1600);
+        printf("  측정 거짓 차단 (알려진 한계): inverter의 시정수 25 ms, 오차 +10 Nm, 한 주기 묵음: 페달을 놓은 뒤 %d ms에 끊었다\n",
+               t_cut - 1500);
+    }
+    report_offset = 0;
+    report_stale = false;
+    inverter_tau_ms = 20.0;
 }
 
 int main(void)
@@ -892,7 +1151,10 @@ int main(void)
         { "TC-117", "FI-18 서서 R을 고르는데 차량 속도가 무효", tc_117 },
         { "TC-118", "FI-19 차량 속도가 0에 얼어붙은 채 기어가 R로 바뀜 (알려진 한계)", tc_118 },
         { "TC-119", "주의와 경고가 겹치면 경고가 나간다", tc_119 },
-        { "NC-002", "대조: inverter가 메시지를 검사하지 않으면 SG-01을 어긴다", nc_002 },
+        { "TC-120", "FI-20 전송 중의 고장인데 inverter가 메시지를 검사하지 않음", tc_120 },
+        { "TC-121", "FI-21 inverter가 요구보다 100 Nm 더 냄", tc_121 },
+        { "TC-122", "FI-22 inverter가 더 내면서 알리는 값도 틀림 (알려진 한계)", tc_122 },
+        { "TC-123", "고장이 없으면 inverter의 검사가 끊지 않는다", tc_123 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

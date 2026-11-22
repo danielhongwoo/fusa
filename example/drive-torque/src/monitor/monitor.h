@@ -58,4 +58,28 @@ torque_t monitor_apply_cap(torque_t allowed, reaction_state_t state);
 torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
                            torque_t allowed, gear_t gear);
 
+/* inverter가 알린 토크의 검사. 값은 임시다 */
+#define INVERTER_HISTORY_CYCLES  ((uint8_t)5)    /* 보낸 토크를 이만큼 (50 ms) 기억한다 */
+#define INVERTER_TORQUE_MARGIN   ((torque_t)300) /* 범위에 더하는 여유: 30.0 Nm */
+#define INVERTER_OUT_CYCLES      ((uint8_t)3)    /* 범위를 벗어난 주기가 이만큼 이어지면 구동 허용 차단 */
+#define INVERTER_INVALID_CYCLES  ((uint8_t)10)   /* 상태가 무효인 주기가 이만큼 이어지면 구동 허용 차단 */
+
+typedef struct {
+    torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */
+    uint8_t pos;            /* 다음에 적을 자리 */
+    uint8_t out_cycles;     /* 알린 토크가 범위를 벗어난 주기가 몇 번 이어졌는가 */
+    uint8_t invalid_cycles; /* inverter의 상태가 무효인 주기가 몇 번 이어졌는가 */
+} inverter_check_t;
+
+void inverter_check_init(inverter_check_t *st);
+
+/* 이번 주기에 보낸 토크를 기록한다 */
+void inverter_check_record(inverter_check_t *st, torque_t sent);
+
+/*
+ * inverter가 알린 토크를 지난 주기들에 보낸 토크와 견준다. 구동 허용 차단의 사건이면 참이다.
+ * valid가 거짓이면 reported를 보지 않는다.
+ */
+bool inverter_check_step(inverter_check_t *st, bool valid, torque_t reported);
+
 #endif

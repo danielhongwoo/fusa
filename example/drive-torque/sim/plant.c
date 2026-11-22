@@ -26,6 +26,8 @@ void plant_init(plant_t *p)
     p->frame_sent = (frame_t){ 0, 0u, 0u };
     p->frame_sent_wait_ms = 0u;
     p->check_frames = true;
+    p->torque_offset_nm = 0.0;
+    p->inverter_tau_ms = (double)PLANT_INVERTER_TAU_MS;
     p->rx_synced = false;
     p->rx_counter = 0u;
     p->enable_sent = false;
@@ -112,9 +114,9 @@ void plant_step_1ms(plant_t *p)
     /* inverter: 허용 신호가 없거나 토크 요구가 끊기면 목표는 0이다 */
     double target = 0.0;
     if (p->enable && (p->cmd_age_ms < PLANT_CMD_TIMEOUT_MS)) {
-        target = clamp(p->torque_cmd_nm, -MOTOR_MAX_NM, MOTOR_MAX_NM);
+        target = clamp(p->torque_cmd_nm + p->torque_offset_nm, -MOTOR_MAX_NM, MOTOR_MAX_NM);
     }
-    p->torque_act_nm += (target - p->torque_act_nm) * (1.0 / (double)PLANT_INVERTER_TAU_MS);
+    p->torque_act_nm += (target - p->torque_act_nm) * (1.0 / p->inverter_tau_ms);
     if (p->cmd_age_ms < 100000u) {
         p->cmd_age_ms++;
     }

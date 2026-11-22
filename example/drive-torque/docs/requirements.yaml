@@ -57,7 +57,6 @@ requirements:
   - id: FSR-09
     text: "inverter가 낸 토크가 VCU가 요구한 토크의 범위를 계속 벗어나거나 inverter의 상태를 계속 알 수 없으면 VCU는 구동 허용 신호를 끊고 운전자에게 경고를 요청한다."
     parents: [SG-01]
-    status: planned
   - id: FSR-10
     text: "입력 검사, 감시, 출력 단계가 정해진 순서와 주기로 실행되지 않으면, VCU의 소프트웨어와 따로 동작하는 요소가 구동을 막을 수 있게 한다."
     parents: [SG-01]
@@ -123,7 +122,6 @@ requirements:
   - id: TSR-13
     text: "inverter가 알린 토크를 VCU가 보낸 토크의 최근 50 ms와 견준다. 최근 5주기에 보낸 토크와 0 가운데 가장 큰 값보다 30 Nm 넘게 크거나, 가장 작은 값보다 30 Nm 넘게 작은 주기가 3번 이어지면 구동 허용 차단의 사건을 알린다. 보낸 토크와 0 사이의 값은 벗어난 것이 아니다 (inverter가 덜 내는 것은 이 검사의 대상이 아니다). inverter의 상태가 무효인 주기가 10번 이어져도 같은 사건을 알린다. 값은 임시다."
     parents: [FSR-09]
-    status: planned
   - id: TSR-14
     text: "task마다 실행한 표시를 남긴다. 주기의 끝에서 순서와 횟수를 확인하고, 맞으면 그 주기의 계산 결과에서 만든 답을 외부 watchdog에 보낸다. 틀리면 답을 보내지 않는다."
     parents: [FSR-10]
@@ -256,7 +254,8 @@ requirements:
     alloc: "감시"
     text: "inverter가 알린 토크가 범위 [최근 5주기에 보낸 토크와 0 가운데 가장 작은 값 - 30 Nm, 가장 큰 값 + 30 Nm]를 벗어난 주기가 3번 이어지면 구동 허용 차단의 사건을 알린다. inverter의 상태가 무효인 주기가 10번 이어져도 같다."
     parents: [TSR-13]
-    status: planned
+    verified_by: [TC-020, TC-115, TC-120, TC-121, TC-122, TC-123]
+    proved_by: [prove_inverter_check]
   - id: SWR-20
     alloc: "주기 실행"
     text: "task마다 정해진 표시를 남기고, 주기의 끝에서 표시의 순서와 수가 task table과 같은지 확인한다. 같으면 그 주기의 허용 토크와 보낸 토크에서 만든 답을 외부 watchdog에 쓴다. 다르면 쓰지 않는다."

@@ -20,6 +20,9 @@ typedef struct {
     frame_t frame_sent;            /* 보호가 붙은 토크 요구 메시지 */
     time_ms_t frame_sent_wait_ms;
 
+    double torque_offset_nm; /* inverter의 고장: 요구보다 이만큼 더 낸다. 평소에는 0 */
+    double inverter_tau_ms;  /* inverter의 토크 응답의 시정수. 평소에는 PLANT_INVERTER_TAU_MS */
+
     /* inverter의 메시지 검사 (가정 A-21) */
     bool check_frames;       /* 거짓이면 받은 값을 검사 없이 쓴다 (대조 test) */
     bool rx_synced;

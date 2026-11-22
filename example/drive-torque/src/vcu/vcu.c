@@ -14,6 +14,7 @@ void vcu_init(vcu_t *vcu)
     app_init(&vcu->app);
     output_stage_init(&vcu->output);
     reaction_init(&vcu->reaction);
+    inverter_check_init(&vcu->inverter_check);
     e2e_rx_init(&vcu->speed_rx);
     e2e_rx_init(&vcu->inverter_rx);
     e2e_tx_init(&vcu->torque_tx);
@@ -72,6 +73,11 @@ static void task_app(vcu_t *vcu)
 /* 감시와 출력 단계 */
 static void task_monitor_output(vcu_t *vcu)
 {
+    /* SWR-19: inverter가 알린 토크가 지난 주기들에 보낸 토크의 범위를 계속 벗어나거나,
+     * inverter의 상태를 계속 알 수 없으면 구동 허용 차단의 사건이다 */
+    if (inverter_check_step(&vcu->inverter_check, vcu->inverter_valid, vcu->inverter_torque)) {
+        reaction_raise(&vcu->reaction, REACTION_CUT);
+    }
     vcu->torque_out = monitor_output_cycle(&vcu->output, &vcu->reaction, vcu->torque_req,
                                            vcu->pedal_safe, vcu->brake, vcu->gear,
                                            &vcu->torque_allowed);
@@ -96,6 +102,7 @@ static void task_monitor_output(vcu_t *vcu)
     frame_t frame;
     e2e_protect(&vcu->torque_tx, E2E_ID_TORQUE, vcu->torque_out, &frame);
     hal_can_tx_torque_frame(&frame);
+    inverter_check_record(&vcu->inverter_check, vcu->torque_out);
     hal_can_tx_warning(vcu->warning);
 
     hal_diag_t diag;
@@ -111,6 +118,7 @@ static void task_monitor_output(vcu_t *vcu)
     diag.speed = vcu->speed;
     diag.inverter_valid = vcu->inverter_valid;
     diag.gear = vcu->gear;
+    diag.inverter_out_cycles = vcu->inverter_check.out_cycles;
     hal_can_tx_diag(&diag);
 }
 

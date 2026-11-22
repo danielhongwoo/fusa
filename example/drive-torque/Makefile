@@ -17,7 +17,7 @@ INC     := -Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reac
 
 # 제품 코드 (item의 소프트웨어)
 # 하드웨어를 부르지 않는 부분과 부르는 부분을 나눈다. unit test는 앞의 것만 link한다
-SRC_LOGIC  := src/input/pedal_check.c src/input/brake_check.c src/input/gear_check.c src/monitor/monitor.c src/reaction/reaction.c src/com/e2e.c
+SRC_LOGIC  := src/input/pedal_check.c src/input/brake_check.c src/input/gear_check.c src/monitor/monitor.c src/monitor/inverter_check.c src/reaction/reaction.c src/com/e2e.c
 SRC_IO     := src/input/input.c src/vcu/vcu.c
 SRC_SAFETY := $(SRC_LOGIC) $(SRC_IO)
 SRC_APP    := src/app/app.c
@@ -59,14 +59,18 @@ build/test_fault_app: $(SRC_SAFETY) build/app_good.o test/faulty/app_fault.c $(S
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
 # 대조: 감시와 출력 단계를 아무것도 하지 않는 모듈로 바꿔 끼운다
-build/test_no_monitor: src/input/pedal_check.c src/input/brake_check.c src/input/gear_check.c src/input/input.c src/reaction/reaction.c src/com/e2e.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
+build/test_no_monitor: src/input/pedal_check.c src/input/brake_check.c src/input/gear_check.c src/input/input.c src/monitor/inverter_check.c src/reaction/reaction.c src/com/e2e.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
 # 대조: 방향의 판정을 하지 않는 모듈로 바꿔 끼운다
 build/test_no_gear_check: $(filter-out src/input/gear_check.c,$(SRC)) test/faulty/gear_none.c $(SIM) $(TESTLIB) test/test_no_gear_check.c | dirs
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
-test: build/test_unit build/test_scenario build/test_fault_app build/test_no_monitor build/test_no_gear_check
+# 대조: inverter가 알린 토크를 검사하지 않는 모듈로 바꿔 끼운다
+build/test_no_inverter_check: $(filter-out src/monitor/inverter_check.c,$(SRC)) test/faulty/inverter_check_none.c $(SIM) $(TESTLIB) test/test_no_inverter_check.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+test: build/test_unit build/test_scenario build/test_fault_app build/test_no_monitor build/test_no_gear_check build/test_no_inverter_check
 	@echo "== unit test"
 	@build/test_unit
 	@echo "== 시나리오 test (fault는 HAL의 뒤에서 넣는다)"
@@ -77,6 +81,8 @@ test: build/test_unit build/test_scenario build/test_fault_app build/test_no_mon
 	@build/test_no_monitor
 	@echo "== 대조 test (방향의 판정을 뺀다)"
 	@build/test_no_gear_check
+	@echo "== 대조 test (inverter가 알린 토크의 검사를 뺀다)"
+	@build/test_no_inverter_check
 
 # ---- 1장의 실행 예 ----
 # 같은 시나리오를 안전 장치가 없는 제어기와 예제의 제어기로 돌린다.

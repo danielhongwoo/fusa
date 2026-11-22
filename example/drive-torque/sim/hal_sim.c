@@ -28,6 +28,7 @@ static struct {
     bool inv_seen;
     bool inv_fresh;
     unsigned inv_counter;
+    int32_t inv_prev_value;
     frame_t inv_frame;
     time_ms_t inv_rx_ms;
     /* 전송 중에 되풀이되는 토크 요구 메시지 (FAULT_TORQUE_MSG_REPEAT) */
@@ -112,8 +113,14 @@ static void update_messages(void)
     /* inverter가 추정한 토크를 알린다 */
     if (!sim.fault_on[FAULT_INVERTER_MSG_LOSS]) {
         sim.inv_counter = (sim.inv_counter + 1u) & 15u;
-        frame_sim_make(&sim.inv_frame, SIM_ID_INVERTER, sim.inv_counter,
-                       (int32_t)(sim.plant->torque_act_nm * 10.0));
+        /* 알리는 값은 inverter가 추정한 실제 토크다. 한 주기 묵은 값일 수도, param만큼 틀린 값일 수도 있다 */
+        int32_t now_value = (int32_t)(sim.plant->torque_act_nm * 10.0);
+        int32_t value = sim.fault_on[FAULT_INVERTER_REPORT_STALE] ? sim.inv_prev_value : now_value;
+        if (sim.fault_on[FAULT_INVERTER_REPORT_OFFSET]) {
+            value += sim.fault_param[FAULT_INVERTER_REPORT_OFFSET];
+        }
+        sim.inv_prev_value = now_value;
+        frame_sim_make(&sim.inv_frame, SIM_ID_INVERTER, sim.inv_counter, value);
         sim.inv_seen = true;
         sim.inv_fresh = true;
         sim.inv_rx_ms = sim.now_ms;
@@ -134,6 +141,7 @@ void hal_sim_init(plant_t *plant)
     sim.inv_seen = false;
     sim.inv_fresh = false;
     sim.inv_counter = 0u;
+    sim.inv_prev_value = 0;
     sim.inv_frame = (frame_t){ 0, 0u, 0u };
     sim.inv_rx_ms = 0u;
     sim.torque_frame_last = (frame_t){ 0, 0u, 0u };
@@ -141,7 +149,7 @@ void hal_sim_init(plant_t *plant)
     sim.torque_out = 0;
     sim.enable_out = true; /* 켠 직후의 출력은 알 수 없다고 보고 나쁜 쪽으로 둔다 */
     sim.warning_out = 0u;
-    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false, false, 0, false, GEAR_N };
+    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false, false, 0, false, GEAR_N, 0u };
     sim.enable_written_this_tick = false;
     sim.order_violations = 0u;
     update_sensors();
@@ -163,6 +171,9 @@ void hal_sim_set_fault(fault_id_t fault, int32_t param)
     if (fault == FAULT_TORQUE_MSG_REPEAT) {
         sim.torque_frame_stuck = sim.torque_frame_last;
     }
+    if (fault == FAULT_INVERTER_TORQUE_OFFSET) {
+        sim.plant->torque_offset_nm = (double)param / 10.0;
+    }
     sim.fault_on[fault] = true;
     sim.fault_param[fault] = param;
 }
@@ -173,9 +184,11 @@ void hal_sim_clear_faults(void)
         sim.fault_on[i] = false;
         sim.fault_param[i] = 0;
     }
+    sim.plant->torque_offset_nm = 0.0;
 }
 
 void hal_sim_inverter_check(bool on) { sim.plant->check_frames = on; }
+void hal_sim_inverter_tau(double tau_ms) { sim.plant->inverter_tau_ms = tau_ms; }
 torque_t hal_sim_last_torque(void) { return sim.torque_out; }
 bool hal_sim_enable(void) { return sim.enable_out; }
 uint32_t hal_sim_order_violations(void) { return sim.order_violations; }

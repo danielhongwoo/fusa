@@ -21,6 +21,9 @@ typedef enum {
     FAULT_SPEED_MSG_CORRUPT, /* 차량 속도 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_SPEED_MSG_REPEAT,  /* 같은 차량 속도 메시지가 되풀이됨 */
     FAULT_INVERTER_MSG_LOSS, /* inverter의 상태 메시지가 오지 않음 */
+    FAULT_INVERTER_TORQUE_OFFSET, /* inverter가 요구보다 param (0.1 Nm)만큼 더 냄 */
+    FAULT_INVERTER_REPORT_OFFSET, /* inverter가 알리는 토크가 실제보다 param (0.1 Nm)만큼 큼 */
+    FAULT_INVERTER_REPORT_STALE,  /* inverter가 알리는 토크가 한 주기 (10 ms) 전의 값임. 고장이 아니라 느린 경우다 */
     FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
     FAULT_COUNT
@@ -36,6 +39,9 @@ void hal_sim_clear_faults(void);
 
 /* inverter가 받은 메시지를 검사하는지를 정한다. 기본은 검사한다. 거짓은 대조 test에 쓴다 */
 void hal_sim_inverter_check(bool on);
+
+/* inverter의 토크 응답의 시정수를 바꾼다. 기본은 20 ms (가정 A-16). 가정보다 느린 inverter를 보는 test에 쓴다 */
+void hal_sim_inverter_tau(double tau_ms);
 
 /* 보호가 없는 토크 요구. 1장의 단순한 제어기 (intro/naive_vcu.c)만 쓴다.
  * 제품의 HAL (src/hal/hal.h)에는 없다. 제품은 hal_can_tx_torque_frame을 쓴다 */
