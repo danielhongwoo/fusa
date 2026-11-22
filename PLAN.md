@@ -67,7 +67,7 @@ flowchart LR
 - [ ] ISO 26262:2018의 원문 없이 쓸 근거를 갖춘다 (references/README.md의 "원문 없이 쓰는 방법")
   - ISO Online Browsing Platform에서 ISO 26262-1의 용어를 확인한다 (FTTI와 관련 시간 구간, safe state, freedom from interference, SEooC)
   - 미리보기로 ISO 26262-6과 IEC 61508-3의 목차와 Annex 제목을 확인한다
-  - e-나라표준인증에 가입해 KS C IEC 61508을 본다. KS R ISO 26262가 열리는지도 확인한다
+  - KS C IEC 61508-1 - -7이 e-나라표준인증에서 열리는 것은 확인했다 (2026-11-22). KS R ISO 26262가 열리는지 확인한다
   - 3판의 초안을 무료로 읽을 수 있는지 확인한다
   - 결과를 `notes/claims.md`에 적는다
 - [ ] E-Gas monitoring concept v4.0을 미국 NHTSA의 공개 문서철에서 직접 받아 본다. 받으면 판과 재배포 조건을 references/README.md에 적는다
