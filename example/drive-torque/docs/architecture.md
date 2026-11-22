@@ -42,7 +42,7 @@ flowchart TD
 | 입력 검사 (페달) | `src/input/pedal_check.c` | 안 부른다 | counter 둘, 고장 표시, 최근 100주기의 검사 결과, 검사에서 뺀 채널 | `SWR-01` - `SWR-04`, `SWR-14`, `SWR-24` |
 | 입력 검사 (브레이크) | `src/input/brake_check.c` | 안 부른다 | counter 둘, 판정한 브레이크 상태, 고장 표시 | `SWR-15` |
 | 입력 검사 (기어) | `src/input/gear_check.c` | 안 부른다. 차량 속도는 주기 실행부가 넘겨 준다 | 마지막으로 받아들인 방향, 받아들이지 못한 횟수 | `SWR-16` |
-| 기능 | `src/app/app.c` | 안 부른다 | 지난 주기의 토크. 감시가 모르는 상태는 두지 않는다 | `SG-01`의 요구사항 없음 |
+| 기능 | `src/app/app.c` | 안 부른다 | 지난 주기의 토크. 감시가 모르는 상태는 두지 않는다 | `SG-01`의 요구사항 없음. `SG-02`에서 온 `SWR-26` (목표, 오르는 속도, 받은 상한을 넘지 않는다) |
 | 감시 | `src/monitor/monitor.c` | 안 부른다 | 없다. 지난 주기에 보낸 토크는 출력 단계가 기억하고, 주기 실행부가 넘겨 준다 | `SWR-05`, `SWR-06`, `SWR-13` |
 | 감시 (inverter) | `src/monitor/inverter_check.c` | 안 부른다. 알린 토크와 보낸 토크는 주기 실행부가 넘겨 준다 | 최근 5주기에 보낸 토크, counter 둘 | `SWR-19` |
 | 출력 단계 | `src/monitor/monitor.c` | 안 부른다 | counter, 지난 주기에 보낸 토크 | `SWR-07` - `SWR-09` |
