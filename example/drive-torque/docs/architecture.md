@@ -9,7 +9,7 @@ flowchart TD
     subgraph VCU["VCU의 소프트웨어 (src/)"]
         TASK["vcu<br/>task table, 주기 실행"]
         READ["input: 입력 읽기"]
-        CHK["input: 입력 검사<br/>pedal_check"]
+        CHK["input: 입력 검사<br/>pedal_check, brake_check, gear_check"]
         APP["app: 기능"]
         MON["monitor: 감시와 출력 단계"]
         REACT["reaction: 고장 대응의 상태"]
@@ -39,6 +39,7 @@ flowchart TD
 | 입력 읽기 | `src/input/input.c` | 부른다 | 없다 | (입력 검사와 함께 `SG-01`의 요구사항을 받는다) |
 | 입력 검사 (페달) | `src/input/pedal_check.c` | 안 부른다 | counter 둘, 고장 표시, 최근 100주기의 검사 결과 | `SWR-01` - `SWR-04`, `SWR-14` |
 | 입력 검사 (브레이크) | `src/input/brake_check.c` | 안 부른다 | counter 둘, 판정한 브레이크 상태, 고장 표시 | `SWR-15` |
+| 입력 검사 (기어) | `src/input/gear_check.c` | 안 부른다. 차량 속도는 주기 실행부가 넘겨 준다 | 마지막으로 받아들인 방향, 받아들이지 못한 횟수 | `SWR-16` |
 | 기능 | `src/app/app.c` | 안 부른다 | 지난 주기의 토크. 감시가 모르는 상태는 두지 않는다 | `SG-01`의 요구사항 없음 |
 | 감시 | `src/monitor/monitor.c` | 안 부른다 | 없다. 지난 주기에 보낸 토크는 출력 단계가 기억하고, 주기 실행부가 넘겨 준다 | `SWR-05`, `SWR-06`, `SWR-13` |
 | 출력 단계 | `src/monitor/monitor.c` | 안 부른다 | counter, 지난 주기에 보낸 토크 | `SWR-07` - `SWR-09` |
@@ -59,7 +60,7 @@ flowchart TD
 | 모듈 | 하는 일 | 요구사항 |
 |---|---|---|
 | 상태 기계 (넓힘) | 상태를 뒤집은 사본과 함께 두고, 비휘발성 memory에 적는다 | `SWR-22`, `SWR-23` |
-| 입력 검사 (넓힘) | 받아들인 기어, 줄여 감의 사건 | `SWR-16`, `SWR-24` |
+| 입력 검사 (넓힘) | 줄여 감의 사건 | `SWR-24` |
 | 감시 (넓힘) | inverter가 알린 토크를 견준다. 줄여 감 상태의 상한 | `SWR-19`, `SWR-24` |
 | 주기 실행 (넓힘) | 실행의 순서와 횟수를 확인해 외부 watchdog에 답한다 | `SWR-20` |
 | 출력 단계 (넓힘) | 구동 허용 신호를 되읽는다 | `SWR-21` |
@@ -70,7 +71,7 @@ flowchart TD
 
 | 순서 | task | 주기 | 하는 일 |
 |---|---|---|---|
-| 1 | input | 10 ms | 입력을 한 번 읽는다. 받은 메시지 (차량 속도, inverter의 상태)를 검사한다. 페달을 검사해 안전한 페달 값을 내고, 브레이크를 판정한다 |
+| 1 | input | 10 ms | 입력을 한 번 읽는다. 받은 메시지 (차량 속도, inverter의 상태)를 검사한다. 페달을 검사해 안전한 페달 값을 내고, 브레이크를 판정하고, 받아들인 기어를 정한다 |
 | 2 | app | 10 ms | 토크 요구를 만든다 |
 | 3 | monitor_output | 10 ms | 허용 토크를 계산하고, 토크 요구를 깎고, 고정 여부를 정한다. 구동 허용 신호를 쓰고, 토크 요구에 counter와 CRC를 붙여 보낸다 |
 

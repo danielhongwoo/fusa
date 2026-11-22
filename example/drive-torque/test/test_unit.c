@@ -1099,6 +1099,83 @@ static void tc_018(void)
     CHECK(!e2e_check(&rx, 66u, &f, true, true, 51u));
 }
 
+/* TC-019: SWR-16 방향의 바뀜은 차량 속도가 유효하고 5 km/h 아래일 때만 받아들인다 */
+static void tc_019(void)
+{
+    gear_check_t st;
+
+    /* 켠 직후에는 받아들인 방향이 없다. 처음 고른 방향도 속도를 본다 */
+    gear_check_init(&st);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, false, 0), GEAR_N);  /* 속도가 무효다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 139), GEAR_N); /* 1.39 m/s: 5 km/h (1.389 m/s)를 넘는다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, -1), GEAR_N);  /* 크기가 음수다: 믿을 수 없는 값 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 138), GEAR_D); /* 1.38 m/s: 5 km/h 아래 */
+    /* 받아들인 방향과 같으면 속도를 보지 않는다. 속도가 무효여도 그대로다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 3000), GEAR_D);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, false, 0), GEAR_D);
+    /* N과 P는 그대로 받아들인다. 알 수 없는 값은 N이다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_N, true, 3000), GEAR_N);
+    CHECK_EQ(gear_check_step(&st, GEAR_P, true, 3000), GEAR_P);
+    CHECK_EQ(gear_check_step(&st, (gear_t)9, true, 0), GEAR_N);
+    /* N이나 P를 거쳐 같은 방향으로 돌아오면 속도를 보지 않는다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 3000), GEAR_D);
+    /* 반대 방향은 속도가 높거나 무효이면 받아들이지 않고 N을 낸다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 139), GEAR_N);
+    CHECK_EQ(gear_check_step(&st, GEAR_R, false, 0), GEAR_N);
+    /* 가던 방향으로 돌아가면 바로 받아들인다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 3000), GEAR_D);
+    /* N이나 P를 거쳐도 반대 방향은 속도를 본다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_N, true, 3000), GEAR_N);
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 3000), GEAR_N);
+    CHECK_EQ(gear_check_step(&st, GEAR_P, true, 3000), GEAR_P);
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 3000), GEAR_N);
+    /* 속도가 낮아지면 받아들인다. 이제 받아들인 방향은 R이고, D가 반대 방향이다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 138), GEAR_R);
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 3000), GEAR_R);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 3000), GEAR_N);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 0), GEAR_D);
+
+    /* 받아들이지 못한 채 50주기 이어지면 주의를 요청한다 */
+    gear_check_init(&st);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 0), GEAR_D);
+    for (int i = 0; i < 49; i++) {
+        CHECK_EQ(gear_check_step(&st, GEAR_R, true, 2000), GEAR_N);
+        CHECK(!st.caution);
+    }
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 2000), GEAR_N);
+    CHECK(st.caution);
+    /* 오래 이어져도 주의는 그대로다 (세는 값이 넘쳐 0으로 돌아가지 않는다) */
+    for (int i = 0; i < 300; i++) {
+        (void)gear_check_step(&st, GEAR_R, true, 2000);
+        CHECK(st.caution);
+    }
+    /* 조건이 풀리면 (속도가 낮아져 받아들이면) 주의를 거둔다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_R, true, 100), GEAR_R);
+    CHECK(!st.caution);
+
+    /* 중간에 N을 고르면 세던 것을 지운다 */
+    gear_check_init(&st);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 0), GEAR_D);
+    for (int i = 0; i < 49; i++) {
+        (void)gear_check_step(&st, GEAR_R, true, 2000);
+    }
+    CHECK_EQ(gear_check_step(&st, GEAR_N, true, 2000), GEAR_N);
+    for (int i = 0; i < 49; i++) {
+        (void)gear_check_step(&st, GEAR_R, true, 2000);
+    }
+    CHECK(!st.caution);
+    (void)gear_check_step(&st, GEAR_R, true, 2000);
+    CHECK(st.caution);
+    /* 가던 방향을 다시 고르면 주의를 거둔다 */
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 2000), GEAR_D);
+    CHECK(!st.caution);
+
+    /* 기억한 방향이 알 수 없는 값이 되어도 (memory의 값이 틀려도) 속도를 본다 */
+    st.direction = (gear_t)7;
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 3000), GEAR_N);
+    CHECK_EQ(gear_check_step(&st, GEAR_D, true, 0), GEAR_D);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1120,6 +1197,7 @@ int main(void)
         { "TC-016", "브레이크는 두 접점으로 판정한다", tc_016 },
         { "TC-017", "보내는 메시지에 counter와 CRC를 붙인다", tc_017 },
         { "TC-018", "받은 메시지의 CRC, data ID, counter, 시간을 검사한다", tc_018 },
+        { "TC-019", "방향의 바뀜은 속도가 유효하고 낮을 때만 받아들인다", tc_019 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

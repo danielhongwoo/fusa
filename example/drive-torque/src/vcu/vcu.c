@@ -10,6 +10,7 @@ void vcu_init(vcu_t *vcu)
 {
     pedal_check_init(&vcu->pedal_check);
     brake_check_init(&vcu->brake_check);
+    gear_check_init(&vcu->gear_check);
     app_init(&vcu->app);
     output_stage_init(&vcu->output);
     reaction_init(&vcu->reaction);
@@ -22,6 +23,7 @@ void vcu_init(vcu_t *vcu)
     vcu->inverter_torque = 0;
     vcu->pedal_safe = 0;
     vcu->brake = true;
+    vcu->gear = GEAR_N;
     vcu->torque_req = 0;
     vcu->torque_allowed = 0;
     vcu->torque_out = 0;
@@ -57,19 +59,21 @@ static void task_input(vcu_t *vcu)
     if (vcu->brake_check.fault) {
         reaction_raise(&vcu->reaction, REACTION_ZERO);
     }
+    /* SWR-16: 받아들인 기어도 여기 한 곳에서 정해 기능과 감시에 같은 값을 준다 */
+    vcu->gear = gear_check_step(&vcu->gear_check, vcu->in.gear, vcu->speed_valid, vcu->speed);
 }
 
 /* 기능: 토크 요구를 만든다 */
 static void task_app(vcu_t *vcu)
 {
-    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->brake, vcu->in.gear);
+    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->brake, vcu->gear);
 }
 
 /* 감시와 출력 단계 */
 static void task_monitor_output(vcu_t *vcu)
 {
     vcu->torque_out = monitor_output_cycle(&vcu->output, &vcu->reaction, vcu->torque_req,
-                                           vcu->pedal_safe, vcu->brake, vcu->in.gear,
+                                           vcu->pedal_safe, vcu->brake, vcu->gear,
                                            &vcu->torque_allowed);
 
     /* 여기부터는 이 주기의 사건이 모두 반영된 상태를 쓴다 */
@@ -81,6 +85,10 @@ static void task_monitor_output(vcu_t *vcu)
 
     /* SWR-11: 경고 요청은 상태에서 나온다 */
     vcu->warning = reaction_warning(state);
+    /* SWR-16: 방향의 바뀜을 받아들이지 못한 채 이어지면 주의를 요청한다. 고장의 경고가 있으면 그쪽이 앞선다 */
+    if ((vcu->warning == WARNING_NONE) && vcu->gear_check.caution) {
+        vcu->warning = WARNING_AMBER;
+    }
 
     /* 구동 허용 신호를 먼저 쓴다. 끊어야 하는 주기에 CAN의 송신이 늦어져도 끊는 일이 밀리지 않는다 */
     hal_enable_write(vcu->enable);
@@ -102,6 +110,7 @@ static void task_monitor_output(vcu_t *vcu)
     diag.speed_valid = vcu->speed_valid;
     diag.speed = vcu->speed;
     diag.inverter_valid = vcu->inverter_valid;
+    diag.gear = vcu->gear;
     hal_can_tx_diag(&diag);
 }
 

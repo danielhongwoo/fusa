@@ -624,6 +624,209 @@ static void tc_115(void)
     CHECK_EQ(wrong, 0);
 }
 
+static int is_gear_r(const sample_t *s) { return s->diag.gear == GEAR_R; }
+
+/*
+ * TC-116: SWR-16 fault injection FI-17
+ * 가속 페달을 끝까지 밟고 달리는 중에 기어가 R로 바뀐다 (신호의 고장이든 운전자가 고른 것이든 VCU는 가릴 수 없다).
+ * 받아들이지 않고 N으로 둔다. 토크는 0이고 차는 타력으로 간다. 500 ms 이어지면 주의를 요청한다.
+ * D로 돌아오면 바로 받아들인다. 그 뒤에 브레이크를 밟고 R을 고르면, 속도가 5 km/h 아래로 내려간 뒤에 받아들인다.
+ */
+static void tc_116(void)
+{
+    /* 기준: 같은 때 (3000 ms)에 가속 페달을 놓고 타력으로 간다 */
+    static const driver_point_t coast[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 1.0, false, GEAR_D },
+        { 3000u, 0.0, false, GEAR_D },
+    };
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 1.0, false, GEAR_D },
+        { 3000u, 1.0, false, GEAR_R },
+        { 4000u, 1.0, false, GEAR_D },
+        { 5000u, 0.0, true, GEAR_R },
+    };
+    scenario_t sc_ref = { "fi-17-ref", 4000u, coast, 3, NULL, 0, NULL };
+    scenario_t sc = { "fi-17", 8000u, driver, 5, NULL, 0, NULL };
+    int n_ref = scenario_run(&sc_ref, log_ref, LOG_CAP);
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int bad = 0;
+    int over_ms = 0;
+    double max_decel = 0.0;
+    int t_r;
+
+    CHECK_EQ(n_ref, 4000);
+    CHECK(log_buf[2999].speed_mps > 5.0); /* 18 km/h 넘게 달리고 있다 */
+    CHECK_EQ(log_buf[2999].diag.gear, GEAR_D);
+    for (int i = 3000; i < 4000; i++) {
+        const sample_t *s = &log_buf[i];
+        /* 500 ms (50번째로 받아들이지 못한 주기) 뒤에 주의 */
+        uint8_t want_warning = (i >= 3490) ? 1u : 0u;
+        /* 타력 주행보다 얼마나 더 감속하는가 (SG-02의 첫째 구절) */
+        double decel = log_ref[i].accel_mps2 - s->accel_mps2;
+        if (decel > max_decel) {
+            max_decel = decel;
+        }
+        if (decel > 1.0) {
+            over_ms++;
+        }
+        /* 받아들인 기어는 N, 토크와 허용 토크는 0. 고장이 아니므로 고정도 차단도 없다 */
+        if ((s->diag.gear != GEAR_N) || (s->torque_out != 0) || (s->diag.torque_allowed != 0)
+            || (s->warning != want_warning) || s->diag.latched || !s->enable) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+    CHECK(max_decel < 0.05);
+    CHECK_EQ(over_ms, 0);
+    /* D로 돌아온 주기에 받아들이고 주의를 거둔다. 토크가 다시 오른다 */
+    CHECK_EQ(log_buf[4000].diag.gear, GEAR_D);
+    CHECK_EQ(log_buf[4000].warning, 0);
+    CHECK_EQ(log_buf[4000].torque_out, 250);
+    CHECK_EQ(log_buf[4990].torque_out, 2500);
+    CHECK_EQ(log_buf[4990].diag.clamp_count, 0);
+    /* 브레이크를 밟고 R을 고른다. 속도가 5 km/h (1.389 m/s) 아래로 내려간 뒤에야 받아들인다 */
+    t_r = first_time(log_buf, n, 5000u, is_gear_r);
+    CHECK(t_r > 5000);
+    if (t_r > 5000) {
+        CHECK(log_buf[t_r - 1].speed_mps < 1.39);
+        CHECK(log_buf[t_r - 11].speed_mps >= 1.38);
+        for (int i = 5000; i < t_r; i++) {
+            if (log_buf[i].diag.gear != GEAR_N) {
+                bad++;
+            }
+        }
+        CHECK_EQ(bad, 0);
+    }
+    /* 처음부터 끝까지 반대 방향의 토크는 한 번도 나가지 않았다 (브레이크를 밟고 있다) */
+    for (int i = 0; i < n; i++) {
+        if (log_buf[i].torque_out < 0) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+    printf("  측정 FI-17: 타력 주행과 견준 감속은 가장 클 때 %.2f m/s^2, R을 받아들인 때의 속도 %.2f m/s\n",
+           max_decel, (t_r > 0) ? log_buf[t_r - 1].speed_mps : -1.0);
+    (void)scenario_write_csv("build/out/fi-17.csv", log_buf, n);
+}
+
+/* TC-117이 쓰는 시간표: 서 있는 동안 차량 속도 메시지가 끊겼다가 돌아온다 */
+static void speed_loss_at_standstill(time_ms_t t_ms)
+{
+    if (t_ms == 500u) {
+        hal_sim_set_fault(FAULT_SPEED_MSG_LOSS, 0);
+    } else if (t_ms == 2000u) {
+        hal_sim_clear_faults();
+    } else {
+        /* 그대로 둔다 */
+    }
+}
+
+/*
+ * TC-117: SWR-16 fault injection FI-18
+ * 서 있는 차에서 R을 고르는데 차량 속도 메시지가 끊겨 있다. 속도가 무효이므로 받아들이지 못한다.
+ * 차는 출발하지 못하고 (구동력이 없다), 500 ms 뒤에 주의를 요청한다. 메시지가 돌아오면 받아들이고 주의를 거둔다.
+ * 무효인 동안 VCU가 쓰는 속도 값은 0이다. 0은 "낮은 속도"로 읽히는 값이므로, 유효한지를 따로 보지 않으면
+ * 이 경우에 방향을 받아들이게 된다.
+ */
+static void tc_117(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { 1000u, 0.3, false, GEAR_R },
+    };
+    scenario_t sc = { "fi-18", 3000u, driver, 2, NULL, 0, speed_loss_at_standstill };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int bad = 0;
+
+    CHECK_EQ(log_buf[999].diag.gear, GEAR_D);
+    CHECK(!log_buf[999].diag.speed_valid);
+    for (int i = 1000; i < 2000; i++) {
+        const sample_t *s = &log_buf[i];
+        uint8_t want_warning = (i >= 1490) ? 1u : 0u;
+        if ((s->diag.gear != GEAR_N) || (s->torque_out != 0) || (s->warning != want_warning)
+            || s->diag.latched || !s->enable) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+    CHECK_EQ(log_buf[2000].diag.gear, GEAR_R);
+    CHECK_EQ(log_buf[2000].warning, 0);
+    CHECK_EQ(log_buf[n - 1].torque_out, -300);
+    CHECK(log_buf[n - 1].speed_mps < -0.2);
+}
+
+/*
+ * TC-118: SWR-16 fault injection FI-19 (알려진 한계)
+ * 차량 속도의 값이 0에 얼어붙은 채 메시지는 계속 온다 (보내는 쪽의 고장). 달리는 중에 기어가 R로 바뀐다.
+ * VCU가 아는 속도는 0이므로 받아들인다. 반대 방향의 토크가 나가고 SG-02의 첫째 구절을 어긴다.
+ * 방향의 판정이 속도를 쓰면서 새로 생긴 길이다 (docs/safety-case.md 5절의 열린 가지).
+ */
+static void tc_118(void)
+{
+    static const driver_point_t coast[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 1.0, false, GEAR_D },
+        { 3000u, 0.0, false, GEAR_D },
+    };
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 1.0, false, GEAR_D },
+        { 3000u, 1.0, false, GEAR_R },
+    };
+    fault_event_t fault = { 100u, FAULT_SPEED_MSG_FREEZE, 0 };
+    scenario_t sc_ref = { "fi-19-ref", 4000u, coast, 3, &fault, 1, NULL };
+    scenario_t sc = { "fi-19", 4000u, driver, 3, &fault, 1, NULL };
+    int n_ref = scenario_run(&sc_ref, log_ref, LOG_CAP);
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int over_ms = 0;
+    double max_decel = 0.0;
+
+    CHECK_EQ(n, n_ref);
+    for (int i = 3000; i < n; i++) {
+        double decel = log_ref[i].accel_mps2 - log_buf[i].accel_mps2;
+        if (decel > max_decel) {
+            max_decel = decel;
+        }
+        if (decel > 1.0) {
+            over_ms++;
+        }
+    }
+    CHECK(log_buf[2999].speed_mps > 5.0);
+    CHECK(log_buf[2999].diag.speed_valid);
+    CHECK_EQ(log_buf[2999].diag.speed, 0);
+    /* 알아채지 못한다: R을 그 주기에 받아들이고, 경고도 없다 */
+    CHECK_EQ(log_buf[3000].diag.gear, GEAR_R);
+    CHECK(log_buf[n - 1].torque_out < 0);
+    CHECK_EQ(log_buf[n - 1].warning, 0);
+    CHECK(max_decel > 1.0);
+    CHECK(over_ms > 200);
+    printf("  측정 FI-19 (알려진 한계): 타력 주행과 견준 감속은 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n",
+           max_decel, over_ms);
+}
+
+/*
+ * TC-119: SWR-16, SWR-11 주의와 경고가 겹치면 경고가 나간다
+ * 방향의 바뀜을 받아들이지 못해 주의가 나가 있는 중에 페달 채널 1이 높은 값에 고착된다.
+ */
+static void tc_119(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 1.0, false, GEAR_D },
+        { 3000u, 1.0, false, GEAR_R },
+    };
+    fault_event_t fault = { 3700u, FAULT_APPS1_FIXED_MV, 4900 };
+    scenario_t sc = { "caution-and-warning", 4500u, driver, 3, &fault, 1, NULL };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+
+    CHECK_EQ(log_buf[3600].warning, 1);
+    CHECK(log_buf[n - 1].diag.pedal_fault);
+    CHECK_EQ(log_buf[n - 1].warning, 2);
+    CHECK_EQ(log_buf[n - 1].diag.gear, GEAR_N);
+}
+
 /*
  * NC-002: 대조. inverter가 메시지를 검사하지 않으면 FI-13과 FI-14는 SG-01을 어긴다.
  * 그래서 TC-112와 TC-113의 "SG-01이 지켜졌다"는 메시지의 보호와 inverter의 검사 (가정 A-21)가 한 일이다.
@@ -685,6 +888,10 @@ int main(void)
         { "TC-113", "FI-14 지난 토크 요구 메시지가 되풀이됨", tc_113 },
         { "TC-114", "FI-15 차량 속도 메시지가 바뀜, 되풀이됨, 끊김, 얼어붙음", tc_114 },
         { "TC-115", "FI-16 inverter의 상태 메시지가 끊김", tc_115 },
+        { "TC-116", "FI-17 달리는 중에 기어가 R로 바뀜", tc_116 },
+        { "TC-117", "FI-18 서서 R을 고르는데 차량 속도가 무효", tc_117 },
+        { "TC-118", "FI-19 차량 속도가 0에 얼어붙은 채 기어가 R로 바뀜 (알려진 한계)", tc_118 },
+        { "TC-119", "주의와 경고가 겹치면 경고가 나간다", tc_119 },
         { "NC-002", "대조: inverter가 메시지를 검사하지 않으면 SG-01을 어긴다", nc_002 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;

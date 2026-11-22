@@ -17,6 +17,8 @@ typedef struct {
     permille_t pedal_safe;
     brake_check_t brake_check;
     bool brake;              /* 판정한 브레이크 상태. 기능과 감시가 같이 쓴다 */
+    gear_check_t gear_check;
+    gear_t gear;             /* 받아들인 기어. 기능과 감시가 같이 쓴다 */
     app_t app;
     torque_t torque_req;     /* 기능이 낸 토크 요구 (깎기 전) */
     torque_t torque_allowed; /* 감시가 계산한 허용 토크 */

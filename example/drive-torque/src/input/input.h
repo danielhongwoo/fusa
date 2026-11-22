@@ -47,7 +47,28 @@ typedef struct {
     bool fault;              /* 브레이크 신호의 고장으로 판정했는가 */
 } brake_check_t;
 
+/* 방향의 판정: 받아들인 방향이 없거나 반대인 방향은 차량 속도가 유효하고 5 km/h 아래일 때만 받아들인다.
+ * 5 km/h는 1.389 m/s다. 속도의 단위가 0.01 m/s이므로 138까지가 "아래"다. 두 값은 임시다 */
+#define GEAR_CHANGE_SPEED_MAX   ((speed_t)139)
+#define GEAR_REJECT_WARN_CYCLES ((uint8_t)50) /* 받아들이지 못한 채 이만큼 (500 ms) 이어지면 주의 */
+
+/* 방향 판정의 상태 */
+typedef struct {
+    gear_t direction;      /* 마지막으로 받아들인 방향 (GEAR_D 또는 GEAR_R). 아직 없으면 GEAR_N */
+    uint8_t reject_cycles; /* 고른 방향을 받아들이지 못한 주기가 몇 번 이어졌는가 */
+    bool caution;          /* 운전자에게 주의를 요청하는가. 조건이 풀리면 거둔다 */
+} gear_check_t;
+
 void input_read(inputs_t *in);
+
+void gear_check_init(gear_check_t *st);
+
+/*
+ * 운전자가 고른 기어에서 받아들인 기어를 정해 돌려준다. 기능과 감시가 이 값 하나를 같이 쓴다.
+ * 받아들이지 못한 방향은 N으로 낸다. 고장으로 판정하지 않는다.
+ * speed는 차량 속도의 크기 (0.01 m/s), speed_valid는 그 값을 믿을 수 있는가다.
+ */
+gear_t gear_check_step(gear_check_t *st, gear_t selected, bool speed_valid, speed_t speed);
 
 void brake_check_init(brake_check_t *st);
 

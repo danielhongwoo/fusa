@@ -141,7 +141,7 @@ void hal_sim_init(plant_t *plant)
     sim.torque_out = 0;
     sim.enable_out = true; /* 켠 직후의 출력은 알 수 없다고 보고 나쁜 쪽으로 둔다 */
     sim.warning_out = 0u;
-    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false, false, 0, false };
+    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false, false, 0, false, GEAR_N };
     sim.enable_written_this_tick = false;
     sim.order_violations = 0u;
     update_sensors();

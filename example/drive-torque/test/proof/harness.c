@@ -537,3 +537,59 @@ void prove_message_change_detected(void)
     assert(!valid);
     assert((rx.last_counter == rx0.last_counter) && (rx.synced == rx0.synced));
 }
+
+/*
+ * 성질 12 (SWR-16): 받아들인 기어. 기억한 방향과 세는 값이 어떤 값에서 시작해도 (망가진 값이어도) 성립한다.
+ *   가. 받아들인 기어는 P, N이거나 운전자가 고른 방향이다. 고르지 않은 방향은 나오지 않는다.
+ *   나. 방향을 받아들였으면 그것이 기억한 방향이다.
+ *   다. 받아들인 방향이 지난번에 기억한 방향과 다르면, 차량 속도가 유효하고 0 이상 1.38 m/s 이하였다.
+ *   라. 기억한 방향은 받아들일 때에만 바뀐다.
+ *   마. 주의는 받아들이지 못한 주기가 50번 이어진 때에만 요청하고, 받아들이거나 방향을 고르지 않으면 거둔다.
+ * 말해 주지 않는 것: 차량 속도의 값이 옳은가, 차가 실제로 어느 쪽으로 가고 있는가.
+ */
+void prove_gear_check(void)
+{
+    gear_check_t st;
+    gear_t selected = (gear_t)nondet_int32();
+    bool speed_valid = nondet_bool();
+    speed_t speed = nondet_int32();
+    gear_t old_direction;
+    uint8_t old_reject;
+    gear_t accepted;
+
+    st.direction = (gear_t)nondet_int32();
+    st.reject_cycles = nondet_uint8();
+    st.caution = nondet_bool();
+    old_direction = st.direction;
+    old_reject = st.reject_cycles;
+
+    accepted = gear_check_step(&st, selected, speed_valid, speed);
+
+    /* 가 */
+    assert((accepted == GEAR_P) || (accepted == GEAR_N) || (accepted == GEAR_D) || (accepted == GEAR_R));
+    if (accepted == GEAR_P) {
+        assert(selected == GEAR_P);
+    }
+    if ((accepted == GEAR_D) || (accepted == GEAR_R)) {
+        assert(accepted == selected);
+        /* 나 */
+        assert(st.direction == accepted);
+        /* 다 */
+        if (accepted != old_direction) {
+            assert(speed_valid && (speed >= 0) && (speed <= 138));
+        }
+    }
+    /* 라 */
+    if (st.direction != old_direction) {
+        assert((st.direction == accepted) && (accepted == selected));
+    }
+    /* 마 */
+    assert(st.caution == (st.reject_cycles >= 50));
+    if (st.caution) {
+        assert(old_reject >= 49);
+        assert(((selected == GEAR_D) || (selected == GEAR_R)) && (accepted == GEAR_N));
+    }
+    if ((accepted == GEAR_D) || (accepted == GEAR_R) || ((selected != GEAR_D) && (selected != GEAR_R))) {
+        assert(st.reject_cycles == 0);
+    }
+}
