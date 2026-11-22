@@ -6,13 +6,16 @@
 
 #include "input.h"
 
-#define REVERSE_PERCENT     ((int32_t)40)    /* 후진은 전진 토크의 40%까지 */
+/* 후진은 전진 토크의 40%까지.
+ * 감시의 ALLOWED_REVERSE_PCT와 값이 같아야 한다. 일부러 상수를 함께 쓰지 않았다.
+ * 함께 쓰면 이 값을 바꿀 때 감시의 한계가 검토 없이 따라 바뀐다.
+ * 따로 두면 두 값이 어긋날 때 TC-007이 실패한다 */
+#define REVERSE_PERCENT     ((int32_t)40)
 #define RISE_PER_CYCLE      ((torque_t)250)  /* 한 주기에 올릴 수 있는 토크: 25 Nm */
 
 void app_init(app_t *st)
 {
     st->prev = 0;
-    st->brake_override = false;
 }
 
 torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear)
@@ -27,16 +30,11 @@ torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear)
         p = PEDAL_FULL;
     }
 
-    /* 제동 우선: 두 페달을 함께 밟으면 걸리고, 가속 페달을 놓아야 풀린다 */
-    if (brake && (p >= PEDAL_RELEASED)) {
-        st->brake_override = true;
-    }
-    if (p < PEDAL_RELEASED) {
-        st->brake_override = false;
-    }
-
-    if ((p < PEDAL_RELEASED) || brake || st->brake_override
-        || ((gear != GEAR_D) && (gear != GEAR_R))) {
+    /* 제동 우선: 브레이크를 밟는 동안에는 토크를 요구하지 않는다.
+     * 걸린 상태를 기억하지 않는다. 기억하면 감시가 모르는 상태가 생기고,
+     * 그 상태에서는 허용 토크와 이 모듈의 토크 요구가 크게 벌어진다
+     * (docs/technical-safety-concept.md 3절) */
+    if ((p < PEDAL_RELEASED) || brake || ((gear != GEAR_D) && (gear != GEAR_R))) {
         target = 0;
     } else {
         target = (p * TORQUE_MAX) / PEDAL_FULL;

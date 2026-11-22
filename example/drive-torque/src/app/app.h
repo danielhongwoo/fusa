@@ -8,6 +8,7 @@
  *   1. 정상인 이 모듈의 토크 요구는 감시의 허용 토크를 넘지 않는다.
  *   2. 허용 토크와 정상인 이 모듈의 토크 요구의 차이는 SG-01의 한계보다 작다.
  * 그래서 이 모듈은 토크를 페달 위치에 비례하게 내고, 속도에 따라 줄이지 않는다.
+ * 같은 이유로 이 모듈은 감시가 모르는 상태를 갖지 않는다. 갖고 있는 상태는 지난 주기의 토크 하나다.
  */
 #ifndef APP_H
 #define APP_H
@@ -15,8 +16,7 @@
 #include "types.h"
 
 typedef struct {
-    torque_t prev;       /* 지난 주기의 토크 요구 */
-    bool brake_override; /* 제동 우선이 걸려 있는가 */
+    torque_t prev; /* 지난 주기의 토크 요구 */
 } app_t;
 
 void app_init(app_t *st);

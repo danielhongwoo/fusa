@@ -226,32 +226,71 @@ static void tc_007(void)
     CHECK_EQ(max_gap, 50); /* 실제로는 허용 오차 5 Nm뿐이다 */
 }
 
+/* 운전자의 입력 한 벌 */
+typedef struct {
+    permille_t pedal;
+    bool brake;
+    gear_t gear;
+} drive_t;
+
 /*
- * TC-011: SWR-06 기능이 토크를 올리는 동안에는 허용 토크와의 차이가 55 Nm를 넘을 수 있다.
- * 그 시간은 SG-01의 시간 (200 ms)보다 짧아야 한다.
+ * TC-011: SWR-06 입력이 한 번 바뀐 뒤 기능이 토크를 올리는 동안에는 허용 토크와의 차이가
+ * 55 Nm 이상일 수 있다. 그 시간은 SG-01의 시간 (200 ms)보다 짧아야 하고,
+ * 그 뒤에는 차이가 5 Nm로 돌아와야 한다.
+ * 기능이 감시가 모르는 상태를 가지면 이 test가 실패한다.
+ * 예: 브레이크를 놓은 뒤에도 토크 0을 유지하는 기능 (처음의 예제가 그랬다).
  */
 static void tc_011(void)
 {
-    static const gear_t gears[] = { GEAR_D, GEAR_R };
+    /* 바뀌기 전의 입력, 바뀐 뒤의 입력, 차이가 55 Nm 이상인 주기의 수.
+     * 주기의 수는 요구사항의 숫자 (주기마다 25 Nm, 오차 5 Nm)에서 계산한 값이다 */
+    static const struct {
+        drive_t before;
+        drive_t after;
+        int wide_cycles;
+    } cases[] = {
+        { { 0, false, GEAR_D }, { 1000, false, GEAR_D }, 7 },    /* 페달을 한 번에 끝까지 */
+        { { 300, false, GEAR_D }, { 1000, false, GEAR_D }, 4 },  /* 밟은 채로 더 밟음 */
+        { { 1000, true, GEAR_D }, { 1000, false, GEAR_D }, 7 },  /* 브레이크를 놓음. 페달은 그대로 */
+        { { 800, true, GEAR_D }, { 800, false, GEAR_D }, 6 },
+        { { 1000, false, GEAR_N }, { 1000, false, GEAR_D }, 7 }, /* 페달을 밟은 채 N에서 D로 */
+        { { 1000, false, GEAR_P }, { 1000, false, GEAR_D }, 7 },
+        { { 0, false, GEAR_R }, { 1000, false, GEAR_R }, 2 },    /* 후진 */
+        { { 1000, true, GEAR_R }, { 1000, false, GEAR_R }, 2 },
+        { { 1000, false, GEAR_D }, { 1000, false, GEAR_R }, 2 }, /* 페달을 밟은 채 D에서 R로 */
+        { { 1000, false, GEAR_R }, { 1000, false, GEAR_D }, 7 },
+    };
 
-    for (int g = 0; g < 2; g++) {
+    for (int c = 0; c < (int)(sizeof(cases) / sizeof(cases[0])); c++) {
+        const drive_t *before = &cases[c].before;
+        const drive_t *after = &cases[c].after;
         app_t app;
         int wide_cycles = 0;
+        int clamped = 0;
+        torque_t gap = 0;
 
         app_init(&app);
-        /* 페달을 한 번에 끝까지 밟는다 */
+        for (int i = 0; i < 40; i++) {
+            (void)app_step(&app, before->pedal, before->brake, before->gear);
+        }
         for (int i = 0; i < 100; i++) {
-            torque_t req = app_step(&app, 1000, false, gears[g]);
-            torque_t allowed = monitor_allowed_torque(1000, false, gears[g]);
+            torque_t req = app_step(&app, after->pedal, after->brake, after->gear);
+            torque_t allowed = monitor_allowed_torque(after->pedal, after->brake, after->gear);
             torque_t mag = (req < 0) ? -req : req;
-            if ((allowed - mag) >= 550) {
+            if (output_clamp(req, allowed, after->gear) != req) {
+                clamped++;
+            }
+            gap = allowed - mag;
+            if (gap >= 550) {
                 wide_cycles++;
             }
         }
+        CHECK_EQ(clamped, 0);
         CHECK((wide_cycles * 10) < 200);
-        if (gears[g] == GEAR_D) {
-            CHECK_EQ(wide_cycles, 7); /* 25 Nm씩 올린다: 70 ms */
-        }
+        CHECK_EQ(wide_cycles, cases[c].wide_cycles);
+        /* 다 올린 뒤에는 허용 오차 5 Nm뿐이다.
+         * 페달을 끝까지 밟으면 허용 토크가 최대 토크에서 잘려 차이가 0이다 */
+        CHECK_EQ(gap, (after->pedal == 1000 && after->gear == GEAR_D) ? 0 : 50);
     }
 }
 
@@ -372,20 +411,23 @@ static void ft_002(void)
     CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -250);
 }
 
-/* FT-003: 제동 우선은 두 페달을 함께 밟으면 걸리고, 가속 페달을 놓아야 풀린다 */
+/* FT-003: 제동 우선은 브레이크를 밟는 동안 듣는다. 걸린 상태를 기억하지 않는다 */
 static void ft_003(void)
 {
     app_t app;
 
     app_init(&app);
-    CHECK(app_settle(&app, 500, false, GEAR_D) > 0);
-    CHECK_EQ(app_step(&app, 500, true, GEAR_D), 0);  /* 함께 밟음 */
-    CHECK_EQ(app_step(&app, 500, false, GEAR_D), 0); /* 브레이크만 놓음: 아직 0 */
-    CHECK_EQ(app_step(&app, 0, false, GEAR_D), 0);   /* 가속 페달을 놓음: 풀림 */
-    CHECK(app_step(&app, 500, false, GEAR_D) > 0);
-    /* 가속 페달을 놓은 채 브레이크만 밟으면 걸리지 않는다 */
+    CHECK_EQ(app_settle(&app, 500, false, GEAR_D), 1250);
+    CHECK_EQ(app_step(&app, 500, true, GEAR_D), 0);    /* 두 페달을 함께 밟음 */
+    CHECK_EQ(app_step(&app, 500, true, GEAR_D), 0);
+    CHECK_EQ(app_step(&app, 500, false, GEAR_D), 250); /* 브레이크를 놓음: 다시 올린다 */
+    CHECK_EQ(app_settle(&app, 500, false, GEAR_D), 1250);
+    /* 가속 페달을 놓은 채 브레이크만 밟았다 놓아도 같다 */
     CHECK_EQ(app_step(&app, 0, true, GEAR_D), 0);
-    CHECK(app_step(&app, 500, false, GEAR_D) > 0);
+    CHECK_EQ(app_step(&app, 500, false, GEAR_D), 250);
+    /* 후진에서도 같다 */
+    CHECK_EQ(app_step(&app, 500, true, GEAR_R), 0);
+    CHECK_EQ(app_step(&app, 500, false, GEAR_R), -250);
 }
 
 int main(void)
@@ -401,7 +443,7 @@ int main(void)
         { "TC-008", "출력은 기어의 방향과 허용 토크 안에 있다", tc_008 },
         { "TC-009", "깎인 주기가 5번 이어지면 고정한다", tc_009 },
         { "TC-010", "고정된 뒤에는 토크 0이다", tc_010 },
-        { "TC-011", "토크를 올리는 동안의 차이는 200 ms보다 짧다", tc_011 },
+        { "TC-011", "입력이 바뀐 뒤 토크를 올리는 동안의 차이는 200 ms보다 짧다", tc_011 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },
