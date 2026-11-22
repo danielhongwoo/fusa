@@ -67,6 +67,7 @@ static void tc_201(void)
     int n_ref = run(&sc, log_ref, APP_FAULT_NONE, 0, T_FAULT);
     int worst_latch_ms = 0;
     int worst_excess_ms = 0;
+    int worst_plant_ms = 0;
     double max_excess = 0.0;
 
     for (time_ms_t phase = 0u; phase < 10u; phase++) {
@@ -106,6 +107,15 @@ static void tc_201(void)
         if (excess_ms > worst_excess_ms) {
             worst_excess_ms = excess_ms;
         }
+        /* 차량 수준: 모터의 토크가 처음의 5% 아래로 내려가는 때 */
+        for (int i = 0; i < n; i++) {
+            if ((log_fault[i].t_ms >= (T_FAULT + phase)) && (log_fault[i].torque_act_nm < 3.75)) {
+                if (((int)log_fault[i].t_ms - (int)(T_FAULT + phase)) > worst_plant_ms) {
+                    worst_plant_ms = (int)log_fault[i].t_ms - (int)(T_FAULT + phase);
+                }
+                break;
+            }
+        }
         if (phase == 5u) {
             (void)scenario_write_csv("build/out/fi-02.csv", log_fault, n);
         }
@@ -113,6 +123,10 @@ static void tc_201(void)
     /* 5번째로 이어서 깎인 주기에 고정한다: 가장 나빠도 50 ms */
     CHECK(worst_latch_ms <= 50);
     CHECK(worst_excess_ms <= SG01_TIME_MS);
+    /* 시간 예산표의 합 (111 ms) 안에 있다 */
+    CHECK(worst_plant_ms <= 111);
+    printf("  측정 FI-02: fault부터 모터의 토크가 5%% 아래로 내려갈 때까지 가장 나쁜 경우 %d ms\n",
+           worst_plant_ms);
     printf("  측정 FI-02: fault부터 고정과 차단까지 가장 나쁜 경우 %d ms\n", worst_latch_ms);
     printf("  측정 FI-02: 가속의 차이는 가장 클 때 %.2f m/s^2, %.1f m/s^2를 넘은 시간 %d ms\n",
            max_excess, SG01_ACCEL_EXCESS, worst_excess_ms);

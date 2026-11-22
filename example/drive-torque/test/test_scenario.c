@@ -73,6 +73,7 @@ static void tc_102(void)
     };
     const torque_t limit_true = 750 + TORQUE_TOLERANCE; /* 실제 페달 위치의 허용 토크 */
     int worst_ms = 0;
+    int worst_plant_ms = 0;
 
     for (time_ms_t phase = 0u; phase < 10u; phase++) {
         fault_event_t fault = { T_FAULT + phase, FAULT_APPS1_FIXED_MV, 4500 };
@@ -104,13 +105,26 @@ static void tc_102(void)
         }
         CHECK_EQ(excess, 0);
         CHECK_EQ(escalated, 0);
+        /* 차량 수준: 모터의 토크가 처음의 5% 아래로 내려가는 때 */
+        for (int i = 0; i < n; i++) {
+            if ((log_buf[i].t_ms >= fault.t_ms) && (log_buf[i].torque_act_nm < 3.75)) {
+                if (((int)log_buf[i].t_ms - (int)fault.t_ms) > worst_plant_ms) {
+                    worst_plant_ms = (int)log_buf[i].t_ms - (int)fault.t_ms;
+                }
+                break;
+            }
+        }
         if (phase == 5u) {
             (void)scenario_write_csv("build/out/fi-01.csv", log_buf, n);
         }
     }
     /* 3번째로 이어서 실패를 본 주기에 반영한다: 가장 나빠도 30 ms */
     CHECK(worst_ms <= 30);
+    /* 시간 예산표의 합 (92 ms)과 SG-01의 시간 (200 ms) 안에 있다 */
+    CHECK(worst_plant_ms <= 92);
     printf("  측정 FI-01: fault부터 토크 요구 0까지 가장 나쁜 경우 %d ms\n", worst_ms);
+    printf("  측정 FI-01: fault부터 모터의 토크가 5%% 아래로 내려갈 때까지 가장 나쁜 경우 %d ms\n",
+           worst_plant_ms);
 }
 
 /*
