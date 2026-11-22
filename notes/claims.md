@@ -381,3 +381,129 @@
 | C-12-032 | Toyota의 고장 표에 brake switch의 두 극이 맞지 않을 때의 DTC가 있다 | nasa-toyota-ua-report, 78쪽 (표 6.5.2.2-1) | 1차 | 2026-11-23 |
 | C-12-033 | 페달 신호를 확인할 수 없으면 평소보다 느린 상승률로 토크를 허용하는 safe state를 예로 든다 | nhtsa-etc-ev-fsa, 67쪽 | 1차 | 2026-11-23 |
 | C-12-034 | 한 제어기가 정한 간격으로 입력 묶음을 주고 정한 시간 안의 옳은 답으로 다른 제어기의 건전성을 확인한다 (quizzer, seed-and-key) | nhtsa-etc-ev-fsa, 74쪽 각주 24 | 1차 | 2026-11-23 |
+| C-15-001 | test와 debugging은 가능한 실행의 일부만 보아 틀린 실행을 놓칠 수 있으므로 증명이 아니다 (coverage가 없는 문제) | Cousot, Abstract Interpretation in a Nutshell, 5절. https://www.di.ens.fr/~cousot/AI/IntroAbsInt.html (웹, 직접 읽음) | 1차 | 2026-11-23 |
+| C-15-002 | verification은 한 단계의 산출물이 앞 단계의 요구를 만족하는지 보는 것 ("built right")이고 방법은 analysis, review, inspection, testing, auditing. validation은 "right product"를 보는 것이고 보통 주된 방법은 testing | nasa-gb-8719-13, 45쪽 | 1차 | 2026-11-23 |
+| C-15-003 | NASA 표준은 IEEE 1012를 출처로 validation을 "you built the right thing", verification을 "you built it right"로 적는다 | nasa-std-8739-8b, 13쪽 | 1차 | 2026-11-23 |
+| C-15-004 | Formal Inspection은 결함을 찾아 없애려는 구조화된 기술 review이고 Fagan Inspection이라고도 한다. 대상은 요구사항, 설계 노트, test 계획, source 코드 | nasa-gb-8719-13, 118쪽 (6.5.5절과 각주) | 1차 | 2026-11-23 |
+| C-15-005 | Formal Inspection은 정해진 단계와 검토자의 역할이 있어 informal review나 walkthrough와 다르고, formal method가 아니다 ("Formal inspections are not formal methods!") | nasa-gb-8719-13, 119쪽 | 1차 | 2026-11-23 |
+| C-15-006 | inspection은 초기, 특히 요구사항 단계에서 효과가 가장 크다. 고장과 결함의 대부분이 빠졌거나 잘못 이해된 요구사항에서 온다는 연구를 "Studies have shown"으로만 든다. 검토자의 관점, 점검 목록 | nasa-gb-8719-13, 119쪽 | 1차 | 2026-11-23 |
+| C-15-007 | 코드 inspection의 점검 목록에 넣을 것 넷 (요구사항과 설계 정보, 코딩 표준, 언어와 무관한 오류, 언어별 오류). 안전 필수 부품에는 최소한 Formal Inspection을 해야 한다 (should) | nasa-gb-8719-13, 176쪽 | 1차 | 2026-11-23 |
+| C-15-008 | 요구사항과 코드의 Formal Inspection의 등급은 benefit HIGH, cost MODERATE | nasa-gb-8719-13, 119쪽, 177쪽 | 1차 | 2026-11-23 |
+| C-15-009 | 기법의 benefit와 cost 등급은 주관적이고 기법을 고르는 하나의 고려일 뿐이다 | nasa-gb-8719-13, 104쪽 | 1차 | 2026-11-23 |
+| C-15-010 | 프로젝트 관리자는 요구사항, 계획, 설계, 코드, test 절차에 peer review나 inspection을 하고 결과를 보고해야 한다 (shall, SWE-087) | nasa-std-8739-8b, 44쪽 | 1차 (NASA 자체의 요구) | 2026-11-23 |
+| C-15-011 | 실행 시간이 짧은 도구가 대체로 거짓 경보를 낼 가능성이 크고, 분석 시간과 정밀도의 균형을 고려한다 ("Broadly speaking") | misra-compliance-2020, 13쪽 | 1차 | 2026-11-23 |
+| C-15-012 | undecidable rule에서 도구가 확정된 위반과 가능한 위반을 구별해 알리는 정도가 중요하다. 진단이 없다는 것이 Yes를 뜻하지 않는다 | misra-compliance-2020, 18-19쪽 | 1차 | 2026-11-23 |
+| C-15-013 | Toyota 조사에서 NASA는 Coverity, CodeSonar, Uno의 세 정적 분석 도구를 썼고 성격이 서로 다르다 | nasa-toyota-ua-report, 149쪽 | 1차 | 2026-11-23 |
+| C-15-014 | Koopman의 슬라이드는 도구별 경고 건수를 든다 (Coverity 선언 후 미참조 97, CodeSonar 전역 변수의 다른 형 선언 2272, Uno 초기화되지 않았을 수 있는 변수 89). Toyota는 경고 없는 상태를 주장하지 않았다. 어느 경고가 결함인지는 적지 않는다 | koopman-toyota-ua, 37쪽 | 1차 (원고 쪽 전문가의 발표. 숫자는 NASA 부록 A의 인용) | 2026-11-23 |
+| C-15-015 | abstract interpretation은 실제 의미의 상위 집합을 쓰고, 그것이 안전하면 실제도 안전하다. sound는 모든 경우를 덮는다는 뜻. 경보가 없으면 올바름의 증명. 상위 집합 때문에 거짓 경보가 생긴다. sound하고 complete한 추상화는 수학적으로 있으나 계산할 수 없다 | Cousot, 같은 쪽, 7절, 9절, 11절, 13절 (웹, 직접 읽음) | 1차 | 2026-11-23 |
+| C-15-016 | abstract interpretation은 분석기가 계산한 성질이 모든 실행 경로에서 성립한다는 수학적 보장을 준다 | Brat, Navas, Shi, Venet, IKOS: A Framework for Static Analysis based on Abstract Interpretation, NASA Ames, 2014, 1쪽. https://ntrs.nasa.gov/api/citations/20140012995/downloads/20140012995.pdf (웹, 직접 읽음) | 1차 | 2026-11-23 |
+| C-15-017 | Astree는 C 프로그램의 run time error가 없음을 증명하려는 분석기이고, 동적 memory 할당과 재귀가 없는 프로그램을 분석하며, 가능한 오류를 모두 알리되 (sound) 때로 일어날 수 없는 오류도 알린다 | Astree 연구 팀 (ENS, INRIA), https://www.astree.ens.fr/ 본문 (웹, 직접 읽음) | 1차 (도구 개발 팀의 서술) | 2026-11-23 |
+| C-15-018 | formal specification은 요구사항을 형식적인 수학 언어로 쓰는 것이고, formal verification은 결과물이 명세를 만족한다는 증명을 준다. FM은 정량적인 신뢰도를 보장하지 않고 높은 수준의 assurance를 준다고 인정된다 | nasa-gb-8719-13, 68쪽 | 1차 | 2026-11-23 |
+| C-15-019 | 증명 없이 명세를 쓰는 과정만으로도 값지다. Lutz와 Ampo의 사례에서 formal specification으로 요구사항의 문제 37개를 찾았다 | nasa-gb-8719-13, 68-69쪽 | 1차 | 2026-11-23 |
+| C-15-020 | model checking은 유한 상태 시스템을 검증하는 자동 방법이다. 상태 기반 모델, temporal logic, 상태 공간 탐색. 성질은 reachability, deadlock 없음, safety, liveness. 주된 어려움은 state explosion | nasa-gb-8719-13, 128-129쪽 | 1차 | 2026-11-23 |
+| C-15-021 | Toyota 보고서는 SPIN을 소개하고 그 도구를 보고서 저자 한 사람이 만들었다고 적는다. 결론 F-10: 정적 분석, logic model testing 등을 했고, 쓴 도구로는 UA를 단독으로 일으키는 소프트웨어 결함을 찾지 못했다 | nasa-toyota-ua-report, 150쪽, 152쪽 | 1차 | 2026-11-23 |
+| C-15-022 | CBMC의 기본 생각은 실행을 정해진 단계 수까지 모델로 만드는 것이고 반복문 펼침으로 구현한다. 한계가 작으면 깊은 경로의 결함을 놓칠 수 있다. unwinding assertion이 모두 성립하면 한계가 충분하다. 한계는 backjump로 세며 i<100 반복은 101이 필요하다 | CPROVER Manual, Understanding Loop Unwinding. https://raw.githubusercontent.com/diffblue/cbmc/develop/doc/cprover-manual/cbmc-unwinding.md (웹, 직접 읽음) | 1차 | 2026-11-23 |
+| C-15-023 | 교육 자료는 --unwind 11이 반복문을 10번 펼친다고 적는다 ("10 times (not 11 times!)") | CBMC training, Loop unwinding. https://model-checking.github.io/cbmc-training/cbmc/overview/loop-unwinding.html (웹, 직접 읽음) | 1차 | 2026-11-23 |
+| C-15-024 | bounded model checking은 실행의 앞부분만 보므로 늦게 나타나는 오류를 놓칠 수 있어 증명이 아니다 | Cousot, 같은 쪽, 6절 | 1차 (저자의 관점) | 2026-11-23 |
+| C-15-025 | CBMC 6.11에서 열 번 도는 반복문은 --unwind 11이면 증명되고, --unwind 10이면 unwinding assertion이 실패한다. --unwinding-assertions를 주지 않아도 그렇다 | 이 책이 도구로 확인 (cbmc 6.11.0, scratchpad의 작은 예 loop.c. 2026-11-23) | 1차 (실험) | 2026-11-23 |
+| C-15-026 | theorem prover는 이름의 목록만 있다 | nasa-gb-8719-13, 69쪽 | 1차 | 2026-11-23 |
+| C-15-027 | FM을 쓰는 세 방식 (뒤에, 나란히, FM만으로)과 각각의 비용. FM이 널리 받아들여지지 않은 것은 주로 형식 증명의 어려움 때문이다 | nasa-gb-8719-13, 68쪽 | 1차 | 2026-11-23 |
+| C-15-028 | 가장 엄격한 Design Logic Analysis는 FM을 쓴다. 비용이 높아 대상의 비용이나 위험이 낮으면 더 단순한 DLA를 쓴다 | nasa-gb-8719-13, 160쪽 | 1차 | 2026-11-23 |
+| C-15-029 | Table 3-5: software category와 hazard severity로 safety effort (Full, Moderate, Minimum, None)를 정한다. 기법마다 수준별 권장 코드가 있고, Highly Recommended를 넣지 않으면 안전이 해쳐지지 않음을 보여야 한다 (should) | nasa-gb-8719-13, 42-43쪽 | 1차 | 2026-11-23 |
+| C-15-030 | 위험이 큰 부품은 설계와 코딩의 모든 단계에서 inspection하고 작은 부품은 코드 inspection만 할 수 있다 (may) | nasa-gb-8719-13, 156쪽 | 1차 | 2026-11-23 |
+| C-15-031 | AC 20-115D는 ED-216/DO-333 Formal Methods Supplement를 인정하는 문서로 든다 | faa-ac-20-115d, 1쪽 | 1차 | 2026-11-23 |
+| C-15-032 | IKOS 논문은 DO-333이 abstract interpretation을 인증 크레딧을 얻는 한 방법으로 든다고 적는다 | Brat 외, 2014, 1쪽 (위 주소) | 2차 (DO-178C/DO-333, 판은 논문이 적은 대로) | 2026-11-23 |
+| C-15-033 | `static`은 cppcheck (warning, style, performance, portability)와 clang-tidy (bugprone-*, cert-*, clang-analyzer-*)를 돌린다. cppcheck는 `--error-exitcode=1`로 멈추고, clang-tidy는 실패를 `true`로 덮고 경고 수만 찍는다. 지금 둘 다 지적 없음 | example/drive-torque/Makefile 131-147행, `make static` 실행 결과 | 1차 | 2026-11-23 |
+| C-15-034 | 성질 7의 단언과 가정 (코드 인용), 전제 넷 | example/drive-torque/test/proof/harness.c 342-409행 | 1차 | 2026-11-23 |
+| C-15-035 | prove.sh는 성질 14개를 --signed-overflow-check --div-by-zero-check --conversion-check --bounds-check --unwind 101 --unwinding-assertions로 돌리고, 가장 긴 반복이 100번이다. 증명 전에 tool_check.c로 도구를 확인한다. 지금 14개 모두 증명됨 | example/drive-torque/tools/prove.sh, 실행 결과 | 1차 | 2026-11-23 |
+| C-15-036 | 증명과 정적 분석이 찾은 것 (signed overflow, CRC 변환 셋, SWR-24의 반례 둘, clang-tidy 둘, cppcheck MISRA 거짓 경보) | example/drive-torque/docs/test-report.md 6절 | 1차 | 2026-11-23 |
+| C-15-037 | 성질 14가 구조체 안 배열의 한 칸 넘는 쓰기를 놓쳤고, 그 뒤에 tool_check.c, proof_mutation.py (9개 모두 잡음), _Static_assert를 더했다 | docs/test-report.md 5절, 6절; docs/tools.md 3절; src/flow/flow.c 12행 | 1차 | 2026-11-23 |
+| C-15-038 | "틈이 5 Nm라는 것을 증명했다"가 증명보다 넓었다 (F-04, 성질 7 추가). 성질 7을 한 주기의 증분으로 읽어 "쌓인다"고 적은 것이 틀렸다 (F-21, F-29) | reviews/2026-11-23-stage2-part2/README.md, reviews/2026-11-23-stage2-part3/README.md의 "검토가 찾은 것의 성격" | 1차 | 2026-11-23 |
+| C-15-039 | review는 역할을 받은 에이전트 둘이 했고, 1차에서는 서로의 의견을 보지 않았고, 같은 계열의 모델이며, 사람의 검토를 받지 않았다 | docs/safety-plan.md 40-55행; reviews/2026-11-23-stage2-part3/README.md (참가자, 확인하지 못한 것) | 1차 | 2026-11-23 |
+| C-15-040 | review가 찾은 것: safety goal을 근거에 맞춰 좁힘, 남는 것의 목록이 좁음, 동등한 변이의 이유가 틀림, fault를 빼도 통과하는 test 둘 | 위 두 README의 "검토가 찾은 것의 성격"; docs/tools.md 3절 | 1차 | 2026-11-23 |
+| C-16-007 | 응용의 모든 면, 사건의 모든 조합을 test하는 일은 드물게만 가능하고, test를 모을 곳은 위험의 분석으로 정하는 것이 알맞다 | nasa-gb-8719-13, 189쪽 | 1차 | 2026-11-23 |
+| C-16-008 | 차량 수준의 test는 쓸모 있고 중요하지만 조건, 시간 순서, 간헐적 고장의 조합이 너무 많아 모든 것을 test할 수 없다. slide 20의 test 양 숫자에는 발표자의 어림 ("perhaps 1-2 hours")이 섞여 있다 | koopman-toyota-ua, 19쪽, 20쪽 | 1차 (원고 쪽 전문가의 발표) | 2026-11-23 |
+| C-16-009 | 시간당 10^-8의 고장률을 정량화하려면 10^8시간이 넘는 test가 필요하다. 10시간 임무에 고장 확률 10^-9이면 시험체 10개로 고장 한 번까지 기대 시험 기간 114155년. r=1은 가장 짧은 경우이고 통계적 유의성에는 더 많은 test가 든다 | Butler와 Finelli, The Infeasibility of Quantifying the Reliability of Life-Critical Real-Time Software, 1993, NASA NTRS 공개본 https://ntrs.nasa.gov/api/citations/20040139817/downloads/20040139817.pdf, 4쪽 (Table 1), 15쪽 | 1차 (웹, 저자 공개본) | 2026-11-23 |
+| C-16-010 | requirements coverage는 요구사항에 따른 test가 구현을 얼마나 확인했는지, structural coverage는 그 test가 코드 구조를 얼마나 실행했는지를 본다. 앞의 분석이 먼저다. coverage는 척도이지 방법이나 test가 아니다 | nasa-mcdc-tutorial, 10쪽 | 1차 | 2026-11-23 |
+| C-16-011 | 요구사항에 따른 test는 사용자의 관점에서 하고, 요구사항이 유한하고 완료 기준이 있으면 exhaustive test와 달리 실행할 수 있다 | nasa-mcdc-tutorial, 11쪽 | 1차 | 2026-11-23 |
+| C-16-012 | "requirements-based test 중에 실행되었다"는 코드의 동작이 그것이 이어진 요구사항과 견주어졌다는 뜻이기도 하다 (DO-248A FAQ #43의 Note 1) | nasa-mcdc-tutorial, 12쪽 | 2차 (DO-248A를 인용) | 2026-11-23 |
+| C-16-013 | 코드에서 출발한 test는 구현되지 않은 요구사항을 찾을 수 없고, 코드의 출력을 기댓값으로 여기는 경향이 생긴다. 기댓값을 요구사항에서 정하면 이 치우침이 없다 | nasa-mcdc-tutorial, 16쪽 (DO-248A FAQ #44 인용) | 2차 (DO-248A를 인용) | 2026-11-23 |
+| C-16-014 | equivalence class와 boundary value 분석은 test 계획 항목에 이름으로 나온다 | nasa-gb-8719-13, 187쪽 | 1차 | 2026-11-23 |
+| C-16-015 | 경계와 성능 요구사항은 정한 한계에서, 아래에서, 위에서 test하는 것이 좋고 (should), 가정한 운용 한계 밖의 동작도 볼 필요가 있다. software fault injection은 test 시작 전에 코드에 fault를 넣고 반응을 보는 특별한 안전 test 기법의 예다 | nasa-gb-8719-13, 179쪽 | 1차 | 2026-11-23 |
+| C-16-016 | 비교 하나의 MC/DC는 test 둘로 채워지지만, 비교점과 관계 연산자를 확인하려면 약간 위, 약간 아래, 같은 값의 셋이 든다. altitude > 2500의 예 (25와 32000은 MC/DC만, 2500, 2499, 2501이 전환점 확인) | nasa-mcdc-tutorial, 24-25쪽 | 1차 | 2026-11-23 |
+| C-16-017 | negative test는 소프트웨어가 의도한 기능만 하고 불필요한 기능은 하지 않음을 보인다. 안전 test는 어느 수준에 넣어도 되지만 모든 안전 기능의 확인과 다른 요소가 방해하지 못함을 보이는 것이 필수다 (vital) | nasa-gb-8719-13, 194쪽 | 1차 | 2026-11-23 |
+| C-16-018 | statement coverage의 예 (and를 or로 잘못 써도 못 찾음), decision coverage는 (A or B)에서 B의 효과를 보지 않음, condition coverage는 (TF), (FT)가 판단을 한쪽으로만 보냄 | nasa-mcdc-tutorial, 14-15쪽 | 1차 | 2026-11-23 |
+| C-16-019 | MC/DC는 입력이 n개인 판단에 일반적으로 최소 n+1개의 test. multiple condition coverage는 2^n이고, 각주는 n이 조건이 아니라 입력의 수라고 적는다 ((A and B) or (A and C)는 입력 셋, 조건 넷) | nasa-mcdc-tutorial, 15쪽 | 1차 | 2026-11-23 |
+| C-16-020 | 최소 test 묶음은 exhaustive가 아니어서 모든 오류를 찾지 못한다 (or 자리의 xor). unique-cause와 masking의 정의 | nasa-mcdc-tutorial, 79쪽 | 1차 (CAST에 낸 백서, 78쪽에서 규제 지침이 아니라고 밝힘) | 2026-11-23 |
+| C-16-021 | unique-cause는 판단의 논리 분석이 필요 없고, 되풀이되거나 강하게 묶인 조건의 판단에는 쓸 수 없다 | nasa-mcdc-tutorial, 19쪽 | 1차 | 2026-11-23 |
+| C-16-022 | 연산자가 한 종류인 판단에서 두 방식은 같다. unique-cause를 채우면 masking도 채운다. test 수는 일반적으로 같다. masking은 논리 분석이 필요하고 묶인 조건에도 쓸 수 있다 | nasa-mcdc-tutorial, 82쪽 | 1차 (백서) | 2026-11-23 |
+| C-16-023 | 단락 평가 식은 MC/DC에서 보통의 and, or처럼 다룰 수 있고 don't-care로 최소 test를 줄일 수 있다. 그 최소 test는 compiler가 최적화할 때에도 옳게 동작할 때에만 유효하다 | nasa-mcdc-tutorial, 49-51쪽 | 1차 | 2026-11-23 |
+| C-16-024 | 실행되지 않은 코드는 test case나 절차의 부족, 소프트웨어 요구사항의 불충분, dead code, deactivated code에서 나올 수 있고 (DO-178B 6.4.4.3을 따라), 분석이 source의 오류도 찾을 수 있다 | nasa-mcdc-tutorial, 53쪽 | 2차 (DO-178B를 설명) | 2026-11-23 |
+| C-16-025 | dead code는 지우는 것이 좋고, 의도하지 않은 기능과 deactivated code는 설명하고 다룬다. MC/DC를 채우려고 더한 test도 요구사항과 맞아야 한다 (should) | nasa-mcdc-tutorial, 67-68쪽 | 1차 | 2026-11-23 |
+| C-16-026 | 예제 11: A 대신 B를 쓴 코드에서 승인된 test의 출력은 기댓값과 맞아 test만으로는 오류를 못 잡지만, MC/DC가 모자라다. 코드가 옳았다면 같은 test가 MC/DC를 준다 | nasa-mcdc-tutorial, 54-55쪽 | 1차 | 2026-11-23 |
+| C-16-027 | coverage를 채우면 의도하지 않은 기능이 없음을 확인하는 데 도움이 되지만 모든 요구사항을 test했음은 확인하지 않는다. 오해의 예: 입력을 모두 source에서 끌어냄, MC/DC를 test 방법으로 씀 | nasa-mcdc-tutorial, 61쪽 | 1차 | 2026-11-23 |
+| C-16-028 | source 수준 coverage는 object 수준과 다를 수 있다. Beizer: source에서 statement 100%인 test 묶음이 object에서 75% 이하일 수 있다 | nasa-mcdc-tutorial, 17쪽 | 1차 (Beizer를 인용) | 2026-11-23 |
+| C-16-029 | instrumentation은 코드를 바꾸므로 오류를 숨기거나 만들지 않음을 보이는 것이 필수이고, 보통 원래 코드와 같은 test로 견준다. 도구는 probe를 넣은 코드를 확인하고 넣지 않은 코드는 가정이다 | nasa-mcdc-tutorial, 56쪽 | 1차 | 2026-11-23 |
+| C-16-030 | probe가 compiler의 함수 호출 순서를 바꾼 예. probe를 넣은 코드는 compiler, linker, target이 다를 수 있어 충실도를 평가하는 것이 좋다 (should) | nasa-mcdc-tutorial, 59-60쪽 | 1차 | 2026-11-23 |
+| C-16-031 | 도구마다 독립 효과를 정하는 algorithm이 다르고, 조건 수의 한계가 있어 큰 식이 무시되거나 일부만 감시될 수 있다 | nasa-mcdc-tutorial, 58쪽 | 1차 | 2026-11-23 |
+| C-16-032 | unit test와 integration test의 뜻, stub과 driver | nasa-gb-8719-13, 185쪽, 190쪽 | 1차 | 2026-11-23 |
+| C-16-033 | fault injection은 오류에 대한 반응을 보는 test 갈래에 들고 안전에 중요한 부품에 Highly Recommended다. 전통적으로 source를 고쳐 fault를 만들었으나 이제는 부품 사이 interface에 넣고 source 없이도 쓴다 | nasa-gb-8719-13, 191-192쪽, 281쪽 | 1차 | 2026-11-23 |
+| C-16-034 | MC/DC의 목적은 요구사항에 따른 test가 코드 구조를 실행하기에 충분한지 정하는 것이지 오류를 찾는 것이 아니다 | nasa-mcdc-tutorial, 83쪽 (백서, 78쪽) | 1차 (백서) | 2026-11-23 |
+| C-16-035 | mutation testing의 뜻 (변이를 만들어 test 묶음이 가려내는지 보고, 비율이 test 묶음의 질을 나타냄), 두 가설 (competent programmer, coupling effect), equivalent mutant와 그 자동 검출이 불가능함 (프로그램 동치가 결정 불가능) | Jia와 Harman, An Analysis and Survey of the Development of Mutation Testing, IEEE TSE 게재 논문의 저자 원고 (PDF 생성 2010-04), https://web.eecs.umich.edu/~weimerw/2020-481F/readings/mutation-testing.pdf, 1쪽, 3쪽, 4쪽 | 1차 (웹, 논문의 공개 사본) | 2026-11-23 |
+| C-16-036 | software-in-the-loop, processor-in-the-loop, hardware-in-the-loop의 설명 (MIL은 정의하지 않음) | MathWorks, Model Development Processes, https://www.mathworks.com/help/simulink/slref/simulink-concepts-model-development-processes.html (WebFetch가 돌려준 문장, 원문 글자 대조 못 함) | 2차 (회사의 설명서) | 2026-11-23 |
+| C-16-037 | MiL, SiL, PiL, HiL의 검증 단계. SiL까지 target에 매이지 않고 PiL부터 실제 target에서 수치 정확도와 실행 시간을 본다 | Synopsys, Model-Based Design and Virtual ECUs Enable Early Testing for Electric Vehicle Controls, 2025-01, https://www.synopsys.com/content/dam/synopsys/verification/white-papers/model-based-design-and-vecu-wp.pdf, 2쪽 | 2차 (회사의 백서) | 2026-11-23 |
+| C-16-038 | virtual PiL, SiL (PC용으로 compile한 C 코드), MiL (C 코드를 만드는 model)의 구분 | Jordan 외, Full Virtualization of Renault's Engine Management Software, arXiv:1802.06841, https://arxiv.org/pdf/1802.06841, 5쪽 | 1차 (웹, 논문) | 2026-11-23 |
+| C-16-039 | back-to-back test (equivalence test)는 생성한 코드가 model 시뮬레이션과 같은 결과를 내는지 시험한다. 다른 회사의 출처는 찾지 못했다 | MathWorks, Back-to-Back Equivalence Testing, https://www.mathworks.com/help/sltest/ug/back-to-back-equivalence-testing.html (WebFetch가 돌려준 문장) | 2차 (회사의 설명서 하나뿐) | 2026-11-23 |
+| C-16-040 | simulator의 충실도를 물을 것. 안전 test는 최종 시스템 (하드웨어와 소프트웨어)에서 해야 한다 (must). 형상 관리가 system test 매체의 유일한 배포자가 되는 것이 좋고, 반복 가능성은 알려진 고정된 출처에서만 보장된다 | nasa-gb-8719-13, 190쪽 | 1차 | 2026-11-23 |
+| C-16-041 | Ariane 5: SRI는 장비 수준에서 엄격히 시험했으나 Ariane 5의 카운트다운, 비행 순서, 궤적에서의 동작은 시험하지 않았다. 모의 가속도 신호를 넣는 지상 test가 가능했고 했다면 메커니즘이 드러났을 것 | ariane-501-report, 11쪽 (OCR) | 1차 | 2026-11-23 |
+| C-16-042 | ISF 폐루프 시험에서 두 SRI는 소프트웨어 모듈로 모의. 1992년에 SRI를 loop에 넣지 않기로 바꿈 (이유 넷). 위원회는 이유가 기술적으로 타당했으나 이미 확인되었다고 가정한 데에 분명한 위험이 있었다고 봄. simulator로 바꾸는 것은 앞선 수준이 범위를 완전히 덮었는지 확인한 뒤에만 | ariane-501-report, 12-13쪽 (OCR) | 1차 | 2026-11-23 |
+| C-16-043 | DO-178B Table A-7: statement coverage는 level A-C, decision coverage는 A-B, MC/DC는 A | nasa-mcdc-tutorial, 14쪽 | 2차 (DO-178B를 설명) | 2026-11-23 |
+| C-16-044 | 예제의 수: test 71개 (`TC-` 63, `FT-` 3, `NC-` 5), 요구사항 63개 (구현 예정 5), coverage 11개 파일 100% (GCC, masking MC/DC, `-O0`), 변이 221개 (손 172, 상수 49; test 217, build 4; 따로 둔 2), fault 33가지 | example/drive-torque/docs/test-report.md 1-4절, 7절; test 코드의 ID를 grep으로 셈; build/reports/coverage.txt | 이 책의 측정 | 2026-11-23 |
+| C-16-045 | `FI-01` 29 ms (30), 88 ms (92), `FI-02` 49 ms (50), 108 ms (111). 주입 시각을 주기 안에서 0-9 ms로 옮김 | test/test_scenario.c `TC-102`, test/test_fault_app.c `TC-201`, build/reports/variant-O0.txt, docs/test-report.md 3절 | 이 책의 측정 | 2026-11-23 |
+| C-16-046 | 만드는 동안의 발견: input.c MC/DC 42%와 `TC-107`, 변이를 놓친 네 번, `NC-001`과 `NC-002`가 수단을 더하자 실패, `TC-113`과 `TC-208`이 fault 없이도 통과, 따로 둔 변이의 이유가 두 번 틀림, 배열 바로 뒤 변이가 우연에 기대어 잡힘, build가 잡는 변이 넷 | example/drive-torque/docs/test-report.md 3절, 6절, 7절 | 이 책의 측정 | 2026-11-23 |
+| C-16-047 | 같은 test 묶음에서 줄은 100%, MC/DC는 GCC 43% (14개 가운데), LLVM 20% (5개 가운데). 세는 단위가 다르다 | notes/tool-check.md | 이 책의 측정 | 2026-11-23 |
+| C-16-048 | `make variants`: `-O2`, `-Os`, sanitizer (`-O1 -fsanitize=address,undefined`) build에서 test가 통과하고 출력이 `-O0`과 같다. AddressSanitizer는 같은 stack 변수 안의 이웃에 떨어진 한 칸 넘는 쓰기를 알리지 않았다 | example/drive-torque/tools/variants.sh, build/reports/variant-*.txt (cmp로 같음 확인), docs/test-report.md 1절, docs/tools.md 2절 | 이 책의 측정 | 2026-11-23 |
+| C-16-049 | `TC-009`의 코드 (현재 저장소의 것) | example/drive-torque/test/test_unit.c 876-899행 | 이 책의 산출물 | 2026-11-23 |
+| C-17-001 | 일부 과정 표준 (IEC 61508, ISO 26262, DO-178)은 어떤 경우 compiler와 정적 분석 도구의 qualification을 요구한다. 그 경우가 무엇인지는 이 문서에 없다 | misra-compliance-2020, 14쪽 | 2차 (판 없음. C-13-040과 같다) | 2026-11-23 |
+| C-17-002 | DO-178B에서 development tool은 오류를 넣을 수 있고 verification tool은 놓칠 수만 있다. 그래서 두 과정이 함께 모자라야 오류가 남고, 두 종류에 다른 엄격함을 요구한다 | FAA Order 8110.49 Chg 2 (2017)의 9장 (2003-06-03 판), PDF 37-38쪽 (인쇄 50-51쪽). https://www.faa.gov/documentLibrary/media/Order/FAA_Order_8110_49_w-chg_2.pdf | 2차 (DO-178B, 발행 기관) | 2026-11-23 |
+| C-17-003 | verification 중에 쓰는 도구가 모두 verification tool은 아니다 (감시 코드를 넣었다 걷어 내는 도구). 분류는 최종 제품에 미치는 영향으로 정한다 | 같은 문서, PDF 37쪽 | 2차 (DO-178B, 발행 기관) | 2026-11-23 |
+| C-17-004 | 도구의 결과를 다른 verification 활동이 확인하면 qualification할 필요가 없다. 세 물음에 모두 "예"이면 qualification한다 | 같은 문서, PDF 37-38쪽 (9-2.a, 9-3.a) | 2차 (DO-178B, 발행 기관) | 2026-11-23 |
+| C-17-005 | DO-330/DO-178C는 기준 셋 (1: 출력이 항공 소프트웨어가 되어 오류를 넣음, 2: verification을 자동화하고 다른 과정을 줄이는 근거, 3: 의도한 범위에서 오류를 놓침)과 level로 TQL 다섯을 정하고, 번호가 낮을수록 엄격하다 | AFuzion (연도 미표기) https://afuzion.com/?p=358 . LDRA, DO-330 Test Tool Qualification Technical Briefing v2.0 (2021), 3쪽 https://ldra.com/wp-content/uploads/ldra/DO-330-Test-Tool-Qualification-Technical-Briefing-v2.0.pdf . Rapita Systems (연도 미표기) https://www.rapitasystems.com/do-330 | 2차 (DO-330, 회사 글 셋) | 2026-11-23 |
+| C-17-006 | DO-178B로 qualification한 development tool은 기준 1, verification tool은 기준 2 또는 3에 대응한다 (Table 2) | faa-ac-20-115d, 11쪽 | 2차 (DO-178C/DO-330, 항공) | 2026-11-23 |
+| C-17-007 | ISO 26262의 TCL은 TI와 TD로 정한다. TCL1은 더 qualification이 필요 없고 TCL2, 3은 qualification 방법이 필요하다. 방법은 넷이고 ASIL마다 맞는 정도가 다르다 | Synopsys, Understanding How to Assess Tool Confidence Levels for ISO 26262 (2017-10), 1-2쪽, 4-5쪽 https://www.synopsys.com/content/dam/synopsys/solutions/documents/automotive-tool-confidence-iso-26262-wp.pdf . Siemens, Clearing the fog of ISO 26262 tool qualification (2022-04-13) https://blogs.sw.siemens.com/verificationhorizons/2022/04/13/clearing-the-fog-of-iso-26262-tool-qualification/ | 2차 (ISO 26262:2011 / ISO 26262:2018, 회사 글 둘) | 2026-11-23 |
+| C-17-008 | TCL은 따내는 등급이 아니라 쓰임에 대한 분류다 (Siemens). 모든 도구를 TCL1로 만드는 것이 목표라는 생각은 오해다 (Synopsys) | Siemens (2022), 본문. Synopsys (2017), 4쪽 | 2차 (ISO 26262:2018 / 2011) | 2026-11-23 |
+| C-17-009 | TCL 판정의 책임은 쓰는 쪽에 있고, 미리 정한 TCL도 쓰는 쪽이 확인한다. 한 도구의 출력을 다른 도구로 따로 비교해 확신을 높이는 예 (합성 도구) | Synopsys (2017), 3쪽 | 2차 (ISO 26262:2011, 회사 글 하나. 원고에서 Synopsys의 말로 적었다) | 2026-11-23 |
+| C-17-010 | IEC 61508의 off-line 지원 도구는 T1, T2, T3로 나뉘고 (예: 편집기, coverage 측정, 최적화 compiler), T3에는 명세에 맞는다는 증거가 필요하며, 새 판마다 qualification한다 | Conrad, Munier, Rauch, Qualifying Software Tools According to ISO 26262 (2010경), 3쪽 https://fr.mathworks.com/content/dam/mathworks/tag-team/Objects/m/61793_CMR10-16.pdf (IEC 61508 2판 초안 기준). El-Sayed (UL), IEC 61508 Why Tool Qualification (2024-11), 10-11쪽 https://61508.org/wp-content/uploads/2024/11/09B-IEC-61508-Why-tool-qualification_V2_cut.pdf (2판 기준). AbsInt, Relation to safety standards (연도 미표기) https://www.absint.com/qualification/iec.htm (판 표기 없음) | 2차 (IEC 61508, 회사 글 셋) | 2026-11-23 |
+| C-17-011 | MISRA Compliance에서 compiler는 linker, library manager, 실행 파일 형식 변환 도구를 포함한다 | misra-compliance-2020, 12쪽 | 1차 | 2026-11-23 |
+| C-17-012 | 공급자에게서 확신을 얻기 어려우면 책임이 개발자에게 있다. 확신을 얻는 길 셋. validation test는 제품과 같은 compiler option, linker option, library 판으로 해야 한다 ("must") | misra-compliance-2020, 13쪽 | 1차 | 2026-11-23 |
+| C-17-013 | 알려진 결함의 목록 (공급자 또는 자체). 더 공격적인 최적화는 compiler 결함이 드러날 위험을 높일 수 있다 ("may") | misra-compliance-2020, 14쪽 | 1차 | 2026-11-23 |
+| C-17-014 | compiler를 고를 때 결함 목록, 최적화를 끄는 선택, runtime library의 source를 묻는다 | nasa-gb-8719-13, 235쪽 | 1차 | 2026-11-23 |
+| C-17-015 | Csmith로 3년 동안 알려지지 않은 결함 325개 넘게 보고. 시험한 모든 compiler가 조용히 틀린 코드를 만들기도 했다. GCC의 한 결함은 모든 최적화 수준에서 틀린 값을 냈다 (Figure 1) | Yang, Chen, Eide, Regehr, Finding and Understanding Bugs in C Compilers (PLDI 2011), 1쪽 https://www-old.cs.utah.edu/~regehr/papers/pldi11-preprint.pdf | 1차 (논문) | 2026-11-23 |
+| C-17-016 | CompCert의 증명되지 않은 부분에서 틀린 코드를 만드는 결함을 찾았다 | 같은 논문, 2쪽 | 1차 (논문) | 2026-11-23 |
+| C-17-017 | 정의되지 않은 동작에 기대는 코드를 최적화가 지워 버리고, 결과가 잘못된 동작부터 빠진 보안 검사까지 이른다 | Wang, Zeldovich, Kaashoek, Solar-Lezama, Towards Optimization-Safe Systems (SOSP 2013), 1쪽 https://pdos.csail.mit.edu/papers/stack%3Asosp13.pdf | 1차 (논문) | 2026-11-23 |
+| C-17-018 | probe를 넣자 compiler가 A, B의 호출 순서를 바꾼 예. 감시 코드가 오류를 숨기거나 넣지 않음을 보이는 것이 필수이고 보통 같은 test로 견준다 | nasa-mcdc-tutorial, 59-60쪽, 56쪽 | 1차 (항공의 맥락) | 2026-11-23 |
+| C-17-019 | 자동 생성은 사람의 번역 오류를 없애지만 도구의 오류는 남고, 안전 관련이면 옳은 번역을 확인해야 한다 | nasa-gb-8719-13, 238쪽 | 1차 | 2026-11-23 |
+| C-17-020 | compiler도 object code에 오류를 낸다. 안전 관련이면 생성 코드도 손으로 쓴 코드와 같은 inspection, 분석, test를 받는 것이 좋다 ("should") | nasa-gb-8719-13, 240쪽 | 1차 | 2026-11-23 |
+| C-17-021 | 자동 생성의 접근: 생성 도구의 V&V, 도구와 입력의 형상 관리, 생성 코드를 손으로 쓴 코드와 같은 과정으로 확인 (SWE-146) | nasa-std-8739-8b, 29쪽 | 1차 (NASA의 요구) | 2026-11-23 |
+| C-17-022 | OTS는 사 온 것과 다시 쓰는 것을 함께 가리키고, SOUP라는 이름이 문제를 앞에 내세워 낫다. 문서의 부족, source가 없으면 어떤 안전 분석은 못 한다 | nasa-gb-8719-13, 271쪽 | 1차 | 2026-11-23 |
+| C-17-023 | 꺼도 다시 compile하지 않으면 코드가 남는다 | nasa-gb-8719-13, 272쪽 | 1차 | 2026-11-23 |
+| C-17-024 | dormant code를 찾으려면 source가 필요하다 | nasa-gb-8719-13, 278쪽 | 1차 | 2026-11-23 |
+| C-17-025 | 잘 알려진 OS나 library도 오류가 없다고 가정하지 말라 | nasa-gb-8719-13, 273쪽 | 1차 | 2026-11-23 |
+| C-17-026 | wrapper: 입력을 막거나 출력을 검사. 문서 밖의 출력은 빠져나가고, OTS만큼 커질 수 있다 | nasa-gb-8719-13, 276쪽 | 1차 | 2026-11-23 |
+| C-17-027 | OTS의 안전에 확신을 주는 일은 아직 "black art"에 가깝다 | nasa-gb-8719-13, 280쪽 | 1차 | 2026-11-23 |
+| C-17-028 | COTS, OSS, 다시 쓰는 component를 직접 개발한 것과 같은 수준으로 확인하고, 공급자의 결함을 주기적으로 평가한다 (SWE-027 e, f, SWE-211) | nasa-std-8739-8b, 20-21쪽, 40쪽 | 1차 (NASA의 요구) | 2026-11-23 |
+| C-17-029 | adopted code의 출처. 영향을 간과하거나 무해하다고 가정해서는 안 된다 ("must never"). 두 물음은 같지 않고, 준수는 필요조건도 충분조건도 아니다 | misra-compliance-2020, 25쪽 | 1차 | 2026-11-23 |
+| C-17-030 | binary로만 받으면 준수와 품질을 확인할 범위가 좁아진다 | misra-compliance-2020, 26쪽 | 1차 | 2026-11-23 |
+| C-17-031 | 정렬 기능의 요구사항은 Ariane 4를 위한 것이고 Ariane 5에는 해당하지 않았으며, 공통성 때문에 남았다. 위원회는 "presumably" 바꾸지 않는 것이 현명하다는 생각 때문이라고 적는다 | ariane-501-report, PDF 10쪽 (보고서 6쪽, OCR) | 1차 | 2026-11-23 |
+| C-17-032 | 명세가 구현에서 나오는 운용의 제약을 밝히지 않았다. 한계의 선언이 모든 임무 중요 장치에 의무여야 한다 ("should be mandatory") | ariane-501-report, PDF 11쪽 (보고서 7쪽, OCR) | 1차 | 2026-11-23 |
+| C-17-033 | 다시 쓰기의 가장 큰 문제는 심리적인 것이다. Ariane 5의 팀이 그렇게 생각했다 | nasa-gb-8719-13, 279쪽 | 1차 | 2026-11-23 |
+| C-17-034 | proven in use 논증은 사용 이력이 있는 제품을 다른 환경에서 쓸 때 필요하다. 꼭 갖춰야 할 조건 (전형적인 환경, 비슷한 부품, 결함을 고친 부품은 보통 다른 부품, 모든 고장과 사용 시간의 기록). Ariane 4의 예에서 환경이 바뀌면 논증이 무효가 된다 | Schabe, Braband, Basic requirements for proven-in-use arguments (arXiv:1511.01839, 2015), 1쪽, 6쪽, 7쪽 https://arxiv.org/pdf/1511.01839 | 1차 (논문. Ariane의 서술은 논문의 해석) | 2026-11-23 |
+| C-17-035 | IEC 61508의 proven in use는 하드웨어의 무작위 고장률을 위한 것이고 체계적 능력의 요구를 대신하지 않는다 | Intertek, Exploring the IEC 61508 Proven-In-Use Concept (2026-01-22) https://www.intertek.com/blog/2026/01-22-exploring-the-iec-61508-proven-in-use-concept/ | 2차 (IEC 61508, 판 표기 없음, 회사 글 하나. 원고에서 Intertek의 말로 적었다) | 2026-11-23 |
+| C-17-036 | ISO 26262에 proven in use 논증의 절이 있다 (기준의 수치는 원고에 쓰지 않았다) | Schildbach, On the Application of ISO 26262 in Control Design for Automated Vehicles (arXiv:1804.04349, 2018), 6쪽 https://arxiv.org/pdf/1804.04349 | 2차 (ISO 26262, 판 표기 없음, 하나뿐. 원고에 "이 문서 하나로만 확인했다"를 붙였다) | 2026-11-23 |
+| C-17-037 | SEooC는 맥락을 가정해 개발하고, 통합할 때 가정을 확인하며, 맞지 않으면 영향 분석을 한다. ISO 26262 Part 10이 SEooC의 안내를 담는다 | Embitel, What is Safety Element out of Context (SEooC) ... (2019-08-27) https://www.embitel.com/blog/embedded-blog/what-is-safety-element-out-of-context-seooc-in-automotive-functional-safety (판 표기 없음). Guo (Renesas), Functional Safety Support for Automotive (3) (2021-10-04) https://www.renesas.com/en/blogs/renesas-functional-safety-support-automotive-3-applying-iso-26262-standard-seooc-software (ISO 26262:2018 기준) | 2차 (회사 글 둘) | 2026-11-23 |
+| C-17-038 | MCAL과 OS가 SEooC 소프트웨어의 흔한 예이고, 가정을 모두 확인하는 데 시간과 지식이 든다 | Guo (Renesas, 2021), 본문 | 2차 (ISO 26262:2018, 원고에서 Renesas의 말로 적었다) | 2026-11-23 |
+| C-17-039 | AUTOSAR 명세는 SEooC를 정의하지 않는다 | autosar-safety-measures, 46쪽 | 1차 | 2026-11-23 |
+| C-17-040 | 안전 관련 코드와 같은 platform의 OTS는 영향을 줄 수 없음을 분석으로 확인해야 한다 | nasa-gb-8719-13, 272-273쪽 | 1차 | 2026-11-23 |
+| C-17-041 | OSS를 COTS와 함께 다루고, 사용 조건에 GNU GPL 같은 재배포 조건을 포함한다 | nasa-std-8739-8b, 20-21쪽 (SWE-027 c) | 1차 (NASA의 요구) | 2026-11-23 |
+| C-17-042 | IV&V는 프로젝트가 쓰는 open source를 모두 찾았는지, 보안 위험을 찾고 줄였는지 확인한다 | nasa-std-8739-8b, 54쪽 (4.4.2.34) | 1차 (NASA의 요구) | 2026-11-23 |
+| C-EX-029 | 예제의 도구 목록, 어느 도구도 qualification되지 않음, 결함을 넣는 것은 compiler 하나, 다른 compiler (GCC)와 `make variants`로 확인, 실제로 있었던 일 일곱 가운데 넷은 검토자가 결함을 넣거나 빼서 드러남, 하지 않은 것, 밖에서 온 소프트웨어 (표준 헤더 셋, library 함수 호출 없음, 시작 코드와 runtime) | `example/drive-torque/docs/tools.md` 1-5절. 헤더는 `src/`의 `#include`로 확인 | 예제 | 2026-11-23 |
