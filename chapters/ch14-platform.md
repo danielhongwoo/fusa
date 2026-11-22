@@ -28,7 +28,7 @@ OS를 쓰면 급한 task가 덜 급한 task를 끊고 먼저 돌 수 있다. 그
 
 AUTOSAR의 문서는 OS가 주는 보호 두 가지를 설명한다. memory partitioning은 OS-Application이라고 부르는 묶음 (task와 interrupt 처리 루틴 등)마다 memory 영역을 나눠, 한 partition의 코드가 다른 partition의 memory를 바꾸지 못하게 한다. 실제로 접근을 막는 것은 MPU나 MMU 같은 하드웨어이고, 그것을 알맞게 설정하는 것이 OS의 일이다. timing 보호는 앞의 세 요인에 하나씩 대응하는 한계를 감시한다. task의 실행 시간의 상한 (Execution Budget), 자원과 interrupt를 잠그는 시간의 상한 (Lock Budget), 활성화 사이의 최소 간격 (Time Frame)이다. 실행 시간을 강제하려면 시간을 재는 interrupt 같은 하드웨어의 도움이 필요하다 (AUTOSAR, 2025, 13쪽, 20쪽, 26쪽).
 
-같은 문서는 이 보호가 닿지 않는 곳을 함께 적는다 (13쪽, 15-18쪽, 20-22쪽, 25-26쪽).
+같은 문서는 이 보호가 미치지 않는 곳을 함께 적는다 (13쪽, 15-18쪽, 20-22쪽, 25-26쪽).
 
 | 한계 | 문서가 적은 것 |
 |---|---|
@@ -54,7 +54,7 @@ core가 둘 넘으면 data를 주고받지 않는 application 사이에도 결�
 |---|---|
 | cache | cache miss 등으로 생기는 시간 간섭 |
 | memory | 시간 간섭, 그리고 lockout, race condition, data 기아, deadlock, livelock, 지나친 data 지연 |
-| interconnect | 접근의 중재로 생기는 시간 간섭. data가 닿는 시각의 jitter, transaction의 순서가 바뀜, 과부하 |
+| interconnect | 접근의 중재로 생기는 시간 간섭. data가 도착하는 시각의 jitter, transaction의 순서가 바뀜, 과부하 |
 | 주변 장치 | 공유하는 peripheral도 간섭의 길로 식별한다 |
 | 하드웨어의 동적 기능 | 주파수를 바꾸거나 core를 끄는 절전 기능이 실행 중에 동작을 바꾼다 |
 
@@ -126,7 +126,7 @@ sim의 실행기 (`sim/scenario.c`)는 1 ms마다 주기가 된 task를 표의 �
 |---|---|
 | 실행 시간과 마감 | 시간 예산 (`technical-safety-concept.md` 9.4절)에는 실행 시간의 칸이 없고, watchdog의 창은 sim에 둔 임시 값이다 |
 | stack의 사용량 | NASA의 지침서는 stack을 알려진 pattern으로 채우고 남은 공간을 감시하라고 권한다 (NASA, 2004, 94쪽) |
-| memory 보호의 설정 | `HA-03`은 설정이 맞아야 성립하고, trusted 쪽, 같은 partition 안, DMA에는 닿지 않는다 |
+| memory 보호의 설정 | `HA-03`은 설정이 맞아야 성립하고, trusted 쪽, 같은 partition 안, DMA에는 미치지 않는다 |
 | interrupt와 함께 쓰는 data | 입력을 interrupt로 받거나 task를 나누면 `vcu_t`가 함께 쓰는 data가 된다 |
 | compiler가 만든 코드 | 예제의 증명과 coverage는 PC에서 본 source 코드의 논리에 대한 것이다 |
 | core가 둘 넘는 MCU | 기능과 감시를 다른 core에 두면 공유 자원이 간섭의 길이 된다 |
@@ -148,7 +148,7 @@ sim의 실행기 (`sim/scenario.c`)는 1 ms마다 주기가 된 task를 표의 �
 
 ## 흔한 오해
 
-- "인증받은 RTOS를 쓰면 플랫폼은 끝났다." 받은 문서가 적는 것은 OS의 보호가 하드웨어와 설정과 budget의 값에 달렸고 닿지 않는 곳이 있다는 것이다.
+- "인증받은 RTOS를 쓰면 플랫폼은 끝났다." 받은 문서가 적는 것은 OS의 보호가 하드웨어와 설정과 budget의 값에 달렸고 미치지 않는 곳이 있다는 것이다.
 - "OS가 timing 보호를 하니 마감은 지켜진다." OS는 정해 준 budget을 지키게 할 뿐이다. 마감 자체는 보지 않고, budget의 값은 쓰는 쪽이 정한다.
 - "MPU를 켰으니 memory가 나뉘었다." core 안에 있는 MPU는 그 core의 접근만 막는다. DMA와 다른 core는 따로 다뤄야 한다.
 - "watchdog이 있으니 clock의 고장도 잡는다." 소프트웨어와 같은 clock을 쓰는 감시는 clock이 느려진 것을 모른다 (`FI-25`). 따로 된 clock을 쓰는 watchdog도 창의 폭보다 크게 어긋난 clock만 잡는다. 예제의 창에서는 주기의 0.5배와 1.5배 밖이다.
