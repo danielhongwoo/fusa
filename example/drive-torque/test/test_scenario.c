@@ -256,6 +256,69 @@ static void tc_107(void)
     CHECK_EQ(log_buf[n - 1].diag.clamp_count, 0);
 }
 
+/* 페달 채널 1의 선이 80 ms마다 한 주기씩 끊긴다 (0 V) */
+#define T_BLIP_START 1000u
+static void blip_apps1(time_ms_t t_ms)
+{
+    if (t_ms >= T_BLIP_START) {
+        if ((t_ms % 80u) == 70u) {
+            hal_sim_set_fault(FAULT_APPS1_FIXED_MV, 0);
+        }
+        if ((t_ms % 80u) == 0u) {
+            hal_sim_clear_faults();
+        }
+    }
+}
+
+static int is_pedal_fault(const sample_t *s) { return s->diag.pedal_fault; }
+
+/*
+ * TC-109: SWR-14, SWR-04, SWR-11 fault injection FI-08
+ * 페달을 30% 밟고 가는데 채널 1의 선이 80 ms마다 한 주기씩 끊긴다. 기능은 정상이다.
+ * 끊긴 주기마다 토크가 0으로 떨어졌다가 다시 오른다. 운전자에게는 차가 울컥거리는 것으로 보인다.
+ * 이어지는 횟수로는 판정되지 않는다. 11번째로 끊긴 주기에 페달 고장으로 판정하고 경고한다.
+ */
+static void tc_109(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    scenario_t sc = { "fi-08", 3000u, driver, 2, NULL, 0, blip_apps1 };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int t_fault = first_time(log_buf, n, 0u, is_pedal_fault);
+    const int t_first_blip = 1030;
+    int dips = 0;
+    int bad_before = 0;
+    int bad_after = 0;
+
+    /* 처음 끊긴 때는 1030 ms다. 11번째는 800 ms 뒤다 */
+    CHECK_EQ(t_fault, t_first_blip + 800);
+    for (int i = 1; i < n; i++) {
+        const sample_t *s = &log_buf[i];
+        if ((int)s->t_ms < t_fault) {
+            /* 판정 전: 토크는 실제 페달 위치의 허용 토크를 넘지 않고, 경고와 고정이 없다 */
+            if ((s->torque_out > (750 + 50)) || (s->warning != 0u) || s->diag.latched) {
+                bad_before++;
+            }
+            if ((s->t_ms >= T_BLIP_START) && (s->torque_out == 0) && (log_buf[i - 1].torque_out != 0)) {
+                dips++;
+            }
+        } else {
+            /* 판정한 뒤: 토크 0과 경고가 유지된다. 기능의 고장이 아니므로 구동 허용 신호는 끊지 않는다 */
+            if ((s->torque_out != 0) || (s->warning != 2u) || s->diag.latched || !s->enable) {
+                bad_after++;
+            }
+        }
+    }
+    CHECK_EQ(bad_before, 0);
+    CHECK_EQ(bad_after, 0);
+    CHECK_EQ(dips, 10); /* 판정하기 전에 10번 떨어졌다. 11번째에 판정한다 */
+    CHECK_EQ(log_buf[n - 1].diag.clamp_count, 0);
+    (void)scenario_write_csv("build/out/fi-08.csv", log_buf, n);
+    printf("  측정 FI-08: 처음 끊긴 때부터 페달 고장의 판정까지 %d ms\n", t_fault - t_first_blip);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -267,6 +330,7 @@ int main(void)
         { "TC-106", "후진 기어의 방향", tc_106 },
         { "TC-107", "기어가 P, N, 알 수 없는 값이면 토크 0", tc_107 },
         { "TC-108", "켤 때 구동 허용 신호는 끊겨 있다", tc_108 },
+        { "TC-109", "FI-08 페달 채널 1이 가끔 끊김 (간헐 고장)", tc_109 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

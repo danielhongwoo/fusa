@@ -72,7 +72,7 @@ NASA의 지침서는 시간에 관한 요구사항을 따로 다룬다. 고장�
 
 ## 관통 예제에 적용
 
-요구사항의 원본은 `example/drive-torque/docs/requirements.yaml`이다. `SG-01` 아래에 functional safety requirement 5개, technical safety requirement 7개, software safety requirement 13개가 있다.
+요구사항의 원본은 `example/drive-torque/docs/requirements.yaml`이다. `SG-01` 아래에 functional safety requirement 5개, technical safety requirement 8개, software safety requirement 14개가 있다.
 
 요구사항 하나는 이렇게 생겼다.
 
@@ -108,7 +108,7 @@ NASA의 지침서는 시간에 관한 요구사항을 따로 다룬다. 고장�
 - 모든 software safety requirement에 test case가 있고, 그 test case가 test 코드에 있다
 - test 코드의 test case는 모두 어느 요구사항에 이어진다
 
-이 요구사항에는 알려진 빈틈이 있다. 실패와 통과가 번갈아 나오는 간헐 고장은 3번 이어지지 못해 판정되지 않는다. 요구사항을 이렇게 쓰는 순간 그 동작이 정해진 것이다. test (`TC-003`)는 이 동작을 그대로 확인한다. 요구사항의 빈틈은 test가 찾아 주지 않는다. 이 규칙은 검토에서도 의견이 갈렸다. 12장에서 다시 본다.
+이 요구사항에는 빈틈이 있다. 실패와 통과가 번갈아 나오는 간헐 고장은 3번 이어지지 못해 판정되지 않는다. 요구사항을 이렇게 쓰는 순간 그 동작이 정해진 것이다. 처음의 test (`TC-003`)는 이 동작을 그대로 확인했다. 요구사항의 빈틈은 test가 찾아 주지 않는다. 이 규칙은 검토에서도 의견이 갈렸고, 뒤에 간헐 고장을 따로 판정하는 요구사항 (`SWR-14`)을 더했다. 12장에서 다시 본다.
 
 ## sim이 보이는 것과 못 보이는 것
 

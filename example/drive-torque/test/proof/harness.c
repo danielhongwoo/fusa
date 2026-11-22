@@ -87,13 +87,16 @@ void prove_output_stage(void)
     }
 }
 
-/* 성질 4 (SWR-01, SWR-03, SWR-04): 안전한 페달 값은 0-1000이고, 고장은 풀리지 않으며, 고장이면 0이다 */
+/* 성질 4 (SWR-01, SWR-03, SWR-04, SWR-14): 안전한 페달 값은 0-1000이고, 고장은 풀리지 않으며, 고장이면 0이다.
+ * 최근 주기들의 기록과 적을 자리는 어떤 값이든 된다 (정하지 않은 변수를 CBMC는 모든 값으로 본다).
+ * memory의 값이 틀려도 배열 밖을 쓰지 않아야 한다 */
 void prove_pedal_check(void)
 {
     pedal_check_t st;
     inputs_t in;
     bool was_fault;
     permille_t pedal;
+    int bad_in_window = 0;
 
     st.bad_cycles = nondet_uint8();
     st.good_cycles = nondet_uint8();
@@ -116,6 +119,17 @@ void prove_pedal_check(void)
     }
     if (st.fault || !st.ready) {
         assert(pedal == 0);
+    }
+    /* 적을 자리는 한 주기 뒤에 범위 안에 있다 */
+    assert((st.window_pos >= 1) && (st.window_pos <= 100));
+    /* 기록에 실패가 10번을 넘게 남아 있으면 고장이다 */
+    for (int i = 0; i < 100; i++) {
+        if (st.window[i]) {
+            bad_in_window++;
+        }
+    }
+    if (bad_in_window > 10) {
+        assert(st.fault);
     }
 }
 

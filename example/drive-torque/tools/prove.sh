@@ -5,6 +5,7 @@
 #
 # CBMC는 시작 함수에서 닿지 않는 성질도 SUCCESS로 적는다.
 # 그래서 성질마다 따로 돌리고, 그 성질의 assert가 결과에 실제로 있는지를 함께 본다.
+# 반복문은 101번까지 펼친다 (가장 긴 반복이 100번이다). 그보다 길게 도는 반복이 있으면 실패한다.
 # CBMC는 qualification되지 않았다.
 
 INC="-Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor"
@@ -21,7 +22,8 @@ count=0
 for prop in $PROPS; do
     count=$((count + 1))
     out=$(cbmc $INC $SRC --function "$prop" \
-        --signed-overflow-check --div-by-zero-check --conversion-check --bounds-check 2>&1)
+        --signed-overflow-check --div-by-zero-check --conversion-check --bounds-check \
+        --unwind 101 --unwinding-assertions 2>&1)
     echo "==== $prop" >> "$REPORT"
     echo "$out" | grep -E '^\[|VERIFICATION' >> "$REPORT"
     reached=$(echo "$out" | grep -c "^\[$prop\.assertion\.[0-9]*\].*SUCCESS")

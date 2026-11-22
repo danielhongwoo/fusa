@@ -130,13 +130,93 @@ static void tc_003(void)
     }
     CHECK(st.fault);
 
-    /* 알려진 한계: 실패와 통과가 번갈아 나오는 간헐 고장은 판정되지 않는다 */
+    /* 실패와 통과가 번갈아 나오면 이어지는 횟수로는 판정되지 않는다.
+     * 그런 간헐 고장은 SWR-14 (TC-014)가 맡는다. 여기서는 실패 10번까지 판정이 없다는 것만 본다 */
     make_ready(&st);
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 10; i++) {
         (void)pedal_check_step(&st, &bad);
         (void)pedal_check_step(&st, &good);
     }
     CHECK(!st.fault);
+}
+
+/* 정해진 주기에만 검사에 실패하는 입력을 넣고, 처음 페달 고장이 된 주기를 돌려준다. 없으면 -1.
+ * is_bad(i)가 참인 주기에 두 채널이 어긋난다 */
+static int first_fault_cycle(pedal_check_t *st, int cycles, bool (*is_bad)(int))
+{
+    inputs_t good = inputs(apps1(300), apps2(300));
+    inputs_t bad = inputs(apps1(900), apps2(300));
+    int first = -1;
+
+    for (int i = 0; i < cycles; i++) {
+        permille_t pedal = pedal_check_step(st, is_bad(i) ? &bad : &good);
+        if (st->fault) {
+            CHECK_EQ(pedal, 0);
+            if (first < 0) {
+                first = i;
+            }
+        }
+    }
+    return first;
+}
+
+static bool every_8th(int i) { return (i % 8) == 7; }
+static bool every_10th(int i) { return (i % 10) == 9; }
+static bool every_11th(int i) { return (i % 11) == 10; }
+static bool every_2nd(int i) { return (i % 2) == 0; }
+/* 처음 20주기 안에 한 주기 걸러 10번 실패하고, 그 뒤 99번째 주기 (0부터 세어)에 한 번 더 */
+static bool ten_then_at_99(int i) { return ((i < 20) && ((i % 2) == 0)) || (i == 99); }
+static bool ten_then_at_100(int i) { return ((i < 20) && ((i % 2) == 0)) || (i == 100); }
+
+/* TC-014: SWR-14 최근 100주기 가운데 검사 실패가 10번을 넘으면 페달 고장으로 고정한다 */
+static void tc_014(void)
+{
+    pedal_check_t st;
+
+    /* 8주기마다 한 번 실패한다 (FI-07, FI-08의 모양). 이어지는 횟수로는 판정되지 않는다.
+     * 11번째 실패는 7 + 8 x 10 = 87번째 주기다. 그 주기에 고장이 된다 */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 400, every_8th), 87);
+    CHECK(st.fault);
+
+    /* 10주기마다 한 번 실패한다. 어느 100주기를 잡아도 실패가 10번이다. 넘지 않으므로 판정하지 않는다 */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 2000, every_10th), -1);
+    CHECK(!st.fault);
+    /* 11주기마다 한 번 실패한다. 실패가 기록의 자리를 옮겨 가며 적힌다.
+     * 오래된 실패가 기록에서 지워지지 않으면 쌓여서 고장이 된다 (10주기마다의 경우는 같은 자리만 덮어써서 그것을 보지 못한다) */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 2000, every_11th), -1);
+    CHECK(!st.fault);
+
+    /* 돌아보는 길이는 정확히 100주기다.
+     * 0 - 18번째 주기에 10번 실패한 뒤, 99번째 주기에 실패하면 0번째의 실패가 아직 기록에 있다: 11번 */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 300, ten_then_at_99), 99);
+    /* 100번째 주기에 실패하면 0번째의 실패는 기록에서 밀려났다: 10번 */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 300, ten_then_at_100), -1);
+
+    /* 켠 직후부터 한 주기 걸러 실패하면 검사를 3주기 이어서 통과하지 못한다.
+     * 그동안에도 실패를 센다. 11번째 실패는 20번째 주기다 */
+    pedal_check_init(&st);
+    CHECK_EQ(first_fault_cycle(&st, 100, every_2nd), 20);
+    CHECK(!st.ready);
+
+    /* 적을 자리의 값이 범위를 벗어나 있어도 (memory의 값이 틀려도) 배열 밖을 쓰지 않는다 */
+    make_ready(&st);
+    st.window_pos = 100u;
+    CHECK_EQ(first_fault_cycle(&st, 1, every_10th), -1);
+    CHECK_EQ(st.window_pos, 1);
+    st.window_pos = 255u;
+    CHECK_EQ(first_fault_cycle(&st, 1, every_10th), -1);
+    CHECK_EQ(st.window_pos, 1);
+    /* 기록의 값이 틀려 실패가 11번 들어 있으면 다음 주기에 고장이 된다 (안전한 쪽) */
+    make_ready(&st);
+    for (int i = 10; i < 21; i++) {
+        st.window[i] = true;
+    }
+    CHECK_EQ(first_fault_cycle(&st, 1, every_10th), 0);
 }
 
 /* TC-004: SWR-04 안전한 페달 값은 작은 쪽이고, 믿을 수 없으면 0이다 */
@@ -681,6 +761,7 @@ int main(void)
         { "TC-011", "입력이 바뀌어 토크를 올리는 동안에도 허용 토크가 앞서지 않는다", tc_011 },
         { "TC-012", "허용 토크는 지난 출력에서 25 Nm까지만 오른다", tc_012 },
         { "TC-013", "입력이 거듭 바뀌어도 틀린 기능의 토크는 55 Nm 넘게 앞서지 않는다", tc_013 },
+        { "TC-014", "최근 100주기 가운데 실패가 10번을 넘으면 페달 고장이다", tc_014 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

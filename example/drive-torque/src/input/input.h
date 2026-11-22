@@ -16,18 +16,23 @@ typedef struct {
     gear_t gear;
 } inputs_t;
 
+#define PEDAL_RELEASED      ((permille_t)30) /* 이 값 아래는 페달을 놓은 것으로 본다 */
+#define PEDAL_MISMATCH_MAX  ((permille_t)50) /* 두 채널의 차이가 이 값을 넘으면 불일치 */
+#define PEDAL_FAULT_CYCLES  ((uint8_t)3)     /* 검사 실패가 이만큼 이어지면 페달 고장 */
+#define PEDAL_READY_CYCLES  ((uint8_t)3)     /* 켠 뒤 이만큼 이어서 통과해야 페달 값을 쓴다 */
+/* 간헐 고장의 판정: 최근 100주기 (1초) 가운데 실패가 10번을 넘으면 페달 고장. 두 값은 임시다 */
+#define PEDAL_WINDOW_CYCLES  ((uint8_t)100)
+#define PEDAL_WINDOW_MAX_BAD ((uint8_t)10)
+
 /* 페달 검사의 상태 */
 typedef struct {
     uint8_t bad_cycles;  /* 검사에 실패한 주기가 몇 번 이어졌는가 */
     uint8_t good_cycles; /* 켠 뒤로 검사를 통과한 주기가 몇 번 이어졌는가 */
     bool ready;          /* 켠 뒤로 검사를 충분히 통과했는가 */
     bool fault;          /* 페달 고장으로 판정했는가. 다시 켤 때까지 유지한다 */
+    bool window[PEDAL_WINDOW_CYCLES]; /* 최근 주기들의 검사 결과. true가 실패다 */
+    uint8_t window_pos;  /* 다음 결과를 적을 자리 */
 } pedal_check_t;
-
-#define PEDAL_RELEASED      ((permille_t)30) /* 이 값 아래는 페달을 놓은 것으로 본다 */
-#define PEDAL_MISMATCH_MAX  ((permille_t)50) /* 두 채널의 차이가 이 값을 넘으면 불일치 */
-#define PEDAL_FAULT_CYCLES  ((uint8_t)3)     /* 검사 실패가 이만큼 이어지면 페달 고장 */
-#define PEDAL_READY_CYCLES  ((uint8_t)3)     /* 켠 뒤 이만큼 이어서 통과해야 페달 값을 쓴다 */
 
 void input_read(inputs_t *in);
 

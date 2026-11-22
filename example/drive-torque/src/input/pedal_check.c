@@ -36,12 +36,30 @@ static bool out_of_range(millivolt_t mv, millivolt_t low_mv, millivolt_t high_mv
     return (mv < low_mv) || (mv > high_mv);
 }
 
+/* 최근 주기들의 기록에서 실패의 수를 센다.
+ * 수를 따로 기억하지 않고 주기마다 다시 센다. 따로 기억하면 기록과 수가 어긋날 수 있다 */
+static uint8_t window_bad_count(const pedal_check_t *st)
+{
+    uint8_t count = 0u;
+
+    for (uint8_t i = 0u; i < PEDAL_WINDOW_CYCLES; i++) {
+        if (st->window[i]) {
+            count++;
+        }
+    }
+    return count;
+}
+
 void pedal_check_init(pedal_check_t *st)
 {
     st->bad_cycles = 0u;
     st->good_cycles = 0u;
     st->ready = false;
     st->fault = false;
+    for (uint8_t i = 0u; i < PEDAL_WINDOW_CYCLES; i++) {
+        st->window[i] = false;
+    }
+    st->window_pos = 0u;
 }
 
 permille_t pedal_check_step(pedal_check_t *st, const inputs_t *in)
@@ -74,6 +92,18 @@ permille_t pedal_check_step(pedal_check_t *st, const inputs_t *in)
         if (st->good_cycles >= PEDAL_READY_CYCLES) {
             st->ready = true;
         }
+    }
+
+    /* SWR-14: 최근 100주기 가운데 실패가 10번을 넘으면 페달 고장으로 고정한다.
+     * 이어지지 않고 가끔 실패하는 간헐 고장을 잡는다. 가장 오래된 결과를 덮어쓴다.
+     * 적을 자리가 범위를 벗어나 있으면 (memory의 값이 틀렸으면) 처음으로 돌린다 */
+    if (st->window_pos >= PEDAL_WINDOW_CYCLES) {
+        st->window_pos = 0u;
+    }
+    st->window[st->window_pos] = bad;
+    st->window_pos++;
+    if (window_bad_count(st) > PEDAL_WINDOW_MAX_BAD) {
+        st->fault = true;
     }
 
     /* SWR-04: 안전한 페달 값은 작은 쪽이다.

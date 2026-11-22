@@ -243,7 +243,8 @@ static void blip_and_fault(time_ms_t t_ms)
 /*
  * TC-205: SWR-13, SWR-08 fault injection FI-07
  * 페달을 끝까지 밟고 있는데 채널 1의 선이 80 ms마다 한 주기씩 끊긴다.
- * 입력 검사는 그 주기에 안전한 페달 값을 0으로 두지만, 3주기 이어지지 않으므로 고장으로 판정하지 않는다.
+ * 입력 검사는 그 주기에 안전한 페달 값을 0으로 두지만, 3주기 이어지지 않으므로 바로 판정하지 못한다.
+ * 간헐 고장의 판정 (SWR-14)은 11번째로 끊긴 때 (처음 끊긴 뒤 800 ms)에 난다. 그 전에 기능이 틀리는 경우를 본다.
  * 정상인 기능은 토크를 다 올리지 못하고 0에서 다시 시작한다. 그 중에 기능이 최대 토크를 요구한다.
  * 페달이 100%이므로 페달에서 나온 상한은 최대 토크이고, 상한만 보는 감시는 이 요구를 깎지 못한다.
  * 지난 출력에서 오르는 속도를 제한하는 감시는 깎고, 5주기 안에 고정한다.
@@ -262,10 +263,12 @@ static void tc_205(void)
     int worst_excess_ms = 0;
     double max_excess = 0.0;
 
-    /* 선이 끊기기만 하고 기능이 정상이면: 깎이지 않고, 페달 고장으로 판정하지도 않는다 */
+    /* 선이 끊기기만 하고 기능이 정상이면: 깎이지 않는다.
+     * 기능의 결함을 켜는 구간 (1400 - 1470 ms)과 고정까지의 50 ms 동안에는 페달 고장의 판정도 없다 */
     CHECK_EQ(log_ref[n_ref - 1].diag.clamp_count, 0);
     CHECK(!log_ref[n_ref - 1].diag.latched);
-    CHECK(!log_ref[n_ref - 1].diag.pedal_fault);
+    CHECK(!log_ref[1600].diag.pedal_fault);
+    CHECK(log_ref[n_ref - 1].diag.pedal_fault);
     CHECK_EQ(log_ref[1029].torque_out, 2500); /* 처음 끊기기 직전 */
     CHECK_EQ(log_ref[1039].torque_out, 0);    /* 끊긴 주기 */
     CHECK_EQ(log_ref[1109].torque_out, 1750); /* 다음에 끊길 때까지 7주기 동안 올린 값 */
