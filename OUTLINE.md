@@ -120,64 +120,64 @@ flowchart TD
 
 ## 4. 목차
 
-장마다 파일 하나가 `chapters/`에 있다. 장의 계획 (다룰 내용, 예제 산출물, 근거)은 각 파일의 앞부분에 있다.
+원고는 `chapters/`에, 장 계획 (다룰 내용, 예제 산출물, 근거, 상태)은 `plans/`에 장마다 파일 하나씩 있다. 두 폴더의 파일 이름은 같다.
 목표 쪽수는 채워야 하는 양이 아니라 넘지 않으려는 상한이다. 범위가 늘어나는 것을 막고 일정을 추정하는 데 쓴다. 합은 300쪽 안팎이고, 단계 1을 마친 뒤에 다시 본다.
 
 ### Part I. 사고방식과 기본 개념
 
-| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
-|---|---|---|---|
-| 1 | [소프트웨어가 사람을 다치게 할 때](chapters/ch01-accidents.md) | 소프트웨어는 닳지도 부러지지도 않는데 어떻게 사고를 일으키는가? | 12 |
-| 2 | [기본 개념과 용어](chapters/ch02-concepts-and-terms.md) | safety, reliability, availability, security는 어떻게 다른가? | 10 |
-| 3 | [Risk와 integrity level](chapters/ch03-risk-and-integrity-level.md) | 얼마나 안전해야 충분한가? 그 답이 어떻게 개발 방법의 엄격함으로 바뀌는가? | 12 |
-| 4 | [규격 지도와 규격 읽는 법](chapters/ch04-standards-map.md) | 규격은 왜 이렇게 많고 서로 어떤 관계인가? 규격 문장은 어떻게 읽어야 하는가? | 8-10 |
+| 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|---|
+| 1 | [소프트웨어가 사람을 다치게 할 때](chapters/ch01-accidents.md) | [계획](plans/ch01-accidents.md) | 소프트웨어는 닳지도 부러지지도 않는데 어떻게 사고를 일으키는가? | 12 |
+| 2 | [기본 개념과 용어](chapters/ch02-concepts-and-terms.md) | [계획](plans/ch02-concepts-and-terms.md) | safety, reliability, availability, security는 어떻게 다른가? | 10 |
+| 3 | [Risk와 integrity level](chapters/ch03-risk-and-integrity-level.md) | [계획](plans/ch03-risk-and-integrity-level.md) | 얼마나 안전해야 충분한가? 그 답이 어떻게 개발 방법의 엄격함으로 바뀌는가? | 12 |
+| 4 | [규격 지도와 규격 읽는 법](chapters/ch04-standards-map.md) | [계획](plans/ch04-standards-map.md) | 규격은 왜 이렇게 많고 서로 어떤 관계인가? 규격 문장은 어떻게 읽어야 하는가? | 8-10 |
 
 ### Part II. Hazard에서 소프트웨어 요구사항까지
 
-| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
-|---|---|---|---|
-| 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? | 10 |
-| 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 16 |
-| 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 16 |
-| 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? | 14 |
-| 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? | 8-10 |
+| 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|---|
+| 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | [계획](plans/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? | 10 |
+| 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | [계획](plans/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 16 |
+| 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | [계획](plans/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 16 |
+| 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | [계획](plans/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? | 14 |
+| 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | [계획](plans/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? | 8-10 |
 
 ### Part III. 안전한 소프트웨어 만들기
 
-| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
-|---|---|---|---|
-| 10 | [Software safety requirements](chapters/ch10-software-safety-requirements.md) | 검증할 수 있는 안전 요구사항은 어떻게 쓰는가? | 14 |
-| 11 | [Software architecture for safety](chapters/ch11-software-architecture.md) | 일부가 고장 나도 안전한 구조는 어떻게 만드는가? | 18 |
-| 12 | [Software safety mechanism](chapters/ch12-safety-mechanisms.md) | 고장을 제때 감지하고 반응하는 구체적 수단은 무엇인가? | 20 |
-| 13 | [Coding for safety](chapters/ch13-coding.md) | 언어와 코딩 습관은 안전에 얼마나 기여하는가? | 16 |
-| 14 | [플랫폼: RTOS, OS, multicore](chapters/ch14-platform.md) | 내 코드 아래에 있는 소프트웨어와 프로세서는 믿을 수 있는가? | 10 |
+| 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|---|
+| 10 | [Software safety requirements](chapters/ch10-software-safety-requirements.md) | [계획](plans/ch10-software-safety-requirements.md) | 검증할 수 있는 안전 요구사항은 어떻게 쓰는가? | 14 |
+| 11 | [Software architecture for safety](chapters/ch11-software-architecture.md) | [계획](plans/ch11-software-architecture.md) | 일부가 고장 나도 안전한 구조는 어떻게 만드는가? | 18 |
+| 12 | [Software safety mechanism](chapters/ch12-safety-mechanisms.md) | [계획](plans/ch12-safety-mechanisms.md) | 고장을 제때 감지하고 반응하는 구체적 수단은 무엇인가? | 20 |
+| 13 | [Coding for safety](chapters/ch13-coding.md) | [계획](plans/ch13-coding.md) | 언어와 코딩 습관은 안전에 얼마나 기여하는가? | 16 |
+| 14 | [플랫폼: RTOS, OS, multicore](chapters/ch14-platform.md) | [계획](plans/ch14-platform.md) | 내 코드 아래에 있는 소프트웨어와 프로세서는 믿을 수 있는가? | 10 |
 
 ### Part IV. 안전함을 보이고 유지하기
 
-| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
-|---|---|---|---|
-| 15 | [Verification 전략: review, 정적 분석, formal method](chapters/ch15-verification-strategy.md) | 테스트만으로 부족한 것은 무엇이고, 무엇으로 메우는가? | 12 |
-| 16 | [Testing](chapters/ch16-testing.md) | 언제 "충분히 테스트했다"고 말할 수 있는가? | 18 |
-| 17 | [Tool과 기존 소프트웨어](chapters/ch17-tools-and-existing-software.md) | 내가 만들지 않은 것 (compiler, code generator, library, open source)을 어떻게 믿는가? | 12 |
-| 18 | [변경, 형상, 릴리스 이후](chapters/ch18-change-and-configuration.md) | 한 번 안전하다고 보인 소프트웨어를 바꿀 때 무엇을 다시 해야 하는가? | 12 |
-| 19 | [Safety case와 assessment](chapters/ch19-safety-case.md) | 흩어진 산출물이 어떻게 "안전하다"는 하나의 주장이 되는가? | 12 |
+| 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|---|
+| 15 | [Verification 전략: review, 정적 분석, formal method](chapters/ch15-verification-strategy.md) | [계획](plans/ch15-verification-strategy.md) | 테스트만으로 부족한 것은 무엇이고, 무엇으로 메우는가? | 12 |
+| 16 | [Testing](chapters/ch16-testing.md) | [계획](plans/ch16-testing.md) | 언제 "충분히 테스트했다"고 말할 수 있는가? | 18 |
+| 17 | [Tool과 기존 소프트웨어](chapters/ch17-tools-and-existing-software.md) | [계획](plans/ch17-tools-and-existing-software.md) | 내가 만들지 않은 것 (compiler, code generator, library, open source)을 어떻게 믿는가? | 12 |
+| 18 | [변경, 형상, 릴리스 이후](chapters/ch18-change-and-configuration.md) | [계획](plans/ch18-change-and-configuration.md) | 한 번 안전하다고 보인 소프트웨어를 바꿀 때 무엇을 다시 해야 하는가? | 12 |
+| 19 | [Safety case와 assessment](chapters/ch19-safety-case.md) | [계획](plans/ch19-safety-case.md) | 흩어진 산출물이 어떻게 "안전하다"는 하나의 주장이 되는가? | 12 |
 
 ### Part V. 넓히기
 
-| 장 | 제목 | 핵심 질문 | 목표 쪽수 |
-|---|---|---|---|
-| 20 | [로봇: 기계류 안전의 방식](chapters/ch20-robots.md) | 사람 옆에서 움직이는 기계의 안전은 자동차와 무엇이 같고 무엇이 다른가? | 14 |
-| 21 | [드론: 운용 위험 기반의 방식](chapters/ch21-drones.md) | 동력을 끊는 것이 안전하지 않은 기계는 어떻게 안전해지는가? 제품이 아니라 운용을 기준으로 위험을 따지면 무엇이 달라지는가? | 14 |
-| 22 | [그 밖의 분야의 소프트웨어 안전 규격](chapters/ch22-other-domains.md) | 같은 문제를 다른 분야는 어떻게 다르게 푸는가? | 8 |
-| 23 | [Functional safety의 경계](chapters/ch23-boundaries.md) | 고장이 없어도 위험할 수 있다면, functional safety는 어디까지 책임지는가? | 8 |
-| 24 | [실무에 적용하기](chapters/ch24-in-practice.md) | 배운 것을 내 프로젝트에 어디서부터 적용할 것인가? | 6 |
+| 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
+|---|---|---|---|---|
+| 20 | [로봇: 기계류 안전의 방식](chapters/ch20-robots.md) | [계획](plans/ch20-robots.md) | 사람 옆에서 움직이는 기계의 안전은 자동차와 무엇이 같고 무엇이 다른가? | 14 |
+| 21 | [드론: 운용 위험 기반의 방식](chapters/ch21-drones.md) | [계획](plans/ch21-drones.md) | 동력을 끊는 것이 안전하지 않은 기계는 어떻게 안전해지는가? 제품이 아니라 운용을 기준으로 위험을 따지면 무엇이 달라지는가? | 14 |
+| 22 | [그 밖의 분야의 소프트웨어 안전 규격](chapters/ch22-other-domains.md) | [계획](plans/ch22-other-domains.md) | 같은 문제를 다른 분야는 어떻게 다르게 푸는가? | 8 |
+| 23 | [Functional safety의 경계](chapters/ch23-boundaries.md) | [계획](plans/ch23-boundaries.md) | 고장이 없어도 위험할 수 있다면, functional safety는 어디까지 책임지는가? | 8 |
+| 24 | [실무에 적용하기](chapters/ch24-in-practice.md) | [계획](plans/ch24-in-practice.md) | 배운 것을 내 프로젝트에 어디서부터 적용할 것인가? | 6 |
 
 ### 부록
 
-| 부록 | 제목 |
-|---|---|
-| A | [용어집](chapters/appendix-a-glossary.md) |
-| B | [규격 조항 대응표](chapters/appendix-b-clause-map.md) |
-| C | [관통 예제의 산출물](chapters/appendix-c-example-artifacts.md) |
-| D | [참고 문헌](chapters/appendix-d-references.md) |
-| E | [차량 E/E 최소 지식](chapters/appendix-e-vehicle-ee-basics.md) |
+| 부록 | 제목 (원고) | 장 계획 |
+|---|---|---|
+| A | [용어집](chapters/appendix-a-glossary.md) | [계획](plans/appendix-a-glossary.md) |
+| B | [규격 조항 대응표](chapters/appendix-b-clause-map.md) | [계획](plans/appendix-b-clause-map.md) |
+| C | [관통 예제의 산출물](chapters/appendix-c-example-artifacts.md) | [계획](plans/appendix-c-example-artifacts.md) |
+| D | [참고 문헌](chapters/appendix-d-references.md) | [계획](plans/appendix-d-references.md) |
+| E | [차량 E/E 최소 지식](chapters/appendix-e-vehicle-ee-basics.md) | [계획](plans/appendix-e-vehicle-ee-basics.md) |

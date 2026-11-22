@@ -1,0 +1,36 @@
+# 10장. Software safety requirements - 장 계획
+
+원고: [chapters/ch10-software-safety-requirements.md](../chapters/ch10-software-safety-requirements.md)
+
+| 항목 | 내용 |
+|---|---|
+| Part | III. 안전한 소프트웨어 만들기 |
+| 쓰는 단계 | 단계 1 (뼈대). 단계 2에서 깊게 고친다 |
+| 상태 | 미착수 |
+
+## 핵심 질문
+
+검증할 수 있는 안전 요구사항은 어떻게 쓰는가?
+
+## 다룰 내용
+
+- 좋은 요구사항의 속성: 명확성, 검증 가능성, 추적 가능성
+- 요구사항 표기법 (예: EARS)
+- 시간, 값의 범위, 고장 시 동작을 빠뜨리지 않는 법
+- 양방향 traceability
+- safety 요구사항과 그렇지 않은 요구사항의 공존
+
+## 검토에서 더한 항목 (2026-11-22)
+
+괄호 안은 지적 번호이고, 검토 기록은 `reviews/2026-11-22-plan/`에 있다. 규격의 내용에 관한 항목은 쓰기 전에 확인한다 (RULES.md 5절).
+
+- 요구사항 ID 체계와 요구사항을 YAML 파일로 관리하는 방법 (E-26)
+- 빠뜨리기 쉬운 항목에 startup과 reset 직후의 동작을 더한다 (E-06)
+
+## 예제 산출물
+
+software safety requirements, traceability 표
+
+## 근거
+
+ISO 26262-6, -8; IEC 61508-3
