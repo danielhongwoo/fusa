@@ -16,8 +16,8 @@ test를 두 묶음으로 돌렸다: 정상 경우 두 개만 있는 "부분" 묶
 | Apple clang 21.0.0 | 설치되어 있음 | `-fcoverage-mcdc`로 빌드된다. 보고서는 확인하지 않았다 |
 | clang-tidy | 설치되어 있음 | Homebrew의 LLVM에 들어 있다. 실행은 아직 하지 않았다 |
 | cmake, ninja, make, docker | 설치되어 있음 | - |
-| CBMC | 없음 | 설치해야 확인할 수 있다 |
-| cppcheck | 없음 | 설치해야 확인할 수 있다 |
+| CBMC 6.11.0 (Homebrew) | 저자가 설치함 | 감시 함수의 성질 두 개를 모든 32-bit 입력에 대해 증명했다. 일부러 넣은 결함 두 개를 반례와 함께 찾았다. 아래 "CBMC와 정적 분석" 절 |
+| cppcheck 2.22.0 (Homebrew) | 저자가 설치함 | `--enable=all`과 `--addon=misra`로 돌렸다. 아래 "CBMC와 정적 분석" 절 |
 | gcovr | 없음 | 보고서를 보기 좋게 만드는 도구. 없어도 측정은 된다 |
 
 ## 알게 된 것
@@ -32,6 +32,67 @@ test를 두 묶음으로 돌렸다: 정상 경우 두 개만 있는 "부분" 묶
 - unit test: 바깥의 framework를 받지 않고, 예제 안에 작은 test 틀을 둔다. `make check`가 다른 것을 내려받지 않고 돌게 하기 위해서다. 필요해지면 다시 정한다.
 - 이 도구들은 어느 것도 qualification되지 않았다. 17장의 tool 분류표에 그렇게 적는다.
 
+## CBMC와 정적 분석
+
+2026-11-22에 저자가 CBMC와 cppcheck를 설치한 뒤에 확인했다.
+
+### CBMC
+
+시제품에 토크 요구를 한도로 깎는 함수를 더하고, 증명할 성질을 assert로 적었다.
+
+```c
+/* 성질 1: 허용 토크는 어떤 페달 값에서도 0 이상, 최대 토크 이하다 */
+void prove_allowed_range(void)
+{
+    int32_t pedal = nondet_int32();
+    int32_t t = allowed_torque(pedal);
+    assert(t >= 0);
+    assert(t <= TORQUE_MAX);
+}
+
+/* 성질 2: 깎은 토크 요구는 어떤 입력에서도 감시를 통과하고 한도 이하다 */
+void prove_limited_output(void)
+{
+    int32_t cmd = nondet_int32();
+    int32_t pedal = nondet_int32();
+    bool valid = nondet_bool();
+    bool brake = nondet_bool();
+    int32_t out = limit_torque(cmd, pedal, valid, brake);
+    assert(!monitor_violation(out, pedal, valid, brake));
+    assert(out <= TORQUE_MAX + TOLERANCE);
+    if (!valid) { assert(out <= 0); }
+    if (brake) { assert(out <= BRAKE_LIMIT); }
+}
+```
+
+명령은 `cbmc monitor.c harness.c --function prove_limited_output --signed-overflow-check --div-by-zero-check --conversion-check`다.
+
+| 확인한 것 | 결과 |
+|---|---|
+| 성질 1, 성질 2 | 둘 다 증명되었다. 0.4초쯤 걸렸다 |
+| 계산 중의 signed overflow | 없다고 증명되었다. 페달 값을 범위 안으로 자른 뒤에 곱하기 때문이다 |
+| 결함 1: 페달 값을 자르지 않고 곱한다 | 곱셈의 overflow와 성질 위반을 찾았다. 반례: 페달 값 1208352769 |
+| 결함 2: 제동 때의 한도를 뺀다 | 성질 위반을 찾았다. 반례: 토크 요구 102, 페달 55, 브레이크 밟음 |
+
+### cppcheck와 clang-tidy
+
+| 도구 | 찾은 것 | 찾지 못한 것 |
+|---|---|---|
+| cppcheck `--enable=all` | 쓰이지 않는 함수, static으로 둘 수 있는 함수 | 결함 1의 overflow |
+| cppcheck `--addon=misra` | 규칙 15.5 (함수의 출구가 둘), 규칙 17.8 (parameter를 고쳐 씀). 규칙 번호만 나온다 | - |
+| clang-tidy (`bugprone-*`, `cert-*`, `clang-analyzer-*`) | 이름 없는 상수, 형이 같은 parameter가 나란히 있는 것 | 결함 1의 overflow |
+
+## CBMC와 정적 분석에서 알게 된 것
+
+- 세 도구가 찾는 것이 다르다. 결함 1의 overflow는 CBMC만 찾았다. 15장에서 도구마다 보는 것이 다르다는 예로 쓸 수 있다.
+- CBMC는 시작 함수에서 닿지 않는 함수의 성질도 "SUCCESS"로 적는다. 성질 1만 돌렸을 때 성질 2의 assert가 모두 SUCCESS로 나왔다. 증명되었다는 표시만 보면 안 되고, 그 성질에 실제로 닿았는지를 봐야 한다.
+- 증명이 빈 증명이 아닌지는 결함을 일부러 넣어 확인했다. 결함을 넣으면 실패해야 한다.
+- cppcheck의 MISRA 검사는 규칙의 문장 없이 번호만 낸다. 문장을 보려면 MISRA 문서가 있어야 한다 (PLAN.md 12절의 9번).
+- cppcheck의 MISRA 검사가 규칙 7.3을 여덟 곳에서 냈다. 그 줄에는 숫자의 접미사가 없으므로 거짓 경보로 보인다. 원인은 확인하지 않았다. 단계 0.5에서 본다.
+- CBMC가 증명한 것은 C 코드의 성질이다. compiler가 만든 기계어, 실행 시간, 하드웨어의 동작은 증명하지 않는다.
+
 ## 남은 것
 
-- CBMC와 cppcheck는 설치해야 확인할 수 있다. 설치는 저자의 허락을 받은 뒤에 한다.
+- 시제품은 임시 폴더에 있다. 단계 0.5에서 `example/drive-torque/`에 다시 만들고 `make check`에 넣는다.
+- cppcheck의 MISRA 검사가 낸 규칙 7.3의 원인을 확인한다.
+- gcovr는 설치하지 않았다. 보고서는 `gcov`의 출력으로 만든다.
