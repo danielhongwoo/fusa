@@ -54,6 +54,8 @@ static void tc_101(void)
         }
     }
     CHECK_EQ(bad, 0);
+    /* 출력을 쓰는 순서: 주기마다 구동 허용 신호를 먼저 쓰고 토크 요구를 보낸다 (docs/hsi.md 4절) */
+    CHECK_EQ((int)hal_sim_order_violations(), 0);
     CHECK_EQ(log_buf[2900].torque_out, 750);       /* 페달 30% -> 75 Nm */
     CHECK(log_buf[2900].speed_mps > 2.0);
     CHECK_EQ(log_buf[3020].torque_out, 0);         /* 페달을 놓으면 바로 0 */

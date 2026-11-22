@@ -105,6 +105,8 @@ static void tc_201(void)
         }
         CHECK_EQ(over_limit, 0);
         CHECK_EQ(after_latch_bad, 0);
+        /* 끊는 주기에도 구동 허용 신호를 토크 요구보다 먼저 쓴다 */
+        CHECK_EQ((int)hal_sim_order_violations(), 0);
         if (excess_ms > worst_excess_ms) {
             worst_excess_ms = excess_ms;
         }
@@ -315,6 +317,39 @@ static void tc_205(void)
            worst_latch_ms, max_excess, SG01_ACCEL_EXCESS, worst_excess_ms);
 }
 
+/*
+ * TC-206: SWR-05, SWR-08 fault injection FI-09
+ * 두 페달을 함께 밟고 있는데 (브레이크를 밟았으므로 토크는 0이어야 한다) 기능이 최대 토크를 요구한다.
+ * 기능이 정상이면 브레이크를 밟은 동안 스스로 0을 요구하므로, 감시가 브레이크를 보는지는 드러나지 않는다.
+ * 기능이 틀렸을 때에만 드러난다. 감시가 브레이크를 보지 않으면 페달 값만큼의 토크가 나간다.
+ */
+static void tc_206(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.5, false, GEAR_D },
+        { 1000u, 0.5, true, GEAR_D },
+    };
+    scenario_t sc = { "fi-09", 3000u, driver, 3, NULL, 0, switch_fault_on };
+    int n = run(&sc, log_fault, APP_FAULT_FULL, 0, T_FAULT);
+    int t_latch = first_latched(log_fault, n);
+    int nonzero = 0;
+
+    for (int i = 0; i < n; i++) {
+        /* 브레이크를 밟은 다음 주기부터는 기능이 무엇을 요구해도 토크가 나가지 않는다 */
+        if ((log_fault[i].t_ms >= 1010u)
+            && ((log_fault[i].torque_out != 0) || (log_fault[i].diag.torque_allowed != 0))) {
+            nonzero++;
+        }
+    }
+    CHECK_EQ(nonzero, 0);
+    CHECK_EQ(log_fault[999].torque_out, 1250); /* 브레이크를 밟기 전: 페달 50% */
+    CHECK(t_latch >= 0);
+    CHECK((t_latch - (int)T_FAULT) <= 50);
+    CHECK(!log_fault[n - 1].enable);
+    (void)scenario_write_csv("build/out/fi-09.csv", log_fault, n);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -323,6 +358,7 @@ int main(void)
         { "TC-203", "FI-05 기능이 토크를 덜 냄 (SG-01의 범위 밖)", tc_203 },
         { "TC-204", "FI-06 후진에서 기능이 최대 토크를 요구", tc_204 },
         { "TC-205", "FI-07 입력이 거듭 튀는 동안 기능이 최대 토크를 요구", tc_205 },
+        { "TC-206", "FI-09 브레이크를 밟고 있는데 기능이 최대 토크를 요구", tc_206 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

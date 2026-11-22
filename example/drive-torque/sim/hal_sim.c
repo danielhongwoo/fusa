@@ -28,6 +28,9 @@ static struct {
     bool enable_out;
     uint8_t warning_out;
     hal_diag_t diag_out;
+    /* 출력을 쓴 순서: 같은 순간 (1 ms) 안에서 구동 허용 신호를 쓰기 전에 토크 요구를 보낸 횟수 */
+    bool enable_written_this_tick;
+    uint32_t order_violations;
 } sim;
 
 /* 두 채널은 특성이 다르다: 채널 1은 0.5 - 4.5 V, 채널 2는 0.25 - 2.25 V */
@@ -103,12 +106,15 @@ void hal_sim_init(plant_t *plant)
     sim.enable_out = true; /* 켠 직후의 출력은 알 수 없다고 보고 나쁜 쪽으로 둔다 */
     sim.warning_out = 0u;
     sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u };
+    sim.enable_written_this_tick = false;
+    sim.order_violations = 0u;
     update_sensors();
 }
 
 void hal_sim_step(time_ms_t t_ms)
 {
     sim.now_ms = t_ms;
+    sim.enable_written_this_tick = false;
     update_sensors();
     update_messages();
 }
@@ -132,6 +138,7 @@ void hal_sim_clear_faults(void)
 
 torque_t hal_sim_last_torque(void) { return sim.torque_out; }
 bool hal_sim_enable(void) { return sim.enable_out; }
+uint32_t hal_sim_order_violations(void) { return sim.order_violations; }
 uint8_t hal_sim_warning(void) { return sim.warning_out; }
 const hal_diag_t *hal_sim_diag(void) { return &sim.diag_out; }
 
@@ -179,6 +186,11 @@ bool hal_can_rx_inverter(hal_inverter_status_t *status, time_ms_t *age_ms)
 
 void hal_can_tx_torque(torque_t torque)
 {
+    /* 제품은 구동 허용 신호를 먼저 쓰고 토크 요구를 보내야 한다 (docs/hsi.md 4절).
+     * sim에는 CAN의 지연이 없어 순서가 결과에 나타나지 않으므로, 순서 자체를 센다 */
+    if (!sim.enable_written_this_tick) {
+        sim.order_violations++;
+    }
     sim.torque_out = torque;
     plant_send_torque(sim.plant, (double)torque / 10.0);
 }
@@ -190,6 +202,7 @@ void hal_can_tx_warning(uint8_t level)
 
 void hal_enable_write(bool on)
 {
+    sim.enable_written_this_tick = true;
     sim.enable_out = on;
     plant_send_enable(sim.plant, on);
 }

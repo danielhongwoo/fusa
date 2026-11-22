@@ -30,6 +30,8 @@ void hal_sim_clear_faults(void);
 /* VCU가 내보낸 것을 본다 */
 torque_t hal_sim_last_torque(void);
 bool hal_sim_enable(void);
+/* 구동 허용 신호를 쓰기 전에 토크 요구를 보낸 횟수. 제품이 출력을 쓰는 순서를 test가 보는 데 쓴다 */
+uint32_t hal_sim_order_violations(void);
 uint8_t hal_sim_warning(void);
 const hal_diag_t *hal_sim_diag(void);
 

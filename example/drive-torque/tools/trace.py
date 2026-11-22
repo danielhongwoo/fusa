@@ -104,6 +104,8 @@ def main():
         by_id[rid] = r
         if not r.get("text"):
             problem("%s: 문장 (text)이 없다" % rid)
+        if rid.startswith("SG-") and "status" in r:
+            problem("%s: safety goal에는 status를 적지 않는다. 구현 예정은 그 아래의 요구사항에 적는다" % rid)
         if r.get("status", "planned") != "planned":
             problem("%s: status에는 planned만 쓸 수 있다. 구현한 요구사항에는 status를 적지 않는다" % rid)
     planned = sorted(rid for rid, r in by_id.items() if r.get("status") == "planned")
