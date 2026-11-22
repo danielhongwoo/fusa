@@ -41,6 +41,11 @@ static void task_input(vcu_t *vcu)
 {
     hal_rx_t rx;
 
+    /* SWR-21: 지난 주기에 쓴 구동 허용 신호를 되읽어 견준다. 쓴 대로 나가지 않았으면 구동 허용 차단의 사건이다.
+     * 켠 뒤의 처음 주기들에는 끊으라고 쓴 것을 되읽는다. 끊기는 것을 확인하기 전에는 허용하지 않게 된다 */
+    if (hal_enable_readback() != vcu->enable) {
+        reaction_raise(&vcu->reaction, REACTION_CUT);
+    }
     input_read(&vcu->in);
     /* SWR-18: 받은 메시지는 검사를 통과한 것만 쓴다. 무효이면 마지막 값을 쓰지 않는다 */
     hal_can_rx_speed(&rx);

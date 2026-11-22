@@ -24,6 +24,8 @@ typedef enum {
     FAULT_INVERTER_TORQUE_OFFSET, /* inverter가 요구보다 param (0.1 Nm)만큼 더 냄 */
     FAULT_INVERTER_REPORT_OFFSET, /* inverter가 알리는 토크가 실제보다 param (0.1 Nm)만큼 큼 */
     FAULT_INVERTER_REPORT_STALE,  /* inverter가 알리는 토크가 한 주기 (10 ms) 전의 값임. 고장이 아니라 느린 경우다 */
+    FAULT_ENABLE_STUCK_ON,   /* 구동 허용 신호의 선이 허용에 고착됨 (전원에 닿음) */
+    FAULT_ENABLE_OPEN,       /* 구동 허용 신호의 선이 끊김. inverter는 끊긴 것으로 본다 */
     FAULT_TASK_SKIP,         /* task 하나가 실행되지 않음. param은 task table의 몇 번째인가 (0부터) */
     FAULT_TASK_STOP,         /* task가 하나도 실행되지 않음 (MCU가 멈춤) */
     FAULT_TASK_SLOW,         /* task의 주기가 두 배로 늘어남 (clock의 고장) */

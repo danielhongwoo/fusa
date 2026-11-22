@@ -395,6 +395,60 @@ static void tc_207(void)
     CHECK(!log_fault[n - 1].enable);          /* 기능의 고장으로 구동 허용 차단까지 간다 */
 }
 
+/* TC-208이 쓰는 시간표: 달리는 중에 구동 허용 신호의 선이 허용에 고착되고, 500 ms 뒤에 기능의 결함이 켜진다 */
+static void stick_enable_and_fault(time_ms_t t_ms)
+{
+    if (t_ms == 1500u) {
+        hal_sim_set_fault(FAULT_ENABLE_STUCK_ON, 0);
+    }
+    switch_fault_on(t_ms);
+}
+
+/*
+ * TC-208: SWR-21 fault injection FI-29
+ * 달리는 중에 구동 허용 신호의 선이 허용에 고착된다. 허용이라고 쓰는 동안에는 되읽은 값이 쓴 값과 같아서
+ * 드러나지 않는다 (숨은 고장). 그 뒤에 기능이 100 Nm 더 큰 토크를 요구한다 (fault 둘).
+ * 출력 단계가 구동 허용 차단으로 가지만 선은 끊기지 않는다. 구동을 막는 것은 토크 요구 0이다.
+ * 끊는 길이 둘이어서 하나가 죽어도 SG-01이 지켜진다. 켤 때의 되읽기 (FI-27)는 이 숨은 고장을 다음 운행 전에 드러낸다.
+ */
+static void tc_208(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    scenario_t sc_ref = { "fi-29-ref", 3000u, driver, 2, NULL, 0, switch_fault_on };
+    scenario_t sc = { "fi-29", 3000u, driver, 2, NULL, 0, stick_enable_and_fault };
+    int n_ref = run(&sc_ref, log_ref, APP_FAULT_NONE, 0, T_FAULT);
+    int n = run(&sc, log_fault, APP_FAULT_OFFSET, 1000, T_FAULT);
+    int t_latch = first_latched(log_fault, n);
+    int excess_ms = 0;
+    double max_excess = 0.0;
+
+    CHECK_EQ(n, n_ref);
+    /* 고착된 뒤 기능의 결함이 켜지기 전까지는 아무것도 달라지지 않는다 */
+    CHECK_EQ(log_fault[T_FAULT - 1u].torque_out, 750);
+    CHECK_EQ(log_fault[T_FAULT - 1u].warning, 0);
+    CHECK(!log_fault[T_FAULT - 1u].diag.latched);
+    CHECK(t_latch >= (int)T_FAULT);
+    CHECK((t_latch - (int)T_FAULT) <= 50);
+    for (int i = 0; i < n; i++) {
+        double excess = log_fault[i].accel_mps2 - log_ref[i].accel_mps2;
+        if (excess > max_excess) {
+            max_excess = excess;
+        }
+        if (excess > SG01_ACCEL_EXCESS) {
+            excess_ms++;
+        }
+    }
+    CHECK_EQ(excess_ms, 0);
+    CHECK_EQ(log_fault[n - 1].torque_out, 0);
+    CHECK(!log_fault[n - 1].enable); /* VCU는 끊으라고 쓴다. 선이 따르지 않을 뿐이다 */
+    CHECK_EQ(log_fault[n - 1].warning, 2);
+    CHECK(log_fault[n - 1].torque_act_nm < 0.01);
+    printf("  측정 FI-29: 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n", max_excess, excess_ms);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -405,6 +459,7 @@ int main(void)
         { "TC-205", "FI-07 입력이 거듭 튀는 동안 기능이 최대 토크를 요구", tc_205 },
         { "TC-206", "FI-09 브레이크를 밟고 있는데 기능이 최대 토크를 요구", tc_206 },
         { "TC-207", "FI-12 브레이크 접점 하나가 고착된 채 기능이 최대 토크를 요구", tc_207 },
+        { "TC-208", "FI-29 구동 허용 신호의 선이 고착된 채 기능이 큰 토크를 요구", tc_208 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

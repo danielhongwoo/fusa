@@ -54,6 +54,9 @@ void hal_can_tx_warning(uint8_t level);
 /* 구동 허용 신호 (CAN과 별개의 선). false면 inverter는 토크를 내지 않는다 */
 void hal_enable_write(bool on);
 
+/* 구동 허용 신호의 선을 되읽는다. 참이면 선이 허용 상태다. 외부 watchdog을 지난 뒤의 선을 읽는다 */
+bool hal_enable_readback(void);
+
 /* 외부 watchdog에 답을 쓴다. watchdog은 정해진 창 안에 옳은 답을 받지 못하면 구동 허용 신호를 끊는다.
  * 답의 규칙은 docs/hsi.md 3절에 있다 */
 void hal_watchdog_write(uint8_t answer);

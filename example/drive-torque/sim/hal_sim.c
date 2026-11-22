@@ -172,10 +172,22 @@ static bool enable_line(void)
     return sim.enable_out && (!sim.wd_present || (sim.wd_armed && !sim.wd_tripped));
 }
 
+/* inverter에 닿는 선의 값. 선의 고장이 있으면 VCU와 watchdog이 무엇을 하든 그 값이다 */
+static bool enable_wire(void)
+{
+    if (sim.fault_on[FAULT_ENABLE_STUCK_ON]) {
+        return true;
+    }
+    if (sim.fault_on[FAULT_ENABLE_OPEN]) {
+        return false;
+    }
+    return enable_line();
+}
+
 static void watchdog_trip(void)
 {
     sim.wd_tripped = true;
-    plant_send_enable(sim.plant, false);
+    plant_send_enable(sim.plant, enable_wire());
 }
 
 /* watchdog이 기다리는 답. 제품의 코드 (src/flow/flow.c)와 따로 적었다:
@@ -211,6 +223,7 @@ void hal_sim_set_fault(fault_id_t fault, int32_t param)
     }
     sim.fault_on[fault] = true;
     sim.fault_param[fault] = param;
+    plant_send_enable(sim.plant, enable_wire());
 }
 
 void hal_sim_clear_faults(void)
@@ -220,13 +233,14 @@ void hal_sim_clear_faults(void)
         sim.fault_param[i] = 0;
     }
     sim.plant->torque_offset_nm = 0.0;
+    plant_send_enable(sim.plant, enable_wire());
 }
 
 void hal_sim_inverter_check(bool on) { sim.plant->check_frames = on; }
 void hal_sim_watchdog_present(bool present)
 {
     sim.wd_present = present;
-    plant_send_enable(sim.plant, sim.enable_out && (!sim.wd_present || (sim.wd_armed && !sim.wd_tripped)));
+    plant_send_enable(sim.plant, enable_wire());
 }
 bool hal_sim_watchdog_tripped(void) { return sim.wd_tripped; }
 bool hal_sim_fault_on(fault_id_t fault) { return sim.fault_on[fault]; }
@@ -331,7 +345,12 @@ void hal_enable_write(bool on)
 {
     sim.enable_written_this_tick = true;
     sim.enable_out = on;
-    plant_send_enable(sim.plant, enable_line());
+    plant_send_enable(sim.plant, enable_wire());
+}
+
+bool hal_enable_readback(void)
+{
+    return enable_wire();
 }
 
 void hal_watchdog_write(uint8_t answer)
@@ -347,7 +366,7 @@ void hal_watchdog_write(uint8_t answer)
         sim.wd_armed = true;
         sim.wd_question = (sim.wd_question + 1u) & 0xFFu;
         sim.wd_last_ms = sim.now_ms;
-        plant_send_enable(sim.plant, enable_line());
+        plant_send_enable(sim.plant, enable_wire());
     }
 }
 

@@ -50,6 +50,11 @@ uint8_t flow_answer(const flow_t *f, torque_t allowed, torque_t out)
 
 void flow_next(flow_t *f)
 {
+    /* 표시의 값도 지운다. 남겨 두면 다음 주기에 task가 빠져도 지난 주기의 표시가 그 자리를 채워,
+     * 답이 옳게 나온다 */
+    for (uint8_t i = 0u; i < FLOW_TASK_COUNT; i++) {
+        f->marks[i] = 0u;
+    }
     f->count = 0u;
     f->question = (uint8_t)((f->question + 1u) & 0xFFu);
 }

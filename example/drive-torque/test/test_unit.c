@@ -1333,9 +1333,19 @@ static void tc_021(void)
     CHECK_EQ(flow_answer(&f, -5, 3), 253);
     CHECK_EQ(flow_answer(&f, -5, -3), 253);
 
-    /* 주기를 닫으면 표시가 지워지고 질문의 번호가 오른다 */
+    /* 주기를 닫으면 표시가 지워지고 질문의 번호가 오른다. 표시의 값도 남지 않는다 */
     flow_next(&f);
     CHECK(!flow_check(&f));
+    CHECK_EQ(f.marks[0], 0);
+    CHECK_EQ(f.marks[1], 0);
+    CHECK_EQ(f.marks[2], 0);
+    /* task 하나가 빠진 주기의 답은 옳은 답 (97)이 아니다. 지난 주기의 표시가 빈 자리를 채우지 않는다 */
+    flow_mark(&f, 1u);
+    flow_mark(&f, 2u);
+    CHECK(flow_answer(&f, 800, 750) != 97);
+    flow_mark(&f, 3u);
+    flow_next(&f);
+    f.question = 1u;
     mark3(&f, 1u, 2u, 3u);
     CHECK(flow_check(&f));
     CHECK_EQ(flow_answer(&f, 800, 750), 97); /* 1번 질문: (29791 + 1026)의 아래 8 bit */

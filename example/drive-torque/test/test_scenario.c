@@ -1132,6 +1132,67 @@ static void tc_123(void)
 static int is_watchdog_tripped(const sample_t *s) { return s->watchdog_tripped; }
 
 /*
+ * TC-128: SWR-21 fault injection FI-27
+ * 켜기 전부터 구동 허용 신호의 선이 허용 쪽에 고착되어 있다 (전원에 닿았다). 달리는 동안에는 드러나지 않는 고장이다.
+ * VCU는 켤 때 끊으라고 쓰고, 첫 주기에 되읽는다. 허용으로 읽히므로 구동 허용 차단으로 가고 경고한다.
+ * 끊는 길이 죽은 채로는 출발하지 않는다.
+ */
+static void tc_128(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    fault_event_t fault = { 0u, FAULT_ENABLE_STUCK_ON, 0 };
+    scenario_t sc = { "fi-27", 2000u, driver, 2, &fault, 1, NULL };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int bad = 0;
+
+    for (int i = 0; i < n; i++) {
+        const sample_t *s = &log_buf[i];
+        /* 첫 주기부터 구동 허용 차단이다: 토크 0, 경고. VCU는 끝까지 허용을 쓰지 않는다 */
+        if (!s->diag.latched || (s->torque_out != 0) || s->enable || (s->warning != 2u)) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+    CHECK(log_buf[n - 1].speed_mps < 0.01);
+}
+
+/*
+ * TC-129: SWR-21 fault injection FI-28
+ * 달리는 중에 구동 허용 신호의 선이 끊긴다. inverter는 끊긴 것으로 보고 토크를 내지 않는다 (구동력을 잃는다).
+ * VCU는 허용이라고 썼는데 다음 주기에 끊김으로 읽는다. 구동 허용 차단으로 가고 경고한다.
+ * 구동력을 잃은 것을 운전자가 경고로 알게 된다 (SG-02의 둘째 구절).
+ */
+static void tc_129(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    int worst_warn_ms = 0;
+
+    for (time_ms_t phase = 0u; phase < 10u; phase++) {
+        fault_event_t fault = { T_FAULT + phase, FAULT_ENABLE_OPEN, 0 };
+        scenario_t sc = { "fi-28", 3000u, driver, 2, &fault, 1, NULL };
+        int n = scenario_run(&sc, log_buf, LOG_CAP);
+        int t_cut = first_time(log_buf, n, 0u, is_latched);
+
+        CHECK(t_cut >= (int)fault.t_ms);
+        CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
+        CHECK_EQ(log_buf[t_cut - 1].warning, 0);
+        CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+        if ((t_cut - (int)fault.t_ms) > worst_warn_ms) {
+            worst_warn_ms = t_cut - (int)fault.t_ms;
+        }
+    }
+    /* 다음 주기의 되읽기에서 드러난다: 가장 나빠도 10 ms */
+    CHECK(worst_warn_ms <= 10);
+    printf("  측정 FI-28: 선이 끊긴 때부터 구동 허용 차단과 경고까지 가장 나쁜 경우 %d ms\n", worst_warn_ms);
+}
+
+/*
  * TC-124: SWR-20 fault injection FI-23
  * 달리는 중에 입력을 읽는 task가 실행되지 않게 된다. 기능과 감시는 지난 입력으로 계속 돈다.
  * 100 ms 뒤에 운전자가 페달을 놓지만 VCU는 그것을 읽지 못한다.
@@ -1215,6 +1276,9 @@ static void tc_125(void)
         CHECK(t_trip >= (int)T_FAULT);
         CHECK((t_trip - (int)T_FAULT) <= 16);
         CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+        /* watchdog이 끊은 것을 VCU가 아는가 (SWR-21). 입력의 task와 출력의 task가 살아 있으면
+         * 다음 주기의 되읽기에서 드러나 구동 허용 차단과 경고가 된다. 출력의 task가 죽었으면 경고를 쓰지 못한다 */
+        CHECK_EQ(log_buf[n - 1].warning, ((k == 0) || (k == 2)) ? 2 : 0);
         if ((t_trip - (int)T_FAULT) > worst_trip_ms) {
             worst_trip_ms = t_trip - (int)T_FAULT;
         }
@@ -1273,6 +1337,8 @@ int main(void)
         { "TC-124", "FI-23 입력을 읽는 task가 실행되지 않음", tc_124 },
         { "TC-125", "FI-24 task가 빠지거나 모두 멈춤", tc_125 },
         { "TC-126", "FI-25 task의 주기가 두 배로 늘어남", tc_126 },
+        { "TC-128", "FI-27 켜기 전부터 구동 허용 신호의 선이 허용에 고착", tc_128 },
+        { "TC-129", "FI-28 달리는 중에 구동 허용 신호의 선이 끊김", tc_129 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

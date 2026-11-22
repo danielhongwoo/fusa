@@ -122,6 +122,10 @@ static void tc_127(void)
     CHECK(log_fault[n - 1].torque_act_nm < 0.01);
     CHECK(max_excess < 1.0);
     CHECK_EQ(excess_ms, 0);
+    /* watchdog이 끊은 것은 다음 주기의 되읽기 (SWR-21)에서 드러난다: 허용이라고 썼는데 끊김으로 읽힌다 */
+    CHECK_EQ(log_fault[T_FAULT + 9u].warning, 0);
+    CHECK_EQ(log_fault[T_FAULT + 10u].warning, 2);
+    CHECK(log_fault[T_FAULT + 10u].diag.latched);
     printf("  측정 FI-26: fault부터 watchdog이 끊을 때까지 %d ms, 가속의 차이는 가장 클 때 %.2f m/s^2, "
            "1.0 m/s^2를 넘은 시간 %d ms\n", t_trip - (int)T_FAULT, max_excess, excess_ms);
 }

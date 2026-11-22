@@ -153,6 +153,15 @@ MUTANTS = [
      "inverter의 상태를 다른 종류의 data ID로 검사한다"),
     ("src/vcu/vcu.c", "vcu->speed = vcu->speed_valid ? rx.frame.value : 0;", "vcu->speed = rx.frame.value;",
      "무효인 차량 속도의 값을 그대로 쓴다"),
+    ("src/vcu/vcu.c", "    if (hal_enable_readback() != vcu->enable) {\n        reaction_raise(&vcu->reaction, REACTION_CUT);\n    }\n", "",
+     "구동 허용 신호를 되읽지 않는다"),
+    ("src/vcu/vcu.c", "    if (hal_enable_readback() != vcu->enable) {\n        reaction_raise(&vcu->reaction, REACTION_CUT);",
+     "    if (hal_enable_readback() != vcu->enable) {\n        reaction_raise(&vcu->reaction, REACTION_ZERO);",
+     "되읽은 값이 어긋나도 구동 허용 차단으로 가지 않고 토크 0으로만 간다"),
+    ("src/vcu/vcu.c", "    if (hal_enable_readback() != vcu->enable) {", "    if (hal_enable_readback() && !vcu->enable) {",
+     "허용이라고 썼는데 끊김으로 읽히는 쪽을 보지 않는다"),
+    ("src/vcu/vcu.c", "    if (hal_enable_readback() != vcu->enable) {", "    if (!hal_enable_readback() && vcu->enable) {",
+     "끊으라고 썼는데 허용으로 읽히는 쪽을 보지 않는다"),
     ("src/flow/flow.c", "    if (f->count < FLOW_TASK_COUNT) {\n        f->marks[f->count] = mark;",
      "    if (f->count <= FLOW_TASK_COUNT) {\n        f->marks[f->count] = mark;",
      "표시를 적을 자리의 범위 검사가 하나 어긋난다 (배열의 바로 뒤에 쓴다)"),
@@ -176,7 +185,9 @@ MUTANTS = [
      "후진 쪽으로 넘는 토크를 보지 않는다"),
     ("src/flow/flow.c", "torque_t limit = (allowed < 0) ? 0 : allowed;", "torque_t limit = allowed;",
      "음수인 허용 토크를 0으로 자르지 않는다"),
-    ("src/flow/flow.c", "    f->count = 0u;\n    f->question = (uint8_t)", "    f->question = (uint8_t)", "주기를 닫을 때 표시를 지우지 않는다"),
+    ("src/flow/flow.c", "    f->count = 0u;\n    f->question = (uint8_t)", "    f->question = (uint8_t)", "주기를 닫을 때 표시의 수를 지우지 않는다"),
+    ("src/flow/flow.c", "    for (uint8_t i = 0u; i < FLOW_TASK_COUNT; i++) {\n        f->marks[i] = 0u;\n    }\n    f->count = 0u;\n    f->question = (uint8_t)",
+     "    f->count = 0u;\n    f->question = (uint8_t)", "주기를 닫을 때 표시의 값을 지우지 않는다"),
     ("src/flow/flow.c", "    f->count = 0u;\n    f->question = (uint8_t)((f->question + 1u) & 0xFFu);\n", "    f->count = 0u;\n",
      "질문의 번호를 올리지 않는다"),
     ("src/vcu/vcu.c", "    flow_mark(&vcu->flow, FLOW_MARK_INPUT);\n", "", "입력의 task가 표시를 남기지 않는다"),
@@ -358,7 +369,7 @@ EQUIVALENT = [
      "출력과 진단 메시지는 같다"),
     ("src/vcu/vcu.c", "    if (ok) {\n        hal_watchdog_write(", "    if (ok || !ok) {\n        hal_watchdog_write(",
      "task의 순서가 틀려도 외부 watchdog에 답을 쓴다",
-     "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 남은 표시에서 만들므로 (flow_answer), 순서가 틀리면 답도 "
+     "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 그 주기에 남은 표시에서 만들므로 (flow_answer), 순서가 틀리면 답도 "
      "틀리게 나오고 watchdog이 끊는다. 다만 표시가 틀렸는데 답이 우연히 같은 조합이 있다 (답이 8 bit다). "
      "그 조합에서는 이 줄이 유일한 보호이므로 엄밀하게는 동등하지 않다. 순서가 틀린 표시의 답이 옳은 답과 "
      "다르다는 것은 unit test (TC-021)가 값 하나로 본다"),
