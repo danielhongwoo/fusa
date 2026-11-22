@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+"""문서 검사 도구.
+
+사용법:
+    tools/lint            단계 중에 쓰는 검사
+    tools/lint --final    최종 원고 검사. "(확인 필요)"가 남아 있으면 실패한다
+
+검사하는 것:
+    1. 문자: ASCII와 한글 이외의 문자가 없는가 (RULES.md 3.1절)
+    2. 원고와 장 계획의 짝: chapters/와 plans/의 파일 이름이 같은가
+    3. 원고의 제목: 장 번호와 필수 제목이 있는가 (RULES.md 2절)
+    4. "(확인 필요)"의 개수 (RULES.md 5.2절)
+    5. 링크: 문서 사이의 상대 링크가 깨지지 않았는가
+    6. Mermaid: 다이어그램 종류, 묶음의 짝, 괄호와 따옴표의 짝
+    7. code block의 짝, SVG의 형식
+
+Mermaid는 구문의 기본만 검사한다. 실제로 그려지는지는 브라우저에서 따로 확인한다.
+"""
+import os
+import re
+import subprocess
+import sys
+import xml.dom.minidom
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FINAL = "--final" in sys.argv[1:]
+
+NOT_ALLOWED = re.compile("[^\x00-\x7F\uAC00-\uD7A3\u3130-\u318F]")  # ASCII와 한글만 허용
+BINARY_EXT = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".zip", ".gz")
+PLACEHOLDER = "아직 쓰지 않았다."
+UNCONFIRMED = "(확인 필요)"
+SECONDARY = "(2차 자료)"
+H_QUESTION = "## 핵심 질문"
+H_MISTAKES = "## 흔한 오해"
+H_EXERCISES = "## 확인 문제"
+CHAPTER_WORD = "장"
+
+MERMAID_TYPES = ("flowchart", "graph", "sequenceDiagram", "stateDiagram", "classDiagram",
+                 "erDiagram", "gantt", "pie", "timeline", "mindmap", "quadrantChart",
+                 "xychart-beta", "block-beta")
+SEQ_OPENERS = ("par", "alt", "opt", "loop", "rect", "critical", "break")
+
+errors = []
+warnings = []
+
+
+def err(path, line, msg):
+    errors.append("%s:%s: %s" % (path, line, msg))
+
+
+def warn(path, line, msg):
+    warnings.append("%s:%s: %s" % (path, line, msg))
+
+
+def list_files():
+    out = subprocess.run(["git", "ls-files", "-co", "--exclude-standard"], cwd=ROOT,
+                         stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout
+    return sorted(f for f in out.split("\n") if f and os.path.isfile(os.path.join(ROOT, f)))
+
+
+def read(path):
+    with open(os.path.join(ROOT, path), "rb") as f:
+        data = f.read()
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+def check_chars(path, text):
+    for n, line in enumerate(text.split("\n"), 1):
+        m = NOT_ALLOWED.search(line)
+        if m:
+            err(path, n, "ASCII와 한글 이외의 문자 U+%04X" % ord(m.group(0)))
+
+
+def check_fences(path, text):
+    n = sum(1 for line in text.split("\n") if line.lstrip().startswith("```"))
+    if n % 2:
+        err(path, "-", "code block의 시작과 끝이 맞지 않는다")
+
+
+def check_links(path, text):
+    base = os.path.dirname(os.path.join(ROOT, path))
+    in_code = False
+    for n, line in enumerate(text.split("\n"), 1):
+        if line.lstrip().startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        for m in re.finditer(r"\]\(([^)\s]+)\)", line):
+            target = m.group(1).split("#", 1)[0]
+            if not target or re.match(r"^[a-z]+:", target):
+                continue
+            if not os.path.exists(os.path.normpath(os.path.join(base, target))):
+                err(path, n, "깨진 링크: %s" % m.group(1))
+
+
+def balanced(line):
+    stack = []
+    pairs = {")": "(", "]": "[", "}": "{"}
+    in_quote = False
+    for ch in line:
+        if ch == '"':
+            in_quote = not in_quote
+        elif in_quote:
+            continue
+        elif ch in "([{":
+            stack.append(ch)
+        elif ch in ")]}":
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+    return not stack and not in_quote
+
+
+def check_mermaid(path, text):
+    for m in re.finditer(r"```mermaid\n(.*?)```", text, re.S):
+        start = text.count("\n", 0, m.start()) + 2
+        lines = m.group(1).split("\n")
+        body = [l.strip() for l in lines if l.strip() and not l.strip().startswith("%%")]
+        if not body:
+            err(path, start, "Mermaid: 빈 다이어그램")
+            continue
+        kind = body[0].split()[0]
+        if not kind.startswith(MERMAID_TYPES):
+            err(path, start, "Mermaid: 알 수 없는 종류 '%s'" % kind)
+            continue
+        opens = closes = 0
+        for l in body[1:]:
+            word = l.split()[0]
+            if kind.startswith(("flowchart", "graph")):
+                opens += word == "subgraph"
+            elif kind == "sequenceDiagram":
+                opens += word in SEQ_OPENERS
+            closes += l == "end"
+        if kind.startswith(("flowchart", "graph", "sequenceDiagram")) and opens != closes:
+            err(path, start, "Mermaid: 묶음의 시작 %d개와 end %d개가 맞지 않는다" % (opens, closes))
+        if kind.startswith(("flowchart", "graph")):
+            for k, l in enumerate(lines):
+                if not balanced(l):
+                    err(path, start + k, "Mermaid: 괄호나 따옴표의 짝이 맞지 않는다")
+
+
+def check_chapter(path, text):
+    name = os.path.basename(path)
+    first = text.split("\n", 1)[0]
+    m = re.match(r"ch(\d\d)-", name)
+    if m:
+        want = "# %d%s. " % (int(m.group(1)), CHAPTER_WORD)
+        if not first.startswith(want):
+            err(path, 1, "제목이 '%s'로 시작하지 않는다" % want.strip())
+    elif not first.startswith("# "):
+        err(path, 1, "첫 줄이 제목이 아니다")
+    rest = text.split("\n", 1)[1].strip() if "\n" in text else ""
+    if rest == PLACEHOLDER:
+        return "placeholder", 0, 0
+    if m:
+        if H_QUESTION not in text:
+            err(path, "-", "'%s' 제목이 없다" % H_QUESTION)
+        for h in (H_MISTAKES, H_EXERCISES):
+            if h not in text:
+                (err if FINAL else warn)(path, "-", "'%s' 제목이 없다" % h)
+    return "written", text.count(UNCONFIRMED), text.count(SECONDARY)
+
+
+def main():
+    files = list_files()
+    checked = 0
+    for path in files:
+        if path.lower().endswith(BINARY_EXT):
+            continue
+        text = read(path)
+        if text is None:
+            err(path, "-", "UTF-8로 읽을 수 없다")
+            continue
+        checked += 1
+        check_chars(path, text)
+        if path.endswith(".md"):
+            check_fences(path, text)
+            check_links(path, text)
+            check_mermaid(path, text)
+        if path.endswith(".svg"):
+            try:
+                xml.dom.minidom.parseString(text.encode("utf-8"))
+            except Exception as e:  # noqa: BLE001
+                err(path, "-", "SVG 형식 오류: %s" % e)
+
+    chapters = sorted(os.path.basename(f) for f in files if f.startswith("chapters/") and f.endswith(".md"))
+    plans = sorted(os.path.basename(f) for f in files if f.startswith("plans/") and f.endswith(".md"))
+    for name in sorted(set(chapters) - set(plans)):
+        err("plans/" + name, "-", "장 계획 파일이 없다")
+    for name in sorted(set(plans) - set(chapters)):
+        err("chapters/" + name, "-", "원고 파일이 없다")
+
+    written = unconfirmed = secondary = 0
+    for name in chapters:
+        path = "chapters/" + name
+        state, u, s = check_chapter(path, read(path) or "")
+        if state == "written":
+            written += 1
+            unconfirmed += u
+            secondary += s
+            if u:
+                (err if FINAL else warn)(path, "-", "%s %d곳" % (UNCONFIRMED, u))
+
+    for w in warnings:
+        print("주의  " + w)
+    for e in errors:
+        print("오류  " + e)
+    print("검사한 파일 %d개. 원고 %d개 가운데 쓴 것 %d개. %s %d곳, %s %d곳."
+          % (checked, len(chapters), written, UNCONFIRMED, unconfirmed, SECONDARY, secondary))
+    print("오류 %d개, 주의 %d개" % (len(errors), len(warnings)))
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
