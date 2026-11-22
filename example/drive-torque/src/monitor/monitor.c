@@ -37,6 +37,29 @@ torque_t monitor_allowed_torque(permille_t pedal_safe, bool brake, gear_t gear)
     return allowed;
 }
 
+torque_t monitor_limit_rise(torque_t allowed, torque_t last_out, gear_t gear)
+{
+    torque_t from = 0;
+    torque_t limit;
+
+    /* SWR-13: 허용 토크는 지난 주기에 보낸 토크의 크기에서 한 주기에 25 Nm까지만 오른다.
+     * 지난 주기에 보낸 토크가 지금 기어의 방향과 반대이면 0에서 다시 센다.
+     * 기준이 감시의 지난 허용값이 아니라 실제로 보낸 값이므로, 기능이 가진 상태를 베끼지 않는다 */
+    if (gear == GEAR_D) {
+        if (last_out > 0) {
+            from = (last_out > TORQUE_MAX) ? TORQUE_MAX : last_out;
+        }
+    } else if (gear == GEAR_R) {
+        if (last_out < 0) {
+            from = (last_out < -TORQUE_MAX) ? TORQUE_MAX : -last_out;
+        }
+    } else {
+        /* P와 N에서는 0에서 센다 */
+    }
+    limit = from + ALLOWED_RISE_PER_CYCLE;
+    return (allowed < limit) ? allowed : limit;
+}
+
 torque_t output_clamp(torque_t torque_req, torque_t allowed, gear_t gear)
 {
     torque_t lo = 0;
@@ -66,6 +89,7 @@ void output_stage_init(output_stage_t *st)
     st->excess_cycles = 0u;
     st->clamp_count = 0u;
     st->latched = false;
+    st->last_out = 0;
 }
 
 torque_t output_stage_step(output_stage_t *st, torque_t torque_req, torque_t allowed, gear_t gear)
@@ -87,7 +111,8 @@ torque_t output_stage_step(output_stage_t *st, torque_t torque_req, torque_t all
 
     /* SWR-09: 고정된 뒤에는 토크 0을 보낸다 */
     if (st->latched) {
-        return 0;
+        out = 0;
     }
+    st->last_out = out;
     return out;
 }

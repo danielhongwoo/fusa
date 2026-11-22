@@ -31,6 +31,25 @@ static void make_ready(pedal_check_t *st)
     }
 }
 
+/* 운전자의 입력 한 벌 */
+typedef struct {
+    permille_t pedal;
+    bool brake;
+    gear_t gear;
+} drive_t;
+
+/* 감시와 출력 단계를 제품 (src/vcu/vcu.c의 task_monitor_output)과 같은 순서로 한 주기 돌린다.
+ * 그 주기의 허용 토크를 allowed에 적고, inverter로 보낼 토크를 돌려준다 */
+static torque_t chain_step(output_stage_t *out, torque_t req, const drive_t *d, torque_t *allowed)
+{
+    torque_t a = monitor_allowed_torque(d->pedal, d->brake, d->gear);
+    a = monitor_limit_rise(a, out->last_out, d->gear);
+    *allowed = a;
+    return output_stage_step(out, req, a, d->gear);
+}
+
+static torque_t magnitude(torque_t v) { return (v < 0) ? -v : v; }
+
 /* TC-001: SWR-01 두 채널의 전압을 같은 단위로 바꾼다 */
 static void tc_001(void)
 {
@@ -226,69 +245,74 @@ static void tc_007(void)
     CHECK_EQ(max_gap, 50); /* 실제로는 허용 오차 5 Nm뿐이다 */
 
     /* 무작위 운전: 페달, 브레이크, 기어가 아무 때나 바뀌어도 정상인 기능은 깎이지 않고,
-     * 토크 요구의 크기는 그 주기의 목표 (페달에 비례하는 값. 후진은 그 40%)를 넘지 않는다 */
+     * 토크 요구의 크기는 그 주기의 목표 (페달에 비례하는 값. 후진은 그 40%)를 넘지 않는다.
+     * 허용 토크는 제품과 같은 순서로 구한다: 페달에서 나온 상한을 지난 출력 + 25 Nm로 한 번 더 누른다.
+     * 그래도 정상인 기능은 깎이지 않아야 하고, 허용 토크와의 차이는 어느 주기에도 5 Nm를 넘지 않아야 한다 */
     {
         app_t app;
+        output_stage_t out;
         uint32_t seed = 12345u;
-        permille_t pedal = 0;
-        bool brake = false;
-        gear_t gear = GEAR_D;
+        drive_t d = { 0, false, GEAR_D };
         int over_target = 0;
+        int rising = 0;
+        torque_t prev_req = 0;
 
-        clamped = 0;
+        max_gap = 0;
         app_init(&app);
+        output_stage_init(&out);
         for (int i = 0; i < 100000; i++) {
+            torque_t allowed;
             seed = (seed * 1664525u) + 1013904223u;
             if (((seed >> 8) % 6u) == 0u) {
-                pedal = (permille_t)((seed >> 12) % 1001u);
+                d.pedal = (permille_t)((seed >> 12) % 1001u);
             }
             if (((seed >> 20) % 11u) == 0u) {
-                brake = !brake;
+                d.brake = !d.brake;
             }
             if (((seed >> 24) % 13u) == 0u) {
-                gear = gears[(seed >> 28) % 4u];
+                d.gear = gears[(seed >> 28) % 4u];
             }
-            torque_t req = app_step(&app, pedal, brake, gear);
-            torque_t allowed = monitor_allowed_torque(pedal, brake, gear);
-            torque_t mag = (req < 0) ? -req : req;
-            torque_t target = (pedal * 2500) / 1000;
-            if (gear == GEAR_R) {
+            torque_t req = app_step(&app, d.pedal, d.brake, d.gear);
+            torque_t sent = chain_step(&out, req, &d, &allowed);
+            torque_t target = (d.pedal * 2500) / 1000;
+            if (d.gear == GEAR_R) {
                 target = (target * 40) / 100;
             }
-            if (output_clamp(req, allowed, gear) != req) {
-                clamped++;
-            }
-            if (mag > target) {
+            if (magnitude(req) > target) {
                 over_target++;
             }
+            if ((allowed - magnitude(sent)) > max_gap) {
+                max_gap = allowed - magnitude(sent);
+            }
+            if (magnitude(req) == (magnitude(prev_req) + 250)) {
+                rising++; /* 올리는 속도의 제한에 걸린 주기 */
+            }
+            prev_req = req;
         }
-        CHECK_EQ(clamped, 0);
+        CHECK_EQ((int)out.clamp_count, 0);
+        CHECK(!out.latched);
         CHECK_EQ(over_target, 0);
+        CHECK_EQ(max_gap, 50);
+        CHECK(rising > 1000); /* 제한에 걸린 주기가 충분히 있어야 이 test가 뜻이 있다 */
     }
 }
 
-/* 운전자의 입력 한 벌 */
-typedef struct {
-    permille_t pedal;
-    bool brake;
-    gear_t gear;
-} drive_t;
-
 /*
- * TC-011: SWR-06 입력이 한 번 바뀐 뒤 기능이 토크를 올리는 동안에는 허용 토크와의 차이가
- * 55 Nm 이상일 수 있다. 그 시간은 SG-01의 시간 (200 ms)보다 짧아야 하고,
- * 그 뒤에는 차이가 5 Nm로 돌아와야 한다.
+ * TC-011: SWR-13 입력이 바뀌어 기능이 토크를 올리는 동안에도 허용 토크는 정상인 기능의 토크 요구를
+ * 5 Nm 넘게 앞서지 않는다. 깎이는 주기도 없다.
+ * 허용 토크가 페달에서 나온 상한뿐이던 때에는 이 차이가 55 Nm 이상인 주기가 경우마다 0-7번 있었다
+ * (표의 마지막 숫자). 입력이 거듭 바뀌면 그 주기가 끝없이 이어졌다. 지금은 0이어야 한다.
  * 기능이 감시가 모르는 상태를 가지면 이 test가 실패한다.
  * 예: 브레이크를 놓은 뒤에도 토크 0을 유지하는 기능 (처음의 예제가 그랬다).
  */
 static void tc_011(void)
 {
-    /* 바뀌기 전의 입력, 바뀐 뒤의 입력, 차이가 55 Nm 이상인 주기의 수.
+    /* 바뀌기 전의 입력, 바뀐 뒤의 입력, 페달에서 나온 상한만 볼 때 차이가 55 Nm 이상인 주기의 수.
      * 주기의 수는 요구사항의 숫자 (주기마다 25 Nm, 오차 5 Nm)에서 계산한 값이다 */
     static const struct {
         drive_t before;
         drive_t after;
-        int wide_cycles;
+        int static_wide_cycles;
     } cases[] = {
         { { 0, false, GEAR_D }, { 1000, false, GEAR_D }, 7 },    /* 페달을 한 번에 끝까지 */
         { { 300, false, GEAR_D }, { 1000, false, GEAR_D }, 4 },  /* 밟은 채로 더 밟음 */
@@ -310,32 +334,198 @@ static void tc_011(void)
         const drive_t *before = &cases[c].before;
         const drive_t *after = &cases[c].after;
         app_t app;
-        int wide_cycles = 0;
-        int clamped = 0;
+        output_stage_t out;
+        int static_wide_cycles = 0;
+        torque_t max_gap = 0;
         torque_t gap = 0;
+        torque_t allowed;
 
         app_init(&app);
+        output_stage_init(&out);
         for (int i = 0; i < 40; i++) {
-            (void)app_step(&app, before->pedal, before->brake, before->gear);
+            torque_t req = app_step(&app, before->pedal, before->brake, before->gear);
+            (void)chain_step(&out, req, before, &allowed);
         }
         for (int i = 0; i < 100; i++) {
             torque_t req = app_step(&app, after->pedal, after->brake, after->gear);
-            torque_t allowed = monitor_allowed_torque(after->pedal, after->brake, after->gear);
-            torque_t mag = (req < 0) ? -req : req;
-            if (output_clamp(req, allowed, after->gear) != req) {
-                clamped++;
+            torque_t ceiling = monitor_allowed_torque(after->pedal, after->brake, after->gear);
+            torque_t sent = chain_step(&out, req, after, &allowed);
+            CHECK_EQ(sent, req);
+            gap = allowed - magnitude(req);
+            if (gap > max_gap) {
+                max_gap = gap;
             }
-            gap = allowed - mag;
-            if (gap >= 550) {
-                wide_cycles++;
+            if ((ceiling - magnitude(req)) >= 550) {
+                static_wide_cycles++;
             }
         }
-        CHECK_EQ(clamped, 0);
-        CHECK((wide_cycles * 10) < 200);
-        CHECK_EQ(wide_cycles, cases[c].wide_cycles);
+        CHECK_EQ((int)out.clamp_count, 0);
+        CHECK(max_gap <= 50);
+        CHECK_EQ(static_wide_cycles, cases[c].static_wide_cycles);
         /* 다 올린 뒤에는 허용 오차 5 Nm뿐이다.
          * 페달을 끝까지 밟으면 허용 토크가 최대 토크에서 잘려 차이가 0이다 */
         CHECK_EQ(gap, (after->pedal == 1000 && after->gear == GEAR_D) ? 0 : 50);
+    }
+}
+
+/* TC-012: SWR-13 허용 토크는 지난 주기에 보낸 토크의 크기에서 25 Nm까지만 오른다 */
+static void tc_012(void)
+{
+    /* 전진 */
+    CHECK_EQ(monitor_limit_rise(2500, 0, GEAR_D), 250);
+    CHECK_EQ(monitor_limit_rise(2500, 1000, GEAR_D), 1250);
+    CHECK_EQ(monitor_limit_rise(2500, 2249, GEAR_D), 2499);
+    CHECK_EQ(monitor_limit_rise(2500, 2250, GEAR_D), 2500);
+    CHECK_EQ(monitor_limit_rise(2500, 2500, GEAR_D), 2500);
+    /* 페달에서 나온 상한이 더 작으면 그 값이다. 내릴 때는 제한이 없다 */
+    CHECK_EQ(monitor_limit_rise(300, 2500, GEAR_D), 300);
+    CHECK_EQ(monitor_limit_rise(0, 2500, GEAR_D), 0);
+    CHECK_EQ(monitor_limit_rise(250, 0, GEAR_D), 250);
+    CHECK_EQ(monitor_limit_rise(251, 0, GEAR_D), 250);
+    CHECK_EQ(monitor_limit_rise(249, 0, GEAR_D), 249);
+    /* 후진: 지난 출력이 음수일 때 그 크기에서 센다 */
+    CHECK_EQ(monitor_limit_rise(1050, 0, GEAR_R), 250);
+    CHECK_EQ(monitor_limit_rise(1050, -500, GEAR_R), 750);
+    CHECK_EQ(monitor_limit_rise(1050, -1000, GEAR_R), 1050);
+    CHECK_EQ(monitor_limit_rise(1050, -1, GEAR_R), 251);
+    /* 지난 출력의 방향이 지금 기어와 반대이면 0에서 다시 센다 */
+    CHECK_EQ(monitor_limit_rise(2500, -1000, GEAR_D), 250);
+    CHECK_EQ(monitor_limit_rise(2500, -1, GEAR_D), 250);
+    CHECK_EQ(monitor_limit_rise(2500, 1, GEAR_D), 251);
+    CHECK_EQ(monitor_limit_rise(1050, 2000, GEAR_R), 250);
+    CHECK_EQ(monitor_limit_rise(1050, 1, GEAR_R), 250);
+    /* P와 N에서는 지난 출력을 보지 않는다 (허용 토크는 어차피 0이다) */
+    CHECK_EQ(monitor_limit_rise(0, 2000, GEAR_N), 0);
+    CHECK_EQ(monitor_limit_rise(2500, 2000, GEAR_N), 250);
+    CHECK_EQ(monitor_limit_rise(2500, -2000, GEAR_P), 250);
+    /* 지난 출력이 범위 밖이어도 (memory의 값이 틀려도) 계산이 넘치지 않는다 */
+    CHECK_EQ(monitor_limit_rise(2500, 2501, GEAR_D), 2500);
+    CHECK_EQ(monitor_limit_rise(2500, INT32_MAX, GEAR_D), 2500);
+    CHECK_EQ(monitor_limit_rise(2500, INT32_MIN, GEAR_R), 2500);
+    CHECK_EQ(monitor_limit_rise(2500, -2501, GEAR_R), 2500);
+    CHECK_EQ(monitor_limit_rise(2500, INT32_MIN, GEAR_D), 250);
+
+    /* 출력 단계는 보낸 토크를 기억한다. 고정된 뒤에는 0을 기억한다 */
+    {
+        output_stage_t out;
+        output_stage_init(&out);
+        CHECK_EQ(out.last_out, 0);
+        CHECK_EQ(output_stage_step(&out, 700, 1000, GEAR_D), 700);
+        CHECK_EQ(out.last_out, 700);
+        CHECK_EQ(output_stage_step(&out, 1500, 1000, GEAR_D), 1000); /* 깎인 값을 기억한다 */
+        CHECK_EQ(out.last_out, 1000);
+        CHECK_EQ(output_stage_step(&out, -300, 1000, GEAR_R), -300);
+        CHECK_EQ(out.last_out, -300);
+        for (int i = 0; i < 5; i++) {
+            (void)output_stage_step(&out, 2000, 1000, GEAR_D);
+        }
+        CHECK(out.latched);
+        CHECK_EQ(out.last_out, 0);
+    }
+}
+
+/* 입력이 거듭 바뀌는 네 모양. 페달은 끝까지 밟고 있고, 80-90 ms마다 입력 하나가 잠깐 바뀐다.
+ * 페달 한 채널이 가끔 끊기거나 브레이크와 기어의 신호가 튀면 이렇게 된다.
+ * 정상인 기능은 토크를 다 올리기 전에 다시 0에서 시작한다 */
+static drive_t bouncing_input(int shape, int i)
+{
+    drive_t d = { 1000, false, GEAR_D };
+
+    if (shape == 0) {
+        d.gear = ((i % 9) < 7) ? GEAR_D : GEAR_R;
+    } else if (shape == 1) {
+        d.pedal = ((i % 8) < 7) ? 1000 : 0;
+    } else if (shape == 2) {
+        d.brake = ((i % 8) == 7);
+    } else {
+        d.gear = ((i % 8) < 7) ? GEAR_D : GEAR_N;
+    }
+    return d;
+}
+
+/*
+ * TC-013: SWR-13 기능이 틀려도, 입력이 거듭 바뀌는 동안 나가는 토크는 정상인 기능의 토크를
+ * 55 Nm (SG-01의 가속 한계에 해당하는 토크) 넘게 앞서지 않는다.
+ * 틀린 기능 둘을 본다. 정상인 기능을 같은 입력으로 나란히 돌려 견준다.
+ */
+static void tc_013(void)
+{
+    for (int shape = 0; shape < 4; shape++) {
+        /* 1. 감시가 허용하는 만큼을 요구하는 기능. 깎이지 않으므로 고정되지 않는다.
+         *    그래도 나가는 토크는 정상인 기능보다 5 Nm 넘게 크지 않다.
+         *    허용 토크가 페달에서 나온 상한뿐이면 그 차이가 55 Nm 이상인 주기가 대부분이다 */
+        {
+            app_t ref;
+            output_stage_t out;
+            int wide = 0;
+            int static_wide = 0;
+            torque_t max_ahead = 0;
+
+            app_init(&ref);
+            output_stage_init(&out);
+            for (int i = 0; i < 400; i++) {
+                drive_t d = bouncing_input(shape, i);
+                torque_t allowed;
+                torque_t normal = app_step(&ref, d.pedal, d.brake, d.gear);
+                torque_t ceiling = monitor_allowed_torque(d.pedal, d.brake, d.gear);
+                torque_t sign = (d.gear == GEAR_R) ? -1 : 1;
+                torque_t limit = monitor_limit_rise(ceiling, out.last_out, d.gear);
+                torque_t sent = chain_step(&out, sign * limit, &d, &allowed);
+                torque_t ahead = magnitude(sent) - magnitude(normal);
+
+                CHECK_EQ(sent, sign * limit);
+                if (ahead > max_ahead) {
+                    max_ahead = ahead;
+                }
+                if (ahead >= 550) {
+                    wide++;
+                }
+                if ((ceiling - magnitude(normal)) >= 550) {
+                    static_wide++;
+                }
+            }
+            CHECK(!out.latched);
+            CHECK_EQ((int)out.clamp_count, 0);
+            CHECK_EQ(wide, 0);
+            CHECK(max_ahead <= 50);
+            /* 상한만으로는 400주기 가운데 이만큼 열려 있었다 */
+            CHECK_EQ(static_wide, (shape == 0) ? 400 : 350);
+        }
+
+        /* 2. 올리는 속도의 제한을 잃은 기능 (목표를 바로 요구한다).
+         *    토크를 올리는 동안 깎이고, 5주기 안에 고정된다. 그때까지 나간 토크는 정상인 기능과 같다 */
+        {
+            app_t ref;
+            output_stage_t out;
+            int latched_at = -1;
+            torque_t max_ahead = 0;
+
+            app_init(&ref);
+            output_stage_init(&out);
+            for (int i = 0; i < 400; i++) {
+                drive_t d = bouncing_input(shape, i);
+                torque_t allowed;
+                torque_t normal = app_step(&ref, d.pedal, d.brake, d.gear);
+                torque_t target = (d.pedal * 2500) / 1000;
+                torque_t sent;
+
+                if (d.brake || (d.gear == GEAR_N)) {
+                    target = 0;
+                }
+                if (d.gear == GEAR_R) {
+                    target = -((target * 40) / 100);
+                }
+                sent = chain_step(&out, target, &d, &allowed);
+                if ((magnitude(sent) - magnitude(normal)) > max_ahead) {
+                    max_ahead = magnitude(sent) - magnitude(normal);
+                }
+                if (out.latched && (latched_at < 0)) {
+                    latched_at = i;
+                }
+            }
+            CHECK_EQ(max_ahead, 0);
+            CHECK_EQ(latched_at, 4); /* 처음 다섯 주기가 모두 깎인다 */
+        }
     }
 }
 
@@ -488,7 +678,9 @@ int main(void)
         { "TC-008", "출력은 기어의 방향과 허용 토크 안에 있다", tc_008 },
         { "TC-009", "깎인 주기가 5번 이어지면 고정한다", tc_009 },
         { "TC-010", "고정된 뒤에는 토크 0이다", tc_010 },
-        { "TC-011", "입력이 바뀐 뒤 토크를 올리는 동안의 차이는 200 ms보다 짧다", tc_011 },
+        { "TC-011", "입력이 바뀌어 토크를 올리는 동안에도 허용 토크가 앞서지 않는다", tc_011 },
+        { "TC-012", "허용 토크는 지난 출력에서 25 Nm까지만 오른다", tc_012 },
+        { "TC-013", "입력이 거듭 바뀌어도 틀린 기능의 토크는 55 Nm 넘게 앞서지 않는다", tc_013 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

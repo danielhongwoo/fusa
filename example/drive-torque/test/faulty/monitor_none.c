@@ -15,6 +15,13 @@ torque_t monitor_allowed_torque(permille_t pedal_safe, bool brake, gear_t gear)
     return TORQUE_MAX;
 }
 
+torque_t monitor_limit_rise(torque_t allowed, torque_t last_out, gear_t gear)
+{
+    (void)last_out;
+    (void)gear;
+    return allowed;
+}
+
 torque_t output_clamp(torque_t torque_req, torque_t allowed, gear_t gear)
 {
     (void)allowed;
@@ -27,6 +34,7 @@ void output_stage_init(output_stage_t *st)
     st->excess_cycles = 0u;
     st->clamp_count = 0u;
     st->latched = false;
+    st->last_out = 0;
 }
 
 torque_t output_stage_step(output_stage_t *st, torque_t torque_req, torque_t allowed, gear_t gear)

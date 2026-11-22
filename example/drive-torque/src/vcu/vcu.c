@@ -42,6 +42,7 @@ static void task_app(vcu_t *vcu)
 static void task_monitor_output(vcu_t *vcu)
 {
     vcu->torque_allowed = monitor_allowed_torque(vcu->pedal_safe, vcu->in.brake, vcu->in.gear);
+    vcu->torque_allowed = monitor_limit_rise(vcu->torque_allowed, vcu->output.last_out, vcu->in.gear);
     vcu->torque_out = output_stage_step(&vcu->output, vcu->torque_req, vcu->torque_allowed,
                                         vcu->in.gear);
 

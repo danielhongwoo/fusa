@@ -8,14 +8,18 @@
 # CBMC는 qualification되지 않았다.
 
 INC="-Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor"
-SRC="src/input/pedal_check.c src/monitor/monitor.c test/proof/harness.c"
+SRC="src/input/pedal_check.c src/monitor/monitor.c src/app/app.c test/proof/harness.c"
 REPORT=build/reports/cbmc.txt
 fail=0
 
 mkdir -p build/reports
 : > "$REPORT"
 
-for prop in prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check; do
+PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped"
+count=0
+
+for prop in $PROPS; do
+    count=$((count + 1))
     out=$(cbmc $INC $SRC --function "$prop" \
         --signed-overflow-check --div-by-zero-check --conversion-check --bounds-check 2>&1)
     echo "==== $prop" >> "$REPORT"
@@ -34,4 +38,4 @@ if [ "$fail" -ne 0 ]; then
     echo "증명: 실패한 성질이 있다 (보고서: $REPORT)"
     exit 1
 fi
-echo "증명: 성질 4개가 모든 입력에서 성립한다 (보고서: $REPORT)"
+echo "증명: 성질 ${count}개가 모든 입력에서 성립한다 (보고서: $REPORT)"

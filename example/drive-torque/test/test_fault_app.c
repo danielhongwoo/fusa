@@ -225,6 +225,93 @@ static void tc_204(void)
            max_excess, SG01_ACCEL_EXCESS, excess_ms);
 }
 
+/* 페달 채널 1의 선이 80 ms마다 한 주기씩 끊긴다 (0 V). 그 사이에 기능의 결함도 켠다 */
+#define T_BLIP_START 1000u
+static void blip_and_fault(time_ms_t t_ms)
+{
+    if (t_ms >= T_BLIP_START) {
+        if ((t_ms % 80u) == 70u) {
+            hal_sim_set_fault(FAULT_APPS1_FIXED_MV, 0);
+        }
+        if ((t_ms % 80u) == 0u) {
+            hal_sim_clear_faults();
+        }
+    }
+    switch_fault_on(t_ms);
+}
+
+/*
+ * TC-205: SWR-13, SWR-08 fault injection FI-07
+ * 페달을 끝까지 밟고 있는데 채널 1의 선이 80 ms마다 한 주기씩 끊긴다.
+ * 입력 검사는 그 주기에 안전한 페달 값을 0으로 두지만, 3주기 이어지지 않으므로 고장으로 판정하지 않는다.
+ * 정상인 기능은 토크를 다 올리지 못하고 0에서 다시 시작한다. 그 중에 기능이 최대 토크를 요구한다.
+ * 페달이 100%이므로 페달에서 나온 상한은 최대 토크이고, 상한만 보는 감시는 이 요구를 깎지 못한다.
+ * 지난 출력에서 오르는 속도를 제한하는 감시는 깎고, 5주기 안에 고정한다.
+ * fault를 켜는 시각을 끊김의 주기 (80 ms) 안에서 10 ms씩 옮겨 가며 본다.
+ */
+static void tc_205(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 1.0, false, GEAR_D },
+    };
+    scenario_t sc = { "fi-07", 2400u, driver, 2, NULL, 0, blip_and_fault };
+    const time_ms_t t_fault = 1400u;
+    int n_ref = run(&sc, log_ref, APP_FAULT_NONE, 0, t_fault);
+    int worst_latch_ms = 0;
+    int worst_excess_ms = 0;
+    double max_excess = 0.0;
+
+    /* 선이 끊기기만 하고 기능이 정상이면: 깎이지 않고, 페달 고장으로 판정하지도 않는다 */
+    CHECK_EQ(log_ref[n_ref - 1].diag.clamp_count, 0);
+    CHECK(!log_ref[n_ref - 1].diag.latched);
+    CHECK(!log_ref[n_ref - 1].diag.pedal_fault);
+    CHECK_EQ(log_ref[1029].torque_out, 2500); /* 처음 끊기기 직전 */
+    CHECK_EQ(log_ref[1039].torque_out, 0);    /* 끊긴 주기 */
+    CHECK_EQ(log_ref[1109].torque_out, 1750); /* 다음에 끊길 때까지 7주기 동안 올린 값 */
+
+    for (time_ms_t shift = 0u; shift < 80u; shift += 10u) {
+        int n = run(&sc, log_fault, APP_FAULT_FULL, 0, t_fault + shift);
+        int t_latch = first_latched(log_fault, n);
+        int excess_ms = 0;
+        int ahead = 0;
+
+        CHECK_EQ(n, n_ref);
+        for (int i = 0; i < n; i++) {
+            double excess = log_fault[i].accel_mps2 - log_ref[i].accel_mps2;
+            if (excess > max_excess) {
+                max_excess = excess;
+            }
+            if (excess > SG01_ACCEL_EXCESS) {
+                excess_ms++;
+            }
+            /* 소프트웨어 수준: 나간 토크가 정상인 기능의 토크를 55 Nm 넘게 앞선 때가 없다 */
+            if ((log_fault[i].torque_out - log_ref[i].torque_out) >= 550) {
+                ahead++;
+            }
+        }
+        CHECK_EQ(ahead, 0);
+        CHECK(t_latch >= 0);
+        /* 80 ms마다 끊기면 정상인 기능은 늘 토크를 올리는 중이다 (끊긴 주기에는 허용 토크가 0이다).
+         * 그래서 어느 때에 켜도 그 주기부터 깎이고, 5번째 주기에 고정한다 */
+        if ((t_latch - (int)(t_fault + shift)) > worst_latch_ms) {
+            worst_latch_ms = t_latch - (int)(t_fault + shift);
+        }
+        if (excess_ms > worst_excess_ms) {
+            worst_excess_ms = excess_ms;
+        }
+        CHECK(!log_fault[n - 1].enable);
+        if (shift == 0u) {
+            (void)scenario_write_csv("build/out/fi-07.csv", log_fault, n);
+        }
+    }
+    CHECK(worst_latch_ms <= 50);
+    CHECK_EQ(worst_excess_ms, 0);
+    printf("  측정 FI-07: fault부터 고정까지 가장 나쁜 경우 %d ms, 가속의 차이는 가장 클 때 %.2f m/s^2, "
+           "%.1f m/s^2를 넘은 시간 %d ms\n",
+           worst_latch_ms, max_excess, SG01_ACCEL_EXCESS, worst_excess_ms);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -232,6 +319,7 @@ int main(void)
         { "TC-202", "FI-04 서 있는데 기능이 토크를 요구", tc_202 },
         { "TC-203", "FI-05 기능이 토크를 덜 냄 (SG-01의 범위 밖)", tc_203 },
         { "TC-204", "FI-06 후진에서 기능이 최대 토크를 요구", tc_204 },
+        { "TC-205", "FI-07 입력이 거듭 튀는 동안 기능이 최대 토크를 요구", tc_205 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }
