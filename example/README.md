@@ -16,6 +16,12 @@ example/
       functional-safety-concept.md
       technical-safety-concept.md   구조, 시간 예산, 가정, 독립성에 관한 주장
       fta.md             safety goal 하나의 fault tree
+      fmea.md            소프트웨어 수준의 FMEA
+      stpa.md            control structure와 unsafe control action
+      dfa.md             dependent failure analysis
+      hardware-assumptions.md   하드웨어에 대한 가정과 진단의 목록
+      safety-plan.md     활동, 역할, 확인, 줄인 것
+      fault-table.md     fault, error, failure, hazard의 정리
       requirements.yaml  safety goal에서 software safety requirement까지 (ID, 문장, 추적)
       architecture.md    소프트웨어의 정적 view와 동적 view
       test-report.md     test와 fault injection의 결과
