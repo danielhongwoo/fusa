@@ -13,7 +13,7 @@
 |---|---|
 | 요구사항에 따른 test (`TC-`) | 28개, 모두 통과 |
 | 기능의 test (`FT-`), 대조 test (`NC-`) | 4개, 모두 통과 |
-| 추적 검사 | software safety requirement 14개가 모두 코드와 test에 이어진다 |
+| 추적 검사 | 구현한 software safety requirement 14개가 모두 코드와 test에 이어진다. 구현 예정이 30개 있다 (그 가운데 software safety requirement는 11개). 그래서 `make check STRICT=1`은 실패한다 |
 | 정적 분석 | cppcheck 지적 없음, clang-tidy 경고 없음 |
 | coverage | 제품 코드 5개 파일 모두 statement, branch, MC/DC 100% |
 | 증명 | 성질 6개가 모든 입력에서 성립한다 |

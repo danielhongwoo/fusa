@@ -72,7 +72,7 @@ NASA의 지침서는 시간에 관한 요구사항을 따로 다룬다. 고장�
 
 ## 관통 예제에 적용
 
-요구사항의 원본은 `example/drive-torque/docs/requirements.yaml`이다. `SG-01` 아래에 functional safety requirement 5개, technical safety requirement 8개, software safety requirement 14개가 있다.
+요구사항의 원본은 `example/drive-torque/docs/requirements.yaml`이다. safety goal 둘 아래에 functional safety requirement 16개, technical safety requirement 19개, software safety requirement 25개가 있다. 그 가운데 software safety requirement 11개는 구현 예정이다. 요구사항만 있고 코드와 test가 없다는 뜻이고, 추적 검사가 그 수를 늘 찍는다.
 
 요구사항 하나는 이렇게 생겼다.
 
