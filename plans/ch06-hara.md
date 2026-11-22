@@ -47,3 +47,5 @@ item definition (E/E 구성도와 item의 경계 포함), HARA 표, safety goal�
 ## 관련 규격과 자료
 
 ISO 26262-3; IEC 61508-5
+
+받은 문서: nhtsa-etc-ev-fsa (전기차의 가속 제어 시스템에 대한 functional safety 평가. hazard 분석, ASIL 평가, safety goal)

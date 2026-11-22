@@ -11,7 +11,7 @@
 
 | 등급 | 뜻 | 수 | 해당 문서 |
 |---|---|---|---|
-| A | 무료로 받을 수 있다 | 24개 받음, 7개는 직접 받아야 함 | 사고 조사 보고서, NASA와 FAA와 EASA의 문서, SORA, AUTOSAR 공개 규격, 저자가 공개한 책과 논문 |
+| A | 무료로 받을 수 있다 | 27개 받음, 8개는 직접 받아야 함 | 사고 조사 보고서, NASA와 FAA와 EASA의 문서, SORA, AUTOSAR 공개 규격, 저자가 공개한 책과 논문 |
 | B | 온라인에서 볼 수만 있다 | 8개 | ISO와 IEC의 미리보기, KS 열람, 공개 autopilot 문서 |
 | C | 유료이거나 볼 수 없다 | 규격 대부분과 책 | ISO 26262, IEC 61508, 로봇 규격, 항공 규격, MISRA C |
 
@@ -31,6 +31,16 @@
 | b737max-knkt-jt610 | KNKT 최종 보고서, Lion Air JT610 | KNKT (인도네시아) | 1 | 322 | 12.9 |
 | b737max-house-report | 미국 하원 교통인프라위원회 최종 보고서 (2020-09) | 미국 하원 | 1 | 245 | 3.5 |
 | koopman-toyota-ua | Koopman, A Case Study of Toyota Unintended Acceleration and Software Safety (2014) | 저자의 CMU 페이지 | 1 | 55 | 5.9 |
+
+### 관통 예제와 같은 주제를 다룬 미국 정부 보고서
+
+| id | 문서 | 올린 곳 | 쓰는 장 | 쪽 | 크기 |
+|---|---|---|---|---|---|
+| nhtsa-etc-ev-fsa | Functional Safety Assessment of a Generic Accelerator Control System With Electronic Throttle Control in Electric Vehicles, DOT HS 812 656 (2020) | 미국 교통부 저장소 | 6, 7, 8 | 444 | 3.6 |
+| nhtsa-safety-standards-assessment | Assessment of Safety Standards for Automotive Electronic Control Systems, DOT HS 812 285 (2016) | 미국 교통부 저장소 | 4, 22 | 49 | 0.6 |
+| nasa-toyota-ua-report | NASA Engineering and Safety Center, Toyota unintended acceleration 조사 보고서 (2011) | NHTSA | 1 | 177 | - |
+
+nhtsa-etc-ev-fsa는 이 책의 관통 예제와 같은 시스템 (전기차의 가속 제어)에 ISO 26262의 concept phase를 적용한 보고서다. 시스템 정의, hazard 분석 (HAZOP, STPA), ASIL 평가, safety goal, FMEA, functional safety concept, functional safety requirement를 담고 있다. ISO 26262의 요구사항에 관한 이 책의 주된 2차 자료다.
 
 ### 개념과 분석 기법
 
@@ -92,6 +102,7 @@
 | UK HSE, Reducing risks, protecting people (2001) | https://webarchive.nationalarchives.gov.uk/ukgwa/20230703113731/https:/www.hse.gov.uk/enforce/expert/r2p2.htm | 사람 확인 화면. HSE의 원래 페이지는 없어졌다 |
 | SEI CERT C Coding Standard (2016 Edition) | https://www.sei.cmu.edu/forms/secure-coding-form/ | 이름과 이메일을 넣는 등록이 필요 |
 | Standardized E-Gas Monitoring Concept | v4.0 (2007): https://downloads.regulations.gov/NHTSA-2014-0108-0021/attachment_1.pdf | 접근 거부. 아래 설명 참고 |
+| NASA의 Toyota 조사 보고서의 부록 A (소프트웨어) | https://www.nhtsa.gov/staticfiles/nvs/pdf/NASA_FR_Appendix_A_Software.pdf | 자동 요청이 거부됨 |
 | JARUS SORA 2.5의 Annex A, B, E, F, H, I | jarus-rpas.org | 아래 설명 참고 |
 
 ### E-Gas monitoring concept에 대하여
@@ -207,20 +218,36 @@ ISO 26262:2018의 원문은 사지 않는다. 그래서 다음을 할 수 없다
 
 ### 원문 없이 쓰는 방법
 
-| 필요한 것 | 무엇으로 대신하는가 | 비용 | 확인 |
-|---|---|---|---|
-| 용어와 정의 (2018년 판) | ISO Online Browsing Platform의 ISO 26262-1:2018 미리보기. Part 1은 용어를 정의하는 문서라 대부분이 여기에 해당한다 | 무료, 이용 약관 동의 | ISO의 도움말로 확인. 직접 열어 보지는 않았다 |
-| 각 Part의 범위와 조항 제목 | 같은 곳의 각 Part 미리보기 | 무료 | 조항 제목이 보이는지는 확인하지 못했다 |
-| 요구사항의 전문을 읽는 경험 | KS C IEC 61508 (Edition 2의 한국어 번역본)을 e-나라표준인증에서 본다. 이 책이 개념의 뿌리로 삼는 규격이다 | 무료, 가입 | Part 1-7이 모두 열리는 것을 저자가 확인했다 (2026-11-22) |
-| ISO 26262의 요구사항 | 2차 자료 둘 이상으로 확인하고 `(2차 자료)`로 밝힌다. 받은 문서 가운데에는 autosar-safety-measures가 있다 | 무료 | - |
-| ISO 26262의 구조와 한국어 용어 | KS R ISO 26262 (대부분 2011년 판)가 e-나라표준인증에서 열리면 참고한다. 2011년 판임을 밝힌다 | 무료일 수 있다 | 확인하지 못했다. 가입해야 알 수 있다 |
-| 3판에서 달라지는 점 | 영국 표준 기관 (BSI)이 2026-10-14부터 3판 초안에 대한 의견을 받고 있다. 의견을 받는 사이트에서 초안을 읽을 수 있는지 확인한다 | 무료일 수 있다 | 의견을 받고 있다는 것만 확인했다 |
-| 원문과의 대조 | 원문을 볼 수 있는 사람의 검토를 단계 1 뒤에 받는다 | - | - |
+책의 근거는 Claude가 직접 읽을 수 있는 문서로 한정한다 (RULES.md 5.1절). 저자가 대조하지 않아도 되게 하기 위해서다.
 
-- KS C IEC 61508을 읽는 순서: Part 0 (소개) -> Part 4 (용어) -> Part 1 (일반 요구사항) -> Part 3 (소프트웨어) -> Part 7 (기법의 설명). Part 2, 5, 6은 필요할 때 본다.
-- e-나라표준인증의 열람은 보기만 할 수 있고 AI에 넣는 것이 금지되어 있다. 그래서 이 규격과의 대조는 저자가 한다. Claude에게는 원문을 붙여 넣지 않고, 조항의 위치와 저자가 이해한 내용을 자기 말로 알려 준다.
+Claude가 읽을 수 있는 것 (책의 근거로 쓴다)
+
+| 필요한 것 | 근거로 쓰는 문서 |
+|---|---|
+| ISO 26262의 concept phase가 실제로 적용된 모습 (hazard 분석, ASIL 평가, safety goal, functional safety concept) | nhtsa-etc-ev-fsa |
+| 규격들의 구성과 서로의 관계 | nhtsa-safety-standards-assessment, iec-61508-overview-slides |
+| 소프트웨어 안전의 기법 (요구사항, 설계, 코딩, test) | nasa-gb-8719-13, nasa-mcdc-tutorial, misra-compliance-2020 |
+| safety mechanism과 감시 구조 | autosar-safety-measures, autosar-e2e-protocol |
+| 분석 기법 | stpa-handbook, nhtsa-etc-ev-fsa |
+| safety case | gsn-standard-v3 |
+| 사고 사례 | 사고 조사 보고서들, nasa-toyota-ua-report, koopman-toyota-ua |
+| 로봇 | ifa-report-2-2017e (2015년 판 기준) |
+| 드론 | SORA와 EASA의 문서들 |
+
+저자만 볼 수 있는 것 (책의 근거로 쓰지 않는다. 저자가 원할 때 읽는 참고 자료다)
+
+| 문서 | 볼 수 있는 곳 | 확인 |
+|---|---|---|
+| KS C IEC 61508-0 - -7 (Edition 2의 한국어 번역본) | e-나라표준인증, 로그인 필요 | Part 1-7이 모두 열리는 것을 저자가 확인했다 (2026-11-22) |
+| KS R ISO 26262 (대부분 2011년 판) | 같은 곳 | 열리는지 확인하지 못했다 |
+| ISO 26262-1:2018의 용어와 정의 | ISO Online Browsing Platform, 이용 약관 동의 필요 | ISO의 도움말로 확인. 직접 열어 보지는 않았다 |
+| ISO 26262 3판의 초안 | 영국 표준 기관이 2026-10-14부터 의견을 받고 있다 | 초안을 무료로 읽을 수 있는지는 확인하지 못했다 |
+
+- e-나라표준인증의 열람은 보기만 할 수 있고 AI에 넣는 것이 금지되어 있다. 그래서 Claude는 이 문서들을 읽지 않는다.
+- KS C IEC 61508을 읽는다면 순서는 Part 0 (소개) -> Part 4 (용어) -> Part 1 (일반 요구사항) -> Part 3 (소프트웨어) -> Part 7 (기법의 설명)을 권한다.
 - 초안은 바뀔 수 있어서 책의 근거로 삼지 않는다.
 - 3판이 발행되면 그때 살지를 다시 정한다. 원고가 끝나는 시점에는 3판이 현행일 수 있다.
+- 직접 받아야 하는 문서 (위의 "무료지만 직접 받아야 하는 문서")를 받아 두면 Claude가 읽을 수 있는 근거가 늘어난다.
 
 ### 산 문서를 쓸 때 주의할 점
 

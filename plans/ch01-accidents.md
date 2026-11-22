@@ -35,3 +35,5 @@
 각 사고의 조사 보고서 원문
 
 받은 문서: ariane-501-report, b737max-jatr, b737max-ntsb-asr1901, b737max-knkt-jt610, b737max-house-report, koopman-toyota-ua
+
+받은 문서 (추가): nasa-toyota-ua-report (NASA의 Toyota 조사 보고서, 2011)

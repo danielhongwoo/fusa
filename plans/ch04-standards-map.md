@@ -33,7 +33,7 @@
 
 이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다 (RULES.md 5.6절).
 
-- 규격을 읽는 법은 전문을 볼 수 있는 IEC 61508의 한국어 번역본을 예로 든다.
+- 규격의 구성과 서로의 관계는 받은 문서 (iec-61508-overview-slides, nhtsa-safety-standards-assessment)를 근거로 소개한다.
 - ISO 26262는 Part의 구성과, 미리보기로 확인한 조항 제목 수준으로 소개한다.
 
 ## 예제 산출물
@@ -43,3 +43,5 @@
 ## 관련 규격과 자료
 
 IEC 61508-1; ISO 26262-1, -2, -10
+
+받은 문서: iec-61508-overview-slides, nhtsa-safety-standards-assessment (ISO 26262, MIL-STD-882E, DO-178C 등을 견준 미국 정부 보고서)

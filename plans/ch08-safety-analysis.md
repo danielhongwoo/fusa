@@ -37,3 +37,5 @@ FTA 1개, 소프트웨어 수준 FMEA 1개, STPA control structure
 ISO 26262-9, ISO 26262-6 Annex E; IEC 61508-7; STPA Handbook
 
 받은 문서: stpa-handbook
+
+받은 문서 (추가): nhtsa-etc-ev-fsa (HAZOP, STPA, FMEA를 같은 시스템에 적용한 예)

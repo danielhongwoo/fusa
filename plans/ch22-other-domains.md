@@ -35,3 +35,5 @@
 ## 관련 규격과 자료
 
 쓰는 시점에 정한다
+
+받은 문서: nhtsa-safety-standards-assessment, faa-ac-20-115d

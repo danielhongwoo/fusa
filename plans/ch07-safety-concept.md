@@ -44,3 +44,5 @@ functional safety concept, technical safety concept (3단계 감시 구조, 하�
 ## 관련 규격과 자료
 
 ISO 26262-3, -4, -9
+
+받은 문서: nhtsa-etc-ev-fsa (functional safety concept, safe state, 운전자 경고, functional safety requirement), autosar-safety-measures
