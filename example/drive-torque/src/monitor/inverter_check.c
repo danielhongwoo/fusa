@@ -45,7 +45,7 @@ void inverter_check_record(inverter_check_t *st, torque_t sent)
     st->pos++;
 }
 
-bool inverter_check_step(inverter_check_t *st, bool valid, torque_t reported)
+bool inverter_check_step(inverter_check_t *st, bool valid, bool fresh, torque_t reported)
 {
     if (!valid) {
         /* SWR-19: 상태를 알 수 없는 주기를 센다. 범위를 벗어난 횟수는 그대로 둔다.
@@ -53,6 +53,13 @@ bool inverter_check_step(inverter_check_t *st, bool valid, torque_t reported)
         if (st->invalid_cycles < INVERTER_INVALID_CYCLES) {
             st->invalid_cycles++;
         }
+    } else if (!fresh) {
+        /* SWR-19: 유효하지만 새 메시지가 없는 주기다. 받는 쪽의 검사 (SWR-18)는 새 메시지가 50 ms까지
+         * 없어도 마지막 값을 유효로 넘긴다. 그 값은 지난 메시지의 것이어서 지금 보낸 토크와 견줄 수 없다.
+         * 견주면 토크가 크게 내려가는 때에 고장 없는 inverter를 끊는다 (docs/change-impact.md).
+         * 벗어난 횟수는 그대로 둔다. 올리면 벗어난 메시지 하나를 여러 번 세고,
+         * 지우면 벗어난 메시지와 빈 주기가 번갈아 올 때 한계에 닿지 않는다 */
+        st->invalid_cycles = 0u;
     } else {
         /* SWR-19: 최근에 보낸 토크와 0이 이루는 범위에 여유를 더한다.
          * inverter는 보낸 값을 늦게 따라가므로 그 사이의 값은 벗어난 것이 아니다 */

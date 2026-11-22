@@ -1483,6 +1483,7 @@ static void vcu_init_state_is_defined(int fill)
     CHECK(!vcu.speed_valid);
     CHECK_EQ(vcu.speed, 0);
     CHECK(!vcu.inverter_valid);
+    CHECK(!vcu.inverter_fresh);
     CHECK_EQ(vcu.inverter_torque, 0);
     CHECK_EQ(vcu.pedal_safe, 0);
     CHECK(vcu.brake);           /* 켠 직후에는 밟은 것으로 본다 */
@@ -1520,6 +1521,284 @@ static void tc_133(void)
     vcu_init_state_is_defined(0x00);
 }
 
+/* TC-134와 TC-135가 쓰는 것: 정해진 동안 inverter의 상태 메시지를 잃는다 */
+static fault_id_t loss_fault;
+static int32_t loss_param;
+static time_ms_t loss_on_ms;
+static time_ms_t loss_off_ms;
+static int32_t loss_report_offset;
+static bool loss_report_stale;
+static int32_t loss_torque_offset;
+static time_ms_t loss_torque_ms;
+static bool loss_inverter_no_check; /* inverter가 토크 요구 메시지를 검사하지 않는다 (A-21이 틀린 경우) */
+
+static void status_message_loss(time_ms_t t_ms)
+{
+    if (t_ms == loss_off_ms) {
+        hal_sim_clear_faults();
+    }
+    if ((t_ms == 0u) && loss_inverter_no_check) {
+        hal_sim_inverter_check(false);
+    }
+    if ((t_ms == 0u) || (t_ms == loss_off_ms)) {
+        if (loss_report_offset != 0) {
+            hal_sim_set_fault(FAULT_INVERTER_REPORT_OFFSET, loss_report_offset);
+        }
+        if (loss_report_stale) {
+            hal_sim_set_fault(FAULT_INVERTER_REPORT_STALE, 0);
+        }
+    }
+    if ((t_ms == loss_on_ms) && (loss_on_ms != loss_off_ms)) {
+        hal_sim_set_fault(loss_fault, loss_param);
+    }
+    if ((loss_torque_offset != 0) && (t_ms == loss_torque_ms)) {
+        hal_sim_set_fault(FAULT_INVERTER_TORQUE_OFFSET, loss_torque_offset);
+    }
+}
+
+/*
+ * TC-134: SWR-19 상태 메시지를 잃어도 고장이 없으면 끊지 않는다 (SG-02 쪽. 변경 요청 CR-001)
+ * 받는 쪽의 검사 (SWR-18)는 새 메시지가 50 ms까지 없어도 마지막 값을 유효로 넘긴다.
+ * 그 묵은 값을 보낸 토크의 범위와 견주면, 토크가 크게 내려가는 때에 고장 없는 inverter를 끊는다
+ * (docs/fmea.md의 FM-29). 새 메시지가 없는 주기에는 견주지 않아야 한다.
+ * 250 Nm에서 페달을 놓는 때의 앞뒤로, 메시지를 1 - 5개 잃는 구간을 1 ms씩 옮겨 가며 본다.
+ * 잃는 모양은 둘이다: inverter가 보내지 않는 경우와, 보냈는데 bus에서 사라지는 경우 (counter가 건너뛴다).
+ * 알리는 값이 가정 (A-23)의 끝에 있는 경우 (10 Nm 크고 한 주기 묵음)도 본다.
+ */
+static void tc_134(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { 200u, 1.0, false, GEAR_D },
+        { 1500u, 0.0, false, GEAR_D },  /* 놓는다: 250 Nm에서 한 주기에 0 */
+    };
+    static const fault_id_t models[] = { FAULT_INVERTER_MSG_LOSS, FAULT_INVERTER_MSG_DROP };
+    static const char *const model_names[] = { "보내지 않음", "bus에서 사라짐" };
+    int cuts_all = 0;
+
+    loss_torque_offset = 0;
+    for (int m = 0; m < 2; m++) {
+        for (int edge = 0; edge < 2; edge++) {
+            int worst = 0;
+            int cuts = 0;
+            int runs = 0;
+
+            for (int lost = 1; lost <= 5; lost++) {
+                for (time_ms_t start = 1450u; start <= 1560u; start++) {
+                    scenario_t sc = { "status-loss", 2000u, driver, 3, NULL, 0, status_message_loss };
+                    int n;
+                    int bad = 0;
+
+                    loss_fault = models[m];
+                    loss_param = 1000; /* 구간 안에서는 모두 잃는다 */
+                    loss_on_ms = start;
+                    loss_off_ms = start + (time_ms_t)(lost * 10);
+                    loss_report_offset = (edge != 0) ? 100 : 0;
+                    loss_report_stale = (edge != 0);
+                    n = scenario_run(&sc, log_buf, LOG_CAP);
+                    for (int i = 0; i < n; i++) {
+                        const sample_t *s = &log_buf[i];
+                        if ((int)s->diag.inverter_out_cycles > worst) {
+                            worst = (int)s->diag.inverter_out_cycles;
+                        }
+                        if (s->diag.latched || (s->warning != 0u) || ((s->t_ms >= 20u) && !s->enable)) {
+                            bad++;
+                        }
+                    }
+                    if (bad != 0) {
+                        cuts++;
+                    }
+                    runs++;
+                }
+            }
+            CHECK_EQ(cuts, 0);
+            CHECK(worst < 3);
+            printf("  측정 상태 메시지를 잃음 (%s, %s): %d번 가운데 끊은 것 %d번, 범위를 벗어난 주기가 이어진 횟수는 가장 클 때 %d\n",
+                   model_names[m], (edge != 0) ? "오차 +10 Nm, 한 주기 묵음" : "오차 없음", runs, cuts, worst);
+            cuts_all += cuts;
+        }
+    }
+    CHECK_EQ(cuts_all, 0);
+
+    /* 받는 쪽의 검사가 끝없이 받아들이는 가장 나쁜 모양: 메시지 셋에 하나만 닿는다.
+     * 토크가 가장 크게 바뀌는 운전 (TC-123의 것)을 처음부터 끝까지 이 모양으로 한다 */
+    {
+        static const driver_point_t hard[] = {
+            { 0u, 0.0, false, GEAR_D },
+            { 200u, 1.0, false, GEAR_D },
+            { 1500u, 0.0, false, GEAR_D },
+            { 2000u, 1.0, false, GEAR_D },
+            { 3000u, 1.0, true, GEAR_D },
+            { 3500u, 1.0, false, GEAR_D },
+            { 3530u, 0.0, false, GEAR_D },
+            { 3560u, 1.0, false, GEAR_D },
+            { 3590u, 0.0, false, GEAR_D },
+            { 3620u, 1.0, false, GEAR_D },
+            { 3650u, 0.0, false, GEAR_D },
+            { 3700u, 0.0, true, GEAR_D },
+        };
+        for (time_ms_t start = 100u; start < 130u; start++) {
+            scenario_t sc = { "status-one-in-three", 4500u, hard, 12, NULL, 0, status_message_loss };
+            int n;
+            int bad = 0;
+
+            loss_fault = FAULT_INVERTER_MSG_DROP;
+            loss_param = 2;
+            loss_on_ms = start;
+            loss_off_ms = 100000u; /* 끝까지 */
+            loss_report_offset = 100;
+            loss_report_stale = true;
+            n = scenario_run(&sc, log_buf, LOG_CAP);
+            for (int i = 0; i < n; i++) {
+                const sample_t *s = &log_buf[i];
+                if (s->diag.latched || (s->warning != 0u) || ((s->t_ms >= 20u) && !s->enable)) {
+                    bad++;
+                }
+            }
+            CHECK_EQ(bad, 0);
+        }
+    }
+    loss_report_offset = 0;
+    loss_report_stale = false;
+    loss_on_ms = 0u;
+    loss_off_ms = 0u;
+}
+
+/*
+ * TC-135: SWR-19 fault injection FI-34 (두 고장이 겹친 경우. 변경 요청 CR-001의 대가)
+ * inverter가 요구보다 100 Nm 더 내는데, 상태 메시지는 셋에 하나만 닿는다.
+ * 새 메시지가 없는 주기에는 견주지 않으므로, 범위를 벗어난 새 메시지 셋을 모으는 데 더 오래 걸린다.
+ * 차단은 일어난다. 걸리는 시간을 잰다. 시간 예산표 (docs/technical-safety-concept.md 9.4절)의 M4 줄은
+ * 상태 메시지가 주기마다 닿는 경우의 것이고, 이 경우는 그 밖이다.
+ */
+static void tc_135(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    scenario_t sc_ref = { "fi-34-ref", 3000u, driver, 2, NULL, 0, NULL };
+    int n_ref = scenario_run(&sc_ref, log_ref, LOG_CAP);
+    int worst_cut_ms = 0;
+    int worst_over_ms = 0;
+    int worst_off_ms = 0;
+    double worst_excess = 0.0;
+
+    loss_report_offset = 0;
+    loss_report_stale = false;
+    /* 잃기 시작하는 때와 fault를 넣는 때를 주기와 메시지의 모든 위상으로 옮긴다 */
+    for (time_ms_t drop_phase = 0u; drop_phase < 30u; drop_phase += 10u) {
+        for (time_ms_t phase = 0u; phase < 10u; phase++) {
+            scenario_t sc = { "fi-34", 3000u, driver, 2, NULL, 0, status_message_loss };
+            int n;
+            int over_ms = 0;
+            double max_excess;
+            int t_cut;
+            int t_off;
+
+            loss_fault = FAULT_INVERTER_MSG_DROP;
+            loss_param = 2;
+            loss_on_ms = 1000u + drop_phase;
+            loss_off_ms = 100000u;
+            loss_torque_offset = 1000;
+            loss_torque_ms = T_FAULT + phase;
+            n = scenario_run(&sc, log_buf, LOG_CAP);
+            max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+            t_cut = first_time(log_buf, n, 0u, is_latched);
+            t_off = first_motor_off(log_buf, n, loss_torque_ms);
+
+            CHECK_EQ(n, n_ref);
+            CHECK(t_cut >= (int)T_FAULT);
+            CHECK(t_off >= 0);
+            CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
+            if ((t_cut - (int)loss_torque_ms) > worst_cut_ms) {
+                worst_cut_ms = t_cut - (int)loss_torque_ms;
+            }
+            if ((t_off - (int)loss_torque_ms) > worst_off_ms) {
+                worst_off_ms = t_off - (int)loss_torque_ms;
+            }
+            if (over_ms > worst_over_ms) {
+                worst_over_ms = over_ms;
+            }
+            if (max_excess > worst_excess) {
+                worst_excess = max_excess;
+            }
+        }
+    }
+    loss_torque_offset = 0;
+    printf("  측정 FI-34 (inverter가 100 Nm 더 냄 + 상태 메시지 셋에 하나): fault부터 차단까지 가장 나쁜 경우 %d ms, "
+           "모터의 토크가 5%% 아래로 내려갈 때까지 %d ms, 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n",
+           worst_cut_ms, worst_off_ms, worst_excess, worst_over_ms);
+    /* 상태 메시지가 주기마다 닿으면 36 ms와 109 ms다 (TC-121). 셋에 하나만 닿으면 그보다 60 ms 늦다.
+     * 값으로 고정해 둔다. 바뀌면 시간의 예산을 다시 보아야 한다 */
+    CHECK_EQ(worst_cut_ms, 96);
+    CHECK(worst_off_ms <= 170);
+    CHECK(worst_over_ms <= 200);
+
+    /* 시간 예산표의 M4 줄을 정한 경우 (FI-20의 되풀이: 페달을 놓았는데 inverter가 옛 토크를 계속 낸다)에
+     * 상태 메시지가 셋에 하나만 닿는다. 상태 메시지가 주기마다 닿으면 차단까지 70 ms, 5% 아래까지 128 ms다 (TC-120) */
+    {
+        static const driver_point_t release[] = {
+            { 0u, 0.0, false, GEAR_D },
+            { T_PEDAL_ON, 0.3, false, GEAR_D },
+            { T_FAULT, 0.0, false, GEAR_D },
+        };
+        scenario_t sc_ref2 = { "fi-34-ref2", 3000u, release, 3, NULL, 0, NULL };
+
+        (void)scenario_run(&sc_ref2, log_ref, LOG_CAP);
+        worst_cut_ms = 0;
+        worst_off_ms = 0;
+        worst_over_ms = 0;
+        worst_excess = 0.0;
+        loss_inverter_no_check = true;
+        for (time_ms_t drop_phase = 0u; drop_phase < 30u; drop_phase += 10u) {
+            fault_event_t repeat = { T_FAULT - 5u, FAULT_TORQUE_MSG_REPEAT, 0 };
+            scenario_t sc = { "fi-34-repeat", 3000u, release, 3, &repeat, 1, status_message_loss };
+            int n;
+            int over_ms = 0;
+            double max_excess;
+            int t_cut;
+            int t_off;
+
+            loss_fault = FAULT_INVERTER_MSG_DROP;
+            loss_param = 2;
+            loss_on_ms = 1000u + drop_phase;
+            loss_off_ms = 100000u;
+            n = scenario_run(&sc, log_buf, LOG_CAP);
+            max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+            t_cut = first_time(log_buf, n, 0u, is_latched);
+            t_off = first_motor_off(log_buf, n, T_FAULT);
+            CHECK(t_cut >= (int)T_FAULT);
+            CHECK(t_off >= 0);
+            CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
+            if ((t_cut - (int)T_FAULT) > worst_cut_ms) {
+                worst_cut_ms = t_cut - (int)T_FAULT;
+            }
+            if ((t_off - (int)T_FAULT) > worst_off_ms) {
+                worst_off_ms = t_off - (int)T_FAULT;
+            }
+            if (over_ms > worst_over_ms) {
+                worst_over_ms = over_ms;
+            }
+            if (max_excess > worst_excess) {
+                worst_excess = max_excess;
+            }
+        }
+        loss_inverter_no_check = false;
+        printf("  측정 FI-34 (옛 토크를 계속 냄 + 상태 메시지 셋에 하나): 페달을 놓은 때부터 차단까지 가장 나쁜 경우 %d ms, "
+               "모터의 토크가 5%% 아래로 내려갈 때까지 %d ms, 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n",
+               worst_cut_ms, worst_off_ms, worst_excess, worst_over_ms);
+        /* 값으로 고정해 둔다. 예산표의 합 (151 ms)을 넘는다는 것이 이 test가 기록하는 것이다.
+         * sim에서는 SG-01의 200 ms 안이지만 여유가 12 ms이고, 예산표의 셈법으로는 231 ms다 (docs/change-impact.md) */
+        CHECK_EQ(worst_cut_ms, 130);
+        CHECK(worst_off_ms > 151);
+        CHECK(worst_off_ms <= 188);
+        CHECK(worst_over_ms <= 200);
+    }
+    loss_on_ms = 0u;
+    loss_off_ms = 0u;
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1555,6 +1834,8 @@ int main(void)
         { "TC-131", "FI-31 줄여 가는 중에 남은 채널이 높은 값에 고착 (알아채지 못하지만 SG-01은 지킨다)", tc_131 },
         { "TC-132", "FI-32 줄여 가는 중에 남은 채널도 범위를 벗어남", tc_132 },
         { "TC-133", "켠 직후의 VCU의 상태는 memory에 남아 있던 값과 상관없이 정해져 있다", tc_133 },
+        { "TC-134", "상태 메시지를 잃어도 고장이 없으면 inverter의 검사가 끊지 않는다", tc_134 },
+        { "TC-135", "FI-34 inverter가 더 내는데 상태 메시지는 셋에 하나만 닿음 (판정이 늦어진다)", tc_135 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

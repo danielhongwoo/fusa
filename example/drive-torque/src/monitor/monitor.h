@@ -61,7 +61,7 @@ torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t to
 /* inverter가 알린 토크의 검사. 값은 임시다 */
 #define INVERTER_HISTORY_CYCLES  ((uint8_t)5)    /* 보낸 토크를 이만큼 (50 ms) 기억한다 */
 #define INVERTER_TORQUE_MARGIN   ((torque_t)300) /* 범위에 더하는 여유: 30.0 Nm */
-#define INVERTER_OUT_CYCLES      ((uint8_t)3)    /* 범위를 벗어난 주기가 이만큼 이어지면 구동 허용 차단 */
+#define INVERTER_OUT_CYCLES      ((uint8_t)3)    /* 범위를 벗어난 새 메시지가 이만큼 이어지면 구동 허용 차단 */
 #define INVERTER_INVALID_CYCLES  ((uint8_t)10)   /* 상태가 무효인 주기가 이만큼 이어지면 구동 허용 차단 */
 
 /* 배열은 구조체의 끝에 둔다. 증명 도구 (CBMC)의 경계 검사는 pointer로 받은 구조체 안의 배열에 대해
@@ -69,7 +69,7 @@ torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t to
  * (docs/test-report.md 6절. tools/prove.sh가 이 한계를 작은 예로 확인한다) */
 typedef struct {
     uint8_t pos;            /* 다음에 적을 자리 */
-    uint8_t out_cycles;     /* 알린 토크가 범위를 벗어난 주기가 몇 번 이어졌는가 */
+    uint8_t out_cycles;     /* 알린 토크가 범위를 벗어난 새 메시지가 몇 번 이어졌는가 */
     uint8_t invalid_cycles; /* inverter의 상태가 무효인 주기가 몇 번 이어졌는가 */
     torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */
 } inverter_check_t;
@@ -81,8 +81,10 @@ void inverter_check_record(inverter_check_t *st, torque_t sent);
 
 /*
  * inverter가 알린 토크를 지난 주기들에 보낸 토크와 견준다. 구동 허용 차단의 사건이면 참이다.
- * valid가 거짓이면 reported를 보지 않는다.
+ *   valid  inverter의 상태가 유효한가. 거짓이면 reported를 보지 않는다
+ *   fresh  이번 주기에 새 상태 메시지를 받았는가. 유효하지만 새 메시지가 없으면 reported는 지난 메시지의
+ *          값이다. 그 주기에는 견주지 않고, 벗어난 횟수를 올리지도 지우지도 않는다
  */
-bool inverter_check_step(inverter_check_t *st, bool valid, torque_t reported);
+bool inverter_check_step(inverter_check_t *st, bool valid, bool fresh, torque_t reported);
 
 #endif

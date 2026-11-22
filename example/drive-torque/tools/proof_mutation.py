@@ -47,6 +47,12 @@ MUTANTS = [
      "prove_normal_function_not_clamped", "줄여 감의 기능의 상한을 0.1 Nm 낮춘다 (감시와의 틈이 5 Nm를 넘는다)"),
     ("src/monitor/monitor.h", "#define ALLOWED_RISE_PER_CYCLE ((torque_t)250)", "#define ALLOWED_RISE_PER_CYCLE ((torque_t)251)",
      "prove_faulty_function_bounded", "감시가 허용하는 오르는 속도를 0.1 Nm 올린다"),
+    # 변경 요청 CR-001 (docs/change-impact.md): 새 메시지가 없는 주기의 성질 (성질 13의 사)
+    ("src/monitor/inverter_check.c", "한계에 닿지 않는다 */\n        st->invalid_cycles = 0u;\n",
+     "한계에 닿지 않는다 */\n        st->invalid_cycles = 0u;\n        st->out_cycles = 0u;\n", "prove_inverter_check",
+     "새 메시지가 없는 주기에 벗어난 횟수를 지운다"),
+    ("src/monitor/inverter_check.c", "    } else if (!fresh) {", "    } else if (!fresh && (reported == 0)) {",
+     "prove_inverter_check", "새 메시지가 없는 주기에도 알린 값이 0이 아니면 견준다"),
 ]
 
 

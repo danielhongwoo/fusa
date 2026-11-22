@@ -32,6 +32,8 @@ typedef enum {
     FAULT_TASK_TWICE,        /* task 하나가 한 주기에 두 번 실행됨. param은 task table의 몇 번째인가 (0부터) */
     FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
+    FAULT_INVERTER_MSG_DROP, /* inverter의 상태 메시지가 bus에서 사라짐: param개를 잃고 하나가 닿는 것을 되풀이한다.
+                              * 보낸 쪽의 counter는 오른다 (FAULT_INVERTER_MSG_LOSS는 보내지 않는 경우여서 오르지 않는다) */
     FAULT_COUNT
 } fault_id_t;
 

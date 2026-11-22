@@ -24,6 +24,7 @@ void vcu_init(vcu_t *vcu)
     vcu->speed_valid = false;
     vcu->speed = 0;
     vcu->inverter_valid = false;
+    vcu->inverter_fresh = false;
     vcu->inverter_torque = 0;
     vcu->pedal_safe = 0;
     vcu->brake = true;
@@ -56,6 +57,7 @@ static void task_input(vcu_t *vcu)
     hal_can_rx_inverter(&rx);
     vcu->inverter_valid = e2e_check(&vcu->inverter_rx, E2E_ID_INVERTER, &rx.frame, rx.seen, rx.fresh,
                                     rx.age_ms);
+    vcu->inverter_fresh = rx.fresh;
     vcu->inverter_torque = vcu->inverter_valid ? rx.frame.value : 0;
     vcu->pedal_safe = pedal_check_step(&vcu->pedal_check, &vcu->in);
     /* SWR-24: 페달 채널 하나를 검사에서 뺐으면 줄여 감의 사건이다 */
@@ -90,8 +92,10 @@ static void task_app(vcu_t *vcu)
 static void task_monitor_output(vcu_t *vcu)
 {
     /* SWR-19: inverter가 알린 토크가 지난 주기들에 보낸 토크의 범위를 계속 벗어나거나,
-     * inverter의 상태를 계속 알 수 없으면 구동 허용 차단의 사건이다 */
-    if (inverter_check_step(&vcu->inverter_check, vcu->inverter_valid, vcu->inverter_torque)) {
+     * inverter의 상태를 계속 알 수 없으면 구동 허용 차단의 사건이다.
+     * 새 메시지가 없는 주기의 값은 지난 메시지의 것이어서 견주지 않는다 */
+    if (inverter_check_step(&vcu->inverter_check, vcu->inverter_valid, vcu->inverter_fresh,
+                            vcu->inverter_torque)) {
         reaction_raise(&vcu->reaction, REACTION_CUT);
     }
     vcu->torque_out = monitor_output_cycle(&vcu->output, &vcu->reaction, vcu->torque_req,

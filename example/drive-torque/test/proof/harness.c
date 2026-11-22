@@ -624,17 +624,20 @@ void prove_gear_check(void)
  * 성질 13 (SWR-19): inverter가 알린 토크의 검사. 기록, 적을 자리, 세는 값이 어떤 값에서 시작해도
  * (memory의 값이 틀려도) 성립한다.
  *   가. 사건은 범위를 벗어난 횟수가 3 이상이거나 무효인 횟수가 10 이상일 때, 그리고 그때에만 알린다.
- *   나. 유효하고, 알린 토크가 -280 - 280 Nm 밖이면 반드시 벗어난 것으로 센다 (기록이 무엇이든).
- *   다. 유효하고, 알린 토크가 -30 - 30 Nm 안이면 반드시 범위 안으로 본다 (기록이 무엇이든. 0은 늘 범위에 든다).
- *   라. 유효하고 범위 안이면 벗어난 횟수와 무효인 횟수가 0이 된다.
+ *   나. 유효한 새 메시지이고, 알린 토크가 -280 - 280 Nm 밖이면 반드시 벗어난 것으로 센다 (기록이 무엇이든).
+ *   다. 유효한 새 메시지이고, 알린 토크가 -30 - 30 Nm 안이면 반드시 범위 안으로 본다 (기록이 무엇이든. 0은 늘 범위에 든다).
+ *   라. 유효한 새 메시지이고 범위 안이면 벗어난 횟수와 무효인 횟수가 0이 된다.
  *   마. 무효이면 알린 값을 보지 않고, 벗어난 횟수는 그대로다.
  *   바. 기록할 때 배열 밖을 쓰지 않는다.
+ *   사. 유효하지만 새 메시지가 없으면 알린 값이 무엇이든 벗어난 횟수는 그대로이고 (올리지도 지우지도 않는다),
+ *       무효인 횟수는 0이 된다 (변경 요청 CR-001).
  * 말해 주지 않는 것: 범위가 최근에 보낸 값에서 옳게 나오는가. 그것은 unit test (TC-020)가 값으로 본다.
  */
 void prove_inverter_check(void)
 {
     inverter_check_t st;
     bool valid = nondet_bool();
+    bool fresh = nondet_bool();
     torque_t reported = nondet_int32();
     torque_t sent = nondet_int32();
     uint8_t old_out;
@@ -650,11 +653,15 @@ void prove_inverter_check(void)
     old_out = st.out_cycles;
     old_invalid = st.invalid_cycles;
 
-    event = inverter_check_step(&st, valid, reported);
+    event = inverter_check_step(&st, valid, fresh, reported);
 
     /* 가 */
     assert(event == ((st.out_cycles >= 3) || (st.invalid_cycles >= 10)));
-    if (valid) {
+    if (valid && !fresh) {
+        /* 사 */
+        assert(st.out_cycles == old_out);
+        assert(st.invalid_cycles == 0);
+    } else if (valid) {
         assert(st.invalid_cycles == 0);
         /* 나 */
         if ((reported > 2800) || (reported < -2800)) {

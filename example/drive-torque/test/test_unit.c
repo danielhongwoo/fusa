@@ -1387,39 +1387,39 @@ static void tc_020(void)
     /* 75 Nm를 보내 왔다. 범위는 0과 75 Nm에 30 Nm의 여유를 더한 -30 - 105 Nm다 */
     inverter_check_init(&st);
     fill_sent(&st, 750);
-    CHECK(!inverter_check_step(&st, true, 750));
-    CHECK(!inverter_check_step(&st, true, 0));     /* 덜 내는 것은 벗어난 것이 아니다 */
-    CHECK(!inverter_check_step(&st, true, 1050));  /* 105.0 Nm: 범위의 끝 */
-    CHECK(!inverter_check_step(&st, true, -300));  /* -30.0 Nm: 범위의 끝 */
+    CHECK(!inverter_check_step(&st, true, true, 750));
+    CHECK(!inverter_check_step(&st, true, true, 0));     /* 덜 내는 것은 벗어난 것이 아니다 */
+    CHECK(!inverter_check_step(&st, true, true, 1050));  /* 105.0 Nm: 범위의 끝 */
+    CHECK(!inverter_check_step(&st, true, true, -300));  /* -30.0 Nm: 범위의 끝 */
     /* 범위를 벗어난 주기가 3번 이어지면 사건이다 */
-    CHECK(!inverter_check_step(&st, true, 1051));
-    CHECK(!inverter_check_step(&st, true, 1051));
-    CHECK(inverter_check_step(&st, true, 1051));
+    CHECK(!inverter_check_step(&st, true, true, 1051));
+    CHECK(!inverter_check_step(&st, true, true, 1051));
+    CHECK(inverter_check_step(&st, true, true, 1051));
     /* 아래쪽도 같다 */
     inverter_check_init(&st);
     fill_sent(&st, 750);
-    CHECK(!inverter_check_step(&st, true, -301));
-    CHECK(!inverter_check_step(&st, true, -301));
-    CHECK(inverter_check_step(&st, true, -301));
+    CHECK(!inverter_check_step(&st, true, true, -301));
+    CHECK(!inverter_check_step(&st, true, true, -301));
+    CHECK(inverter_check_step(&st, true, true, -301));
     /* 한 번이라도 범위 안으로 돌아오면 다시 센다 */
     inverter_check_init(&st);
     fill_sent(&st, 750);
-    CHECK(!inverter_check_step(&st, true, 2000));
-    CHECK(!inverter_check_step(&st, true, 2000));
-    CHECK(!inverter_check_step(&st, true, 1000));
-    CHECK(!inverter_check_step(&st, true, 2000));
-    CHECK(!inverter_check_step(&st, true, 2000));
-    CHECK(inverter_check_step(&st, true, 2000));
+    CHECK(!inverter_check_step(&st, true, true, 2000));
+    CHECK(!inverter_check_step(&st, true, true, 2000));
+    CHECK(!inverter_check_step(&st, true, true, 1000));
+    CHECK(!inverter_check_step(&st, true, true, 2000));
+    CHECK(!inverter_check_step(&st, true, true, 2000));
+    CHECK(inverter_check_step(&st, true, true, 2000));
 
     /* 후진의 토크를 보내 왔다 (-30 Nm). 범위는 -60 - 30 Nm다 */
     inverter_check_init(&st);
     fill_sent(&st, -300);
-    CHECK(!inverter_check_step(&st, true, -600));
-    CHECK(!inverter_check_step(&st, true, 300));
+    CHECK(!inverter_check_step(&st, true, true, -600));
+    CHECK(!inverter_check_step(&st, true, true, 300));
     CHECK_EQ(st.out_cycles, 0);
-    CHECK(!inverter_check_step(&st, true, -601));
+    CHECK(!inverter_check_step(&st, true, true, -601));
     CHECK_EQ(st.out_cycles, 1);
-    CHECK(!inverter_check_step(&st, true, 301));
+    CHECK(!inverter_check_step(&st, true, true, 301));
     CHECK_EQ(st.out_cycles, 2);
 
     /* 범위는 최근 5주기에 보낸 값에서 나온다. 250 Nm를 보내다가 0으로 내리면,
@@ -1428,52 +1428,96 @@ static void tc_020(void)
     fill_sent(&st, 2500);
     for (int i = 0; i < 4; i++) {
         inverter_check_record(&st, 0);
-        CHECK(!inverter_check_step(&st, true, 2800));
+        CHECK(!inverter_check_step(&st, true, true, 2800));
         CHECK_EQ(st.out_cycles, 0);
     }
     inverter_check_record(&st, 0);
-    CHECK(!inverter_check_step(&st, true, 301));
+    CHECK(!inverter_check_step(&st, true, true, 301));
     CHECK_EQ(st.out_cycles, 1);
-    CHECK(!inverter_check_step(&st, true, 300));
+    CHECK(!inverter_check_step(&st, true, true, 300));
     CHECK_EQ(st.out_cycles, 0);
     /* 방향이 바뀐 직후에는 두 방향의 값이 모두 기록에 있다 */
     inverter_check_init(&st);
     fill_sent(&st, 1000);
     inverter_check_record(&st, -500);
-    CHECK(!inverter_check_step(&st, true, 1300));
-    CHECK(!inverter_check_step(&st, true, -800));
+    CHECK(!inverter_check_step(&st, true, true, 1300));
+    CHECK(!inverter_check_step(&st, true, true, -800));
     CHECK_EQ(st.out_cycles, 0);
 
     /* inverter의 상태가 무효인 주기가 10번 이어지면 사건이다. 무효인 동안에는 알린 값을 보지 않는다 */
     inverter_check_init(&st);
     for (int i = 0; i < 9; i++) {
-        CHECK(!inverter_check_step(&st, false, 30000));
+        CHECK(!inverter_check_step(&st, false, false, 30000));
     }
     CHECK_EQ(st.out_cycles, 0);
-    CHECK(inverter_check_step(&st, false, 0));
+    CHECK(inverter_check_step(&st, false, false, 0));
     /* 유효한 주기가 하나 끼면 다시 센다 */
     inverter_check_init(&st);
     for (int i = 0; i < 9; i++) {
-        CHECK(!inverter_check_step(&st, false, 0));
+        CHECK(!inverter_check_step(&st, false, false, 0));
     }
-    CHECK(!inverter_check_step(&st, true, 0));
+    CHECK(!inverter_check_step(&st, true, true, 0));
     for (int i = 0; i < 9; i++) {
-        CHECK(!inverter_check_step(&st, false, 0));
+        CHECK(!inverter_check_step(&st, false, false, 0));
     }
-    CHECK(inverter_check_step(&st, false, 0));
+    CHECK(inverter_check_step(&st, false, false, 0));
     /* 무효인 주기는 범위를 벗어난 횟수를 지우지 않는다. 벗어남과 무효가 번갈아 와도 판정한다 */
     inverter_check_init(&st);
-    CHECK(!inverter_check_step(&st, true, 301));
-    CHECK(!inverter_check_step(&st, true, 301));
-    CHECK(!inverter_check_step(&st, false, 0));
-    CHECK(inverter_check_step(&st, true, 301));
+    CHECK(!inverter_check_step(&st, true, true, 301));
+    CHECK(!inverter_check_step(&st, true, true, 301));
+    CHECK(!inverter_check_step(&st, false, false, 0));
+    CHECK(inverter_check_step(&st, true, true, 301));
     /* 판정한 뒤에도 오래 이어질 수 있다. 세는 값이 넘쳐 0으로 돌아가지 않는다 */
     for (int i = 0; i < 300; i++) {
-        CHECK(inverter_check_step(&st, true, 301));
+        CHECK(inverter_check_step(&st, true, true, 301));
     }
+
+    /* 유효하지만 새 메시지가 없는 주기 (변경 요청 CR-001). 알린 값은 지난 메시지의 것이므로 견주지 않는다.
+     * 벗어난 횟수를 올리지 않는다: 벗어난 값이 묵은 채 몇 주기를 가도 사건이 아니다 */
+    inverter_check_init(&st);
+    fill_sent(&st, 750);
+    CHECK(!inverter_check_step(&st, true, true, 1051));
+    CHECK_EQ(st.out_cycles, 1);
+    for (int i = 0; i < 20; i++) {
+        CHECK(!inverter_check_step(&st, true, false, 1051));
+        CHECK_EQ(st.out_cycles, 1);
+    }
+    /* 지우지도 않는다: 벗어난 새 메시지와 빈 주기가 번갈아 와도 벗어난 새 메시지가 3번이면 사건이다 */
+    CHECK(!inverter_check_step(&st, true, true, 1051));
+    CHECK_EQ(st.out_cycles, 2);
+    CHECK(!inverter_check_step(&st, true, false, 0));    /* 묵은 값이 범위 안이어도 지우지 않는다 */
+    CHECK(!inverter_check_step(&st, true, false, 0));
+    CHECK_EQ(st.out_cycles, 2);
+    CHECK(inverter_check_step(&st, true, true, 1051));
+    /* 사건이 난 뒤의 빈 주기에도 사건은 그대로다 */
+    CHECK(inverter_check_step(&st, true, false, 0));
+    /* 범위 안의 새 메시지는 그대로 지운다 */
+    inverter_check_init(&st);
+    fill_sent(&st, 750);
+    CHECK(!inverter_check_step(&st, true, true, 1051));
+    CHECK(!inverter_check_step(&st, true, true, 1051));
+    CHECK(!inverter_check_step(&st, true, false, 1051));
+    CHECK(!inverter_check_step(&st, true, true, 1050));
+    CHECK_EQ(st.out_cycles, 0);
+    /* 빈 주기도 유효한 주기다. 무효인 횟수는 지운다 */
+    inverter_check_init(&st);
+    for (int i = 0; i < 9; i++) {
+        CHECK(!inverter_check_step(&st, false, false, 0));
+    }
+    CHECK_EQ(st.invalid_cycles, 9);
+    CHECK(!inverter_check_step(&st, true, false, 30000));
+    CHECK_EQ(st.invalid_cycles, 0);
+    CHECK_EQ(st.out_cycles, 0);
+    /* 무효이면 새 메시지이든 아니든 같다 (검사를 통과하지 못한 새 메시지도 무효다) */
+    inverter_check_init(&st);
+    for (int i = 0; i < 9; i++) {
+        CHECK(!inverter_check_step(&st, false, (i % 2) == 0, 30000));
+    }
+    CHECK_EQ(st.out_cycles, 0);
+    CHECK(inverter_check_step(&st, false, true, 30000));
     inverter_check_init(&st);
     for (int i = 0; i < 300; i++) {
-        CHECK(inverter_check_step(&st, false, 0) == (i >= 9));
+        CHECK(inverter_check_step(&st, false, false, 0) == (i >= 9));
     }
 
     /* 기록과 적을 자리가 틀린 값이 되어도 (memory의 값이 틀려도) 배열 밖을 쓰지 않고 계산이 넘치지 않는다.
@@ -1485,11 +1529,11 @@ static void tc_020(void)
     CHECK_EQ(st.sent[0], 750);
     st.sent[3] = 2147483647;
     st.sent[4] = (-2147483647 - 1);
-    CHECK(!inverter_check_step(&st, true, 2800));
-    CHECK(!inverter_check_step(&st, true, -2800));
+    CHECK(!inverter_check_step(&st, true, true, 2800));
+    CHECK(!inverter_check_step(&st, true, true, -2800));
     CHECK_EQ(st.out_cycles, 0);
-    CHECK(!inverter_check_step(&st, true, 2801));
-    CHECK(!inverter_check_step(&st, true, -2801));
+    CHECK(!inverter_check_step(&st, true, true, 2801));
+    CHECK(!inverter_check_step(&st, true, true, -2801));
     CHECK_EQ(st.out_cycles, 2);
 
     /* 오래 기록해도 기록의 배열 밖을 쓰지 않는다. 구조체 바로 뒤에 둔 값이 그대로인지 본다 (monitor.h) */

@@ -30,6 +30,7 @@ typedef struct {
     speed_t speed;           /* 유효할 때만 쓴다 */
     e2e_rx_t inverter_rx;    /* inverter의 상태 메시지의 검사 */
     bool inverter_valid;
+    bool inverter_fresh;     /* 이번 주기에 inverter의 새 상태 메시지를 받았는가 */
     torque_t inverter_torque; /* 유효할 때만 쓴다 */
     inverter_check_t inverter_check; /* inverter가 알린 토크의 검사 */
     e2e_tx_t torque_tx;      /* 토크 요구 메시지의 보호 */

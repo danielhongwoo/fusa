@@ -29,6 +29,7 @@ static struct {
     bool inv_fresh;
     unsigned inv_counter;
     int32_t inv_prev_value;
+    int32_t inv_dropped;  /* 이어서 잃은 상태 메시지의 수 (FAULT_INVERTER_MSG_DROP) */
     /* 외부 watchdog */
     bool wd_present;
     bool wd_armed;        /* 첫 답을 받았는가 */
@@ -126,10 +127,16 @@ static void update_messages(void)
             value += sim.fault_param[FAULT_INVERTER_REPORT_OFFSET];
         }
         sim.inv_prev_value = now_value;
-        frame_sim_make(&sim.inv_frame, SIM_ID_INVERTER, sim.inv_counter, value);
-        sim.inv_seen = true;
-        sim.inv_fresh = true;
-        sim.inv_rx_ms = sim.now_ms;
+        if (sim.fault_on[FAULT_INVERTER_MSG_DROP] && (sim.inv_dropped < sim.fault_param[FAULT_INVERTER_MSG_DROP])) {
+            /* 보냈지만 닿지 않는다. counter는 이미 올랐다 */
+            sim.inv_dropped++;
+        } else {
+            sim.inv_dropped = 0;
+            frame_sim_make(&sim.inv_frame, SIM_ID_INVERTER, sim.inv_counter, value);
+            sim.inv_seen = true;
+            sim.inv_fresh = true;
+            sim.inv_rx_ms = sim.now_ms;
+        }
     }
 }
 
@@ -148,6 +155,7 @@ void hal_sim_init(plant_t *plant)
     sim.inv_fresh = false;
     sim.inv_counter = 0u;
     sim.inv_prev_value = 0;
+    sim.inv_dropped = 0;
     sim.inv_frame = (frame_t){ 0, 0u, 0u };
     sim.inv_rx_ms = 0u;
     sim.torque_frame_last = (frame_t){ 0, 0u, 0u };

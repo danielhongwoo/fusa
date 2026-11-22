@@ -21,10 +21,11 @@ void inverter_check_record(inverter_check_t *st, torque_t sent)
     (void)sent;
 }
 
-bool inverter_check_step(inverter_check_t *st, bool valid, torque_t reported)
+bool inverter_check_step(inverter_check_t *st, bool valid, bool fresh, torque_t reported)
 {
     (void)st;
     (void)valid;
+    (void)fresh;
     (void)reported;
     return false;
 }
