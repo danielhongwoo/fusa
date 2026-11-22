@@ -16,7 +16,7 @@
 | gcov | GCC 16.2의 것 | statement, branch, MC/DC를 센다 | `tools/coverage.sh`, `tools/coverage_summary.py` |
 | cppcheck | 2.22 | 정적 분석 | `Makefile`의 `static` |
 | clang-tidy | LLVM 23 | 정적 분석 (bugprone, cert, clang-analyzer 묶음) | `Makefile`의 `static` |
-| CBMC | 6.11 | 성질 14개의 증명. overflow, 0으로 나누기, 값이 달라지는 변환, 배열 밖 접근 | `tools/prove.sh` |
+| CBMC | 6.11 | 성질 15개의 증명. overflow, 0으로 나누기, 값이 달라지는 변환, 배열 밖 접근 | `tools/prove.sh` |
 | 추적 스크립트 | 이 저장소의 것 | 요구사항, 코드, test의 ID가 이어져 있는지 | `tools/trace.py` |
 | 변이 검사 스크립트 | 이 저장소의 것 | 제품 코드에 결함을 넣고 test (또는 증명)가 실패하는지 | `tools/mutation_check.py`, `tools/proof_mutation.py` |
 | test의 틀 | 이 저장소의 것 | test를 돌리고 통과와 실패를 센다 | `test/test.h`, `test/test_run.c` |
