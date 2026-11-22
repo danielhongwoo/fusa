@@ -130,6 +130,7 @@
 | C-04-011 | FMVSS는 법으로 정한 성능 요구사항이고 제조사가 스스로 인증한다. ISO 26262는 자발적인 업계 규격 | nhtsa-safety-standards-assessment, 14쪽, 16-17쪽 | 1차 (보고서) | 2026-11-22 |
 | C-04-012 | shall, should, may, can, must의 뜻. normative와 informative | ISO/IEC Directives, Part 2, 9판 (2021), 3.2.1 - 3.3.8, 7절. https://www.iso.org/sites/directives/current/part2/index.xhtml (웹, 2026-11-22) | 1차 | 2026-11-22 |
 | C-04-013 | GSN 표준의 Part 1만 normative. SORA는 should를 강한 의무로 정의 | gsn-standard-v3, 9쪽. sora-2-5-main-body, 29쪽 | 1차 | 2026-11-22 |
+| C-04-018 | ISO의 소개 글: Part 3에 hazard analysis and risk assessment, Part 8에 형상과 변경의 관리 | https://www.iso.org/publication/PUB200262.html (웹, 2026-11-22. 에이전트가 읽음) | 1차 (발행 기관의 판매 설명) | 2026-11-23 |
 | C-04-014 | ISO 26262:2018의 Part 제목, IEC 61508:2010의 Part 제목 | references/standards.md의 기록 (발행 기관의 목록에서 확인). ISO 26262-1:2018의 페이지 https://www.iso.org/standard/68383.html (웹, 2026-11-22) | 1차 (제목만) | 2026-11-22 |
 | C-04-015 | DO-178C: 소프트웨어를 따로 인증하지 않는다. MIL-STD-882E는 인증 규격이 아니다. ISO 26262는 산출물을 모아 safety case로 삼고 confirmation review의 독립을 요구 | nhtsa-safety-standards-assessment, 33-34쪽 | 2차 (DO-178C와 ISO 26262:2011을 보고서가 인용) | 2026-11-22 |
 | C-04-016 | ISO 26262 다음 판: Part 3, 6, 12의 초안 (DIS)이 의견을 받는 단계. Part 3의 제목이 Product development at the item level로 바뀜. 이미 개발 중인 시스템은 적용 범위에서 빠진다는 소개 글. Part 12의 초안은 2판 | https://www.iso.org/standard/90022.html, 90025.html, 90031.html (웹, 2026-11-22. 직접 읽음). 나머지 Part는 에이전트가 읽었다 | 1차 (발행 기관의 페이지) | 2026-11-22 |

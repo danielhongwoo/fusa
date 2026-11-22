@@ -94,7 +94,7 @@
 | F04-056 | 14 | 목적은 "specific" 범주의 UAS 운용이 허용 가능하게 안전하려면 필요한 증거와 보증을 위험에 비례해 정하는 것이다. 신청자와 소관 당국이 함께 쓴다. 목표 안전 수준 (TLOS)은 유인 항공의 수준에 맞춘다 | "risk-proportionate method to determine the required evidence" | |
 | F04-057 | 18 | 처방적 요구가 아니라 위험에 맞춘 견고성 수준의 안전 목표를 담는다. 체크리스트로 쓰면 안 되고 안내서다 | "does not contain prescriptive requirements" | 문서 자체가 "shall not be used as a checklist"라고 쓴다 |
 | F04-058 | 18-19 | 이 방법은 "인정된 평가 방법"으로 제안되며, 소관 당국은 방법을 바꾸거나 조치를 더 요구할 수 있다. 운용자는 SORA가 다루지 않는 다른 규제 요구도 지켜야 한다 | "proposed as an acceptable means to evaluate the safety risks" | 1.2(c), 1.2(f), 1.3(h)항 |
-| F04-059 | 19 | 전통적 항공기 인증 (설계 승인, 감항 승인, 형식 인증)이 위험에 비례하지 않는 경우에 쓸 수 있다고 한다 | "traditional approach to aircraft certification" | 1.2(d)항 |
+| F04-059 | 18 | 전통적 항공기 인증 (설계 승인, 감항 승인, 형식 인증)이 위험에 비례하지 않는 경우에 쓸 수 있다고 한다 | "traditional approach to aircraft certification" | 1.2(d)항 |
 | F04-060 | 29 | 규격 문장 용어: "Should"는 강한 의무, "May"는 제공할 정보의 재량을 뜻한다. 권고 (R)는 지역에 따라 means of compliance라고 부른다. open 범주, 표준 시나리오, certified 범주는 SORA 대상이 아니다 | "'Should' indicates a strong obligation." | 3.1(e), (f)항과 각주 6. 이 문서가 정의한 용어 사용이며 ISO 방식이 아니다 |
 | F04-061 | 30-31 | SORA는 Step #9 뒤에서 두 단계로 나뉜다. 1단계는 요구 도출과 means of compliance 제안, 2단계는 요구의 충족이고, 1단계 끝에 소관 당국과 사전 합의를 권고한다. 결과물은 Comprehensive Safety Portfolio이다 | "Phase 1 (Requirements derivation)" | 3.3절 |
 

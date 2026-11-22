@@ -134,22 +134,22 @@ flowchart TD
 ## 4. 목차
 
 원고는 `chapters/`에, 장 계획 (다룰 내용, 예제 산출물, 근거, 상태)은 `plans/`에 장마다 파일 하나씩 있다. 두 폴더의 파일 이름은 같다.
-목표 쪽수는 채워야 하는 양이 아니라 넘지 않으려는 상한이다. 범위가 늘어나는 것을 막고 일정을 추정하는 데 쓴다. 합은 300쪽 안팎이다. 전체 분량은 따로 정하지 않았다 (PLAN.md 12절).
+목표 쪽수는 채워야 하는 양이 아니라 넘지 않으려는 상한이다. 범위가 늘어나는 것을 막고 일정을 추정하는 데 쓴다. 합은 300쪽 안팎이다. 전체 분량은 따로 정하지 않았다 (PLAN.md 12절). 1, 4, 5장은 초고가 상한을 넘어, 검토에서 겹친 곳을 줄인 뒤에 상한을 고쳤다 (2026-11-23: 12 -> 15, 8-10 -> 11, 10 -> 12). 사례에서 누가 무엇을 말했는지를 나눠 적는 데 드는 길이는 줄이지 않았다.
 
 ### Part I. 사고방식과 기본 개념
 
 | 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
 |---|---|---|---|---|
-| 1 | [소프트웨어가 사람을 다치게 할 때](chapters/ch01-accidents.md) | [계획](plans/ch01-accidents.md) | 소프트웨어는 닳지도 부러지지도 않는데 어떻게 사고를 일으키는가? | 12 |
+| 1 | [소프트웨어가 사람을 다치게 할 때](chapters/ch01-accidents.md) | [계획](plans/ch01-accidents.md) | 소프트웨어는 닳지도 부러지지도 않는데 어떻게 사고를 일으키는가? | 15 |
 | 2 | [기본 개념과 용어](chapters/ch02-concepts-and-terms.md) | [계획](plans/ch02-concepts-and-terms.md) | safety, reliability, availability, security는 어떻게 다른가? | 10 |
 | 3 | [Risk와 integrity level](chapters/ch03-risk-and-integrity-level.md) | [계획](plans/ch03-risk-and-integrity-level.md) | 얼마나 안전해야 충분한가? 그 답이 어떻게 개발 방법의 엄격함으로 바뀌는가? | 12 |
-| 4 | [규격 지도와 규격 읽는 법](chapters/ch04-standards-map.md) | [계획](plans/ch04-standards-map.md) | 규격은 왜 이렇게 많고 서로 어떤 관계인가? 규격 문장은 어떻게 읽어야 하는가? | 8-10 |
+| 4 | [규격 지도와 규격 읽는 법](chapters/ch04-standards-map.md) | [계획](plans/ch04-standards-map.md) | 규격은 왜 이렇게 많고 서로 어떤 관계인가? 규격 문장은 어떻게 읽어야 하는가? | 11 |
 
 ### Part II. Hazard에서 소프트웨어 요구사항까지
 
 | 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
 |---|---|---|---|---|
-| 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | [계획](plans/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? | 10 |
+| 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | [계획](plans/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? | 12 |
 | 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | [계획](plans/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 16 |
 | 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | [계획](plans/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 16 |
 | 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | [계획](plans/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? | 14 |
