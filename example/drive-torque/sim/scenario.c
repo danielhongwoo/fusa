@@ -72,6 +72,7 @@ int scenario_run(const scenario_t *sc, sample_t *log, int log_cap)
             s->warning = hal_sim_warning();
             s->diag = *hal_sim_diag();
             s->watchdog_tripped = hal_sim_watchdog_tripped();
+            s->inverter_msgs = hal_sim_inverter_msgs_arrived();
             s->torque_act_nm = plant.torque_act_nm;
             s->speed_mps = plant.speed_mps;
             s->accel_mps2 = plant.accel_mps2;

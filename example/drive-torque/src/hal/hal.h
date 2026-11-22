@@ -75,7 +75,7 @@ typedef struct {
     speed_t speed;           /* VCU가 쓰는 차량 속도. 메시지가 무효이면 0 */
     bool inverter_valid;     /* inverter의 상태 메시지가 유효한가 */
     gear_t gear;             /* 받아들인 기어 */
-    uint8_t inverter_out_cycles; /* inverter가 알린 토크가 범위를 벗어난 주기가 몇 번 이어졌는가 */
+    uint8_t inverter_out_cycles; /* inverter가 알린 토크가 범위를 벗어난 새 상태 메시지가 몇 번 이어졌는가 */
 } hal_diag_t;
 
 void hal_can_tx_diag(const hal_diag_t *diag);

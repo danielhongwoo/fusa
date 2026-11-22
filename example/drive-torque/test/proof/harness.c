@@ -621,27 +621,37 @@ void prove_gear_check(void)
 }
 
 /*
- * 성질 13 (SWR-19): inverter가 알린 토크의 검사. 기록, 적을 자리, 세는 값이 어떤 값에서 시작해도
+ * 성질 13 (SWR-19): inverter가 알린 토크의 검사, 한 걸음. 기록, 적을 자리, 세는 값이 어떤 값에서 시작해도
  * (memory의 값이 틀려도) 성립한다.
- *   가. 사건은 범위를 벗어난 횟수가 3 이상이거나 무효인 횟수가 10 이상일 때, 그리고 그때에만 알린다.
- *   나. 유효한 새 메시지이고, 알린 토크가 -280 - 280 Nm 밖이면 반드시 벗어난 것으로 센다 (기록이 무엇이든).
- *   다. 유효한 새 메시지이고, 알린 토크가 -30 - 30 Nm 안이면 반드시 범위 안으로 본다 (기록이 무엇이든. 0은 늘 범위에 든다).
- *   라. 유효한 새 메시지이고 범위 안이면 벗어난 횟수와 무효인 횟수가 0이 된다.
- *   마. 무효이면 알린 값을 보지 않고, 벗어난 횟수는 그대로다.
- *   바. 기록할 때 배열 밖을 쓰지 않는다.
- *   사. 유효하지만 새 메시지가 없으면 알린 값이 무엇이든 벗어난 횟수는 그대로이고 (올리지도 지우지도 않는다),
- *       무효인 횟수는 0이 된다 (변경 요청 CR-001).
+ *   가. 사건은 범위를 벗어난 횟수가 3 이상이거나, 최근 5주기 가운데 새 메시지를 받은 주기가 3번보다 적을 때,
+ *       그리고 그때에만 알린다. 최근 5주기의 기록은 한 칸 밀리고 이번 주기가 들어간다. 창 밖의 bit는 남지 않는다.
+ *   나. 새 메시지이고, 알린 토크가 -280 - 280 Nm 밖이면 반드시 벗어난 것으로 센다 (기록이 무엇이든).
+ *   다. 새 메시지이고, 알린 토크가 -30 - 30 Nm 안이면 반드시 범위 안으로 본다 (기록이 무엇이든. 0은 늘 범위에 든다).
+ *       그때 벗어난 횟수는 0이 된다.
+ *   라. 새 메시지가 없으면 알린 값이 무엇이든 벗어난 횟수는 그대로다 (올리지도 지우지도 않는다. 변경 요청 CR-001).
+ *   마. 기록할 때 배열 밖을 쓰지 않는다.
  * 말해 주지 않는 것: 범위가 최근에 보낸 값에서 옳게 나오는가. 그것은 unit test (TC-020)가 값으로 본다.
  */
+static uint8_t harness_fresh_count(uint8_t bits)
+{
+    uint8_t n = 0u;
+
+    for (int i = 0; i < 5; i++) {
+        if (((bits >> i) & 1u) != 0u) {
+            n++;
+        }
+    }
+    return n;
+}
+
 void prove_inverter_check(void)
 {
     inverter_check_t st;
-    bool valid = nondet_bool();
     bool fresh = nondet_bool();
     torque_t reported = nondet_int32();
     torque_t sent = nondet_int32();
     uint8_t old_out;
-    uint8_t old_invalid;
+    uint8_t old_bits;
     bool event;
 
     for (int i = 0; i < 5; i++) {
@@ -649,40 +659,67 @@ void prove_inverter_check(void)
     }
     st.pos = nondet_uint8();
     st.out_cycles = nondet_uint8();
-    st.invalid_cycles = nondet_uint8();
+    st.fresh_bits = nondet_uint8();
     old_out = st.out_cycles;
-    old_invalid = st.invalid_cycles;
+    old_bits = st.fresh_bits;
 
-    event = inverter_check_step(&st, valid, fresh, reported);
+    event = inverter_check_step(&st, fresh, reported);
 
     /* 가 */
-    assert(event == ((st.out_cycles >= 3) || (st.invalid_cycles >= 10)));
-    if (valid && !fresh) {
-        /* 사 */
-        assert(st.out_cycles == old_out);
-        assert(st.invalid_cycles == 0);
-    } else if (valid) {
-        assert(st.invalid_cycles == 0);
+    assert(st.fresh_bits == (uint8_t)((((uint32_t)old_bits << 1) | (fresh ? 1u : 0u)) & 0x1Fu));
+    assert(event == ((st.out_cycles >= 3) || (harness_fresh_count(st.fresh_bits) < 3)));
+    if (fresh) {
         /* 나 */
         if ((reported > 2800) || (reported < -2800)) {
             assert((st.out_cycles == (old_out + 1)) || ((old_out >= 3) && (st.out_cycles == old_out)));
         }
-        /* 다, 라 */
+        /* 다 */
         if ((reported >= -300) && (reported <= 300)) {
             assert(st.out_cycles == 0);
-            assert(!event);
         }
         assert((st.out_cycles == 0) || (st.out_cycles == (old_out + 1)) || (st.out_cycles == old_out));
     } else {
-        /* 마 */
+        /* 라 */
         assert(st.out_cycles == old_out);
-        assert((st.invalid_cycles == (old_invalid + 1)) || ((old_invalid >= 10) && (st.invalid_cycles == old_invalid)));
     }
 
-    /* 바 */
+    /* 마 */
     inverter_check_record(&st, sent);
     assert((st.pos >= 1) && (st.pos <= 5));
     assert(st.sent[st.pos - 1] == sent);
+}
+
+/*
+ * 성질 15 (SWR-19, TSR-13): 판정에 걸리는 시간의 상한 (변경 요청 CR-002).
+ * 알린 토크가 범위를 크게 벗어난 채 (-280 - 280 Nm 밖. 보낸 토크의 기록이 무엇이든 벗어난 값이다) 5주기가
+ * 지나면, 그 5주기에 상태 메시지를 어떤 모양으로 받았든 (모두, 드문드문, 하나도 못 받음) 다섯째 주기에는
+ * 사건을 알린다. 기록, 적을 자리, 세는 값이 어떤 값에서 시작해도, 그 사이에 무엇을 보냈어도 성립한다.
+ * 까닭: 5주기에 새 메시지가 3번 닿았으면 벗어난 횟수가 3이 되고, 닿지 않았으면 드물다는 사건이 된다.
+ * 시간의 예산 (docs/technical-safety-concept.md 9.4절)의 "판정 50 ms"가 이 성질이다.
+ * 말해 주지 않는 것: 범위를 조금만 벗어난 값 (기록에 따라 벗어난 것인지가 달라지는 값)에서도 그런가.
+ * 그것은 시나리오 test (TC-135)가 손실의 모든 모양을 넣어 잰다. 그리고 한 주기가 10 ms라는 것 (clock).
+ */
+void prove_inverter_check_bounded(void)
+{
+    inverter_check_t st;
+    bool event = false;
+
+    for (int i = 0; i < 5; i++) {
+        st.sent[i] = nondet_int32();
+    }
+    st.pos = nondet_uint8();
+    st.out_cycles = nondet_uint8();
+    st.fresh_bits = nondet_uint8();
+
+    for (int cycle = 0; cycle < 5; cycle++) {
+        bool fresh = nondet_bool();
+        torque_t reported = nondet_int32();
+
+        __CPROVER_assume((reported > 2800) || (reported < -2800));
+        event = inverter_check_step(&st, fresh, reported);
+        inverter_check_record(&st, nondet_int32());
+    }
+    assert(event);
 }
 
 /*

@@ -62,7 +62,17 @@ torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t to
 #define INVERTER_HISTORY_CYCLES  ((uint8_t)5)    /* 보낸 토크를 이만큼 (50 ms) 기억한다 */
 #define INVERTER_TORQUE_MARGIN   ((torque_t)300) /* 범위에 더하는 여유: 30.0 Nm */
 #define INVERTER_OUT_CYCLES      ((uint8_t)3)    /* 범위를 벗어난 새 메시지가 이만큼 이어지면 구동 허용 차단 */
-#define INVERTER_INVALID_CYCLES  ((uint8_t)10)   /* 상태가 무효인 주기가 이만큼 이어지면 구동 허용 차단 */
+#define INVERTER_FRESH_WINDOW    ((uint8_t)5)    /* 최근 이만큼의 주기 (50 ms) 가운데 */
+#define INVERTER_FRESH_MIN       ((uint8_t)3)    /* 새 상태 메시지를 받은 주기가 이만큼보다 적으면 구동 허용 차단 */
+
+/* 값 셋이 맞물려 있다. 창 안에서 받아야 하는 새 메시지의 수가 판정에 필요한 수보다 적으면,
+ * 받아들이는 손실의 모양 가운데 판정이 창보다 오래 걸리는 것이 생긴다. 그러면 "알린 토크가 범위를
+ * 벗어난 채이면 창 안에 사건을 알린다"가 깨지고, 시간의 예산 (docs/technical-safety-concept.md 9.4절)이
+ * 맞지 않게 된다 (docs/change-impact.md) */
+_Static_assert(INVERTER_FRESH_MIN >= INVERTER_OUT_CYCLES,
+               "창 안에서 받아야 하는 새 메시지의 수는 판정에 필요한 수보다 적으면 안 된다");
+_Static_assert((INVERTER_FRESH_WINDOW >= INVERTER_FRESH_MIN) && (INVERTER_FRESH_WINDOW <= 8u),
+               "창은 받아야 하는 수보다 짧을 수 없고, 기록은 8 bit에 담는다");
 
 /* 배열은 구조체의 끝에 둔다. 증명 도구 (CBMC)의 경계 검사는 pointer로 받은 구조체 안의 배열에 대해
  * 구조체의 끝만 본다. 배열 뒤에 다른 필드가 있으면 한 칸 넘는 쓰기가 그 필드에 떨어져도 잡지 못한다
@@ -70,7 +80,7 @@ torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t to
 typedef struct {
     uint8_t pos;            /* 다음에 적을 자리 */
     uint8_t out_cycles;     /* 알린 토크가 범위를 벗어난 새 메시지가 몇 번 이어졌는가 */
-    uint8_t invalid_cycles; /* inverter의 상태가 무효인 주기가 몇 번 이어졌는가 */
+    uint8_t fresh_bits;     /* 최근 주기들에 새 상태 메시지를 받았는가. bit 0이 이번 주기, bit 1이 지난 주기 */
     torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */
 } inverter_check_t;
 
@@ -81,10 +91,11 @@ void inverter_check_record(inverter_check_t *st, torque_t sent);
 
 /*
  * inverter가 알린 토크를 지난 주기들에 보낸 토크와 견준다. 구동 허용 차단의 사건이면 참이다.
- *   valid  inverter의 상태가 유효한가. 거짓이면 reported를 보지 않는다
- *   fresh  이번 주기에 새 상태 메시지를 받았는가. 유효하지만 새 메시지가 없으면 reported는 지난 메시지의
- *          값이다. 그 주기에는 견주지 않고, 벗어난 횟수를 올리지도 지우지도 않는다
+ *   fresh  이번 주기에 검사를 통과한 새 상태 메시지를 받았는가. 거짓이면 reported를 보지 않는다
+ *          (새 메시지가 없으면 reported는 지난 메시지의 값이거나 쓸 수 없는 값이다).
+ *          그 주기에는 견주지 않고, 벗어난 횟수를 올리지도 지우지도 않는다
+ * 사건은 둘이다: 범위를 벗어난 새 메시지가 이어진다, 새 메시지가 너무 드물게 닿는다.
  */
-bool inverter_check_step(inverter_check_t *st, bool valid, bool fresh, torque_t reported);
+bool inverter_check_step(inverter_check_t *st, bool fresh, torque_t reported);
 
 #endif

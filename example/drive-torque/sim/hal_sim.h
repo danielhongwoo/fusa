@@ -32,8 +32,10 @@ typedef enum {
     FAULT_TASK_TWICE,        /* task 하나가 한 주기에 두 번 실행됨. param은 task table의 몇 번째인가 (0부터) */
     FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
-    FAULT_INVERTER_MSG_DROP, /* inverter의 상태 메시지가 bus에서 사라짐: param개를 잃고 하나가 닿는 것을 되풀이한다.
+    FAULT_INVERTER_MSG_DROP, /* inverter의 상태 메시지가 bus에서 사라짐. 어느 것이 닿는지를 되풀이되는 모양으로 준다:
+                              * param은 SIM_DROP_PATTERN(길이, 표시)이고, 표시의 bit k가 1이면 그 모양의 k번째 메시지가 닿는다.
                               * 보낸 쪽의 counter는 오른다 (FAULT_INVERTER_MSG_LOSS는 보내지 않는 경우여서 오르지 않는다) */
+    FAULT_INVERTER_MSG_CORRUPT, /* inverter의 상태 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_COUNT
 } fault_id_t;
 
@@ -41,6 +43,10 @@ void hal_sim_init(plant_t *plant);
 
 /* 시각을 t_ms로 맞추고, 센서 값과 주기 메시지를 갱신한다 */
 void hal_sim_step(time_ms_t t_ms);
+
+/* FAULT_INVERTER_MSG_DROP의 param. 길이는 1 - 16. 예: SIM_DROP_PATTERN(3, 4)는 셋에 하나 (세 번째)만 닿는다.
+ * SIM_DROP_PATTERN(1, 0)은 모두 잃는다 */
+#define SIM_DROP_PATTERN(period, mask) ((int32_t)(((uint32_t)(mask) << 8) | (uint32_t)(period)))
 
 void hal_sim_set_fault(fault_id_t fault, int32_t param);
 void hal_sim_clear_faults(void);
@@ -79,6 +85,9 @@ torque_t hal_sim_last_torque(void);
 bool hal_sim_enable(void);
 /* 구동 허용 신호를 쓰기 전에 토크 요구를 보낸 횟수. 제품이 출력을 쓰는 순서를 test가 보는 데 쓴다 */
 uint32_t hal_sim_order_violations(void);
+
+/* inverter의 상태 메시지가 VCU에 닿은 횟수. test가 메시지를 정말 잃었는지 확인하는 데 쓴다 */
+uint32_t hal_sim_inverter_msgs_arrived(void);
 uint8_t hal_sim_warning(void);
 const hal_diag_t *hal_sim_diag(void);
 

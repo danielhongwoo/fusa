@@ -29,7 +29,8 @@ static struct {
     bool inv_fresh;
     unsigned inv_counter;
     int32_t inv_prev_value;
-    int32_t inv_dropped;  /* 이어서 잃은 상태 메시지의 수 (FAULT_INVERTER_MSG_DROP) */
+    uint32_t inv_drop_index; /* 되풀이되는 모양의 몇 번째 메시지인가 (FAULT_INVERTER_MSG_DROP) */
+    uint32_t inv_arrived;    /* VCU에 닿은 상태 메시지의 수 */
     /* 외부 watchdog */
     bool wd_present;
     bool wd_armed;        /* 첫 답을 받았는가 */
@@ -127,15 +128,30 @@ static void update_messages(void)
             value += sim.fault_param[FAULT_INVERTER_REPORT_OFFSET];
         }
         sim.inv_prev_value = now_value;
-        if (sim.fault_on[FAULT_INVERTER_MSG_DROP] && (sim.inv_dropped < sim.fault_param[FAULT_INVERTER_MSG_DROP])) {
-            /* 보냈지만 닿지 않는다. counter는 이미 올랐다 */
-            sim.inv_dropped++;
+        bool arrives = true;
+        if (sim.fault_on[FAULT_INVERTER_MSG_DROP]) {
+            /* 보냈지만 닿지 않는 메시지가 있다. counter는 이미 올랐다 */
+            uint32_t param = (uint32_t)sim.fault_param[FAULT_INVERTER_MSG_DROP];
+            uint32_t period = param & 0xFFu;
+            uint32_t mask = param >> 8;
+            if (period == 0u) {
+                period = 1u;
+            }
+            arrives = ((mask >> (sim.inv_drop_index % period)) & 1u) != 0u;
+            sim.inv_drop_index = (sim.inv_drop_index + 1u) % period;
         } else {
-            sim.inv_dropped = 0;
+            sim.inv_drop_index = 0u;
+        }
+        if (arrives) {
             frame_sim_make(&sim.inv_frame, SIM_ID_INVERTER, sim.inv_counter, value);
+            if (sim.fault_on[FAULT_INVERTER_MSG_CORRUPT]) {
+                /* 전송 중에 값이 바뀐다. CRC는 그대로다 */
+                sim.inv_frame.value += sim.fault_param[FAULT_INVERTER_MSG_CORRUPT];
+            }
             sim.inv_seen = true;
             sim.inv_fresh = true;
             sim.inv_rx_ms = sim.now_ms;
+            sim.inv_arrived++;
         }
     }
 }
@@ -155,7 +171,8 @@ void hal_sim_init(plant_t *plant)
     sim.inv_fresh = false;
     sim.inv_counter = 0u;
     sim.inv_prev_value = 0;
-    sim.inv_dropped = 0;
+    sim.inv_drop_index = 0u;
+    sim.inv_arrived = 0u;
     sim.inv_frame = (frame_t){ 0, 0u, 0u };
     sim.inv_rx_ms = 0u;
     sim.torque_frame_last = (frame_t){ 0, 0u, 0u };
@@ -258,6 +275,8 @@ void hal_sim_inverter_tau(double tau_ms) { sim.plant->inverter_tau_ms = tau_ms; 
 torque_t hal_sim_last_torque(void) { return sim.torque_out; }
 bool hal_sim_enable(void) { return sim.enable_out; }
 uint32_t hal_sim_order_violations(void) { return sim.order_violations; }
+
+uint32_t hal_sim_inverter_msgs_arrived(void) { return sim.inv_arrived; }
 uint8_t hal_sim_warning(void) { return sim.warning_out; }
 const hal_diag_t *hal_sim_diag(void) { return &sim.diag_out; }
 

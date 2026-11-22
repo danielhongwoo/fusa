@@ -16,7 +16,7 @@ fail=0
 mkdir -p build/reports
 : > "$REPORT"
 
-DEFAULT_PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction prove_brake_check prove_message_rules prove_message_change_detected prove_gear_check prove_inverter_check prove_flow"
+DEFAULT_PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction prove_brake_check prove_message_rules prove_message_change_detected prove_gear_check prove_inverter_check prove_flow prove_inverter_check_bounded"
 # PROPS를 주면 그 성질만 돌린다 (tools/proof_mutation.py가 쓴다)
 PROPS="${PROPS:-$DEFAULT_PROPS}"
 count=0

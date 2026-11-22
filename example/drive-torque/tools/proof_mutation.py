@@ -47,12 +47,19 @@ MUTANTS = [
      "prove_normal_function_not_clamped", "줄여 감의 기능의 상한을 0.1 Nm 낮춘다 (감시와의 틈이 5 Nm를 넘는다)"),
     ("src/monitor/monitor.h", "#define ALLOWED_RISE_PER_CYCLE ((torque_t)250)", "#define ALLOWED_RISE_PER_CYCLE ((torque_t)251)",
      "prove_faulty_function_bounded", "감시가 허용하는 오르는 속도를 0.1 Nm 올린다"),
-    # 변경 요청 CR-001 (docs/change-impact.md): 새 메시지가 없는 주기의 성질 (성질 13의 사)
-    ("src/monitor/inverter_check.c", "한계에 닿지 않는다 */\n        st->invalid_cycles = 0u;\n",
-     "한계에 닿지 않는다 */\n        st->invalid_cycles = 0u;\n        st->out_cycles = 0u;\n", "prove_inverter_check",
+    # 변경 요청 CR-001, CR-002 (docs/change-impact.md)
+    ("src/monitor/inverter_check.c", "한계에 닿지 않는다 */\n    }\n",
+     "한계에 닿지 않는다 */\n        st->out_cycles = 0u;\n    }\n", "prove_inverter_check",
      "새 메시지가 없는 주기에 벗어난 횟수를 지운다"),
-    ("src/monitor/inverter_check.c", "    } else if (!fresh) {", "    } else if (!fresh && (reported == 0)) {",
+    ("src/monitor/inverter_check.c", "    if (fresh) {\n        /* SWR-19: 최근에 보낸",
+     "    if (fresh || (reported != 0)) {\n        /* SWR-19: 최근에 보낸",
      "prove_inverter_check", "새 메시지가 없는 주기에도 알린 값이 0이 아니면 견준다"),
+    ("src/monitor/inverter_check.c",
+     "return (st->out_cycles >= INVERTER_OUT_CYCLES) || (fresh_count(st->fresh_bits) < INVERTER_FRESH_MIN);",
+     "return (st->out_cycles >= INVERTER_OUT_CYCLES);", "prove_inverter_check_bounded",
+     "새 메시지가 드물게 닿아도 사건을 알리지 않는다 (판정에 걸리는 시간에 끝이 없어진다)"),
+    ("src/monitor/monitor.h", "#define INVERTER_FRESH_WINDOW    ((uint8_t)5)", "#define INVERTER_FRESH_WINDOW    ((uint8_t)6)",
+     "prove_inverter_check_bounded", "새 메시지를 세는 창을 한 주기 늘린다 (판정이 5주기 안이라는 것이 깨진다)"),
 ]
 
 

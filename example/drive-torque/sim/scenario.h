@@ -56,6 +56,7 @@ typedef struct {
     uint8_t warning;
     hal_diag_t diag;
     bool watchdog_tripped; /* 외부 watchdog이 구동 허용 신호를 끊었는가 */
+    uint32_t inverter_msgs; /* 이때까지 VCU에 닿은 inverter의 상태 메시지의 수 (sim이 센 것) */
     double torque_act_nm;
     double speed_mps;
     double accel_mps2;
