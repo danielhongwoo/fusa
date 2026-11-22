@@ -20,6 +20,7 @@ example/
       stpa.md            control structure와 unsafe control action
       dfa.md             dependent failure analysis
       hardware-assumptions.md   하드웨어에 대한 가정과 진단의 목록
+      hsi.md             hardware-software interface: 신호마다 단위, 켠 직후의 값, 고장일 때의 모습
       safety-plan.md     활동, 역할, 확인, 줄인 것
       fault-table.md     fault, error, failure, hazard의 정리
       requirements.yaml  safety goal에서 software safety requirement까지 (ID, 문장, 추적)

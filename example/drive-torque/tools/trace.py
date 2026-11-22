@@ -3,6 +3,7 @@
 
     tools/trace.py            검사하고 표를 찍는다
     tools/trace.py --quiet    문제만 찍는다
+    tools/trace.py --strict   구현 예정인 요구사항이 하나라도 있으면 실패한다
 
 보는 것
     1. docs/requirements.yaml의 ID가 겹치지 않고, 위로 가는 추적 (parents)이 있는 ID를 가리킨다
@@ -11,6 +12,10 @@
     4. software safety requirement는 test case (TC-)가 하나 넘게 있고, 그 TC가 test/의 코드에 있다
     5. test/의 코드에 적힌 TC는 요구사항 파일에도 있다
     6. 증명 함수 (proved_by)는 test/proof/harness.c에 있다
+    7. 구현 예정 (status: planned)인 요구사항은 3과 4를 보지 않는다. 그 수와 ID를 늘 찍는다.
+       구현 예정이라고 적었는데 코드나 test가 이미 있으면 문제다 (표시를 지우지 않은 것이다).
+       위 단계의 요구사항이 구현 예정인데 그 아래가 모두 구현되어 있어도 문제다.
+       --strict에서는 구현 예정이 0이어야 한다
 
 요구사항 파일은 YAML의 작은 부분만 쓴다. 바깥의 library를 받지 않으려고 직접 읽는다.
     requirements:
@@ -19,6 +24,7 @@
         parents: [TSR-01]
         verified_by: [TC-001]
         proved_by: [prove_something]
+        status: planned
 이 도구는 qualification되지 않았다.
 """
 import os
@@ -84,6 +90,7 @@ def scan(folder, pattern):
 
 def main():
     quiet = "--quiet" in sys.argv
+    strict = "--strict" in sys.argv
     reqs = load_requirements(REQ_FILE)
     by_id = {}
     for r in reqs:
@@ -96,6 +103,9 @@ def main():
         by_id[rid] = r
         if not r.get("text"):
             problem("%s: 문장 (text)이 없다" % rid)
+        if r.get("status", "planned") != "planned":
+            problem("%s: status에는 planned만 쓸 수 있다. 구현한 요구사항에는 status를 적지 않는다" % rid)
+    planned = sorted(rid for rid, r in by_id.items() if r.get("status") == "planned")
 
     for rid, r in by_id.items():
         kind = rid.split("-")[0]
@@ -116,6 +126,13 @@ def main():
         listed_tc.update(tcs)
         if not rid.startswith("SWR-"):
             continue
+        if rid in planned:
+            if rid in in_src:
+                problem("%s: 구현 예정이라고 적었는데 코드에 ID가 있다 (%s)" % (rid, in_src[rid][0]))
+            for tc in tcs:
+                if tc in in_test:
+                    problem("%s: 구현 예정이라고 적었는데 %s가 test/의 코드에 있다" % (rid, tc))
+            continue
         if rid not in in_src:
             problem("%s: src/의 코드에 ID가 없다" % rid)
         if not tcs:
@@ -129,6 +146,15 @@ def main():
         for name in r.get("proved_by", []):
             if not re.search(r"\bvoid %s\(void\)" % re.escape(name), harness_text):
                 problem("%s: 증명 함수 %s가 test/proof/harness.c에 없다" % (rid, name))
+    for rid in planned:
+        if rid.startswith("SWR-"):
+            continue
+        children = [c for c, r in by_id.items() if rid in r.get("parents", [])]
+        if children and not any(c in planned for c in children):
+            problem("%s: 구현 예정이라고 적었는데 그 아래의 요구사항 (%s)이 모두 구현되어 있다"
+                    % (rid, ", ".join(sorted(children))))
+    if strict and planned:
+        problem("구현 예정인 요구사항이 %d개 있다 (--strict)" % len(planned))
     for sid in sorted(in_src):
         if sid not in by_id:
             problem("%s: 코드에 있지만 요구사항 파일에 없다 (%s)" % (sid, in_src[sid][0]))
@@ -144,10 +170,14 @@ def main():
         for rid in sorted(by_id, key=lambda x: (ORDER.index(x.split("-")[0]), x)):
             if rid.startswith("SWR-"):
                 r = by_id[rid]
+                if rid in planned:
+                    print("  %s | 구현 예정" % chain(rid))
+                    continue
                 print("  %s | 코드: %s | test: %s" % (
                     chain(rid),
                     ", ".join(in_src.get(rid, ["없음"])),
                     ", ".join(r.get("verified_by", [])) or "없음"))
+    print("구현 예정: %d개%s" % (len(planned), (" (" + ", ".join(planned) + ")") if planned else ""))
     for p in problems:
         print("문제  " + p)
     print("추적 검사: 문제 %d개" % len(problems))

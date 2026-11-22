@@ -8,6 +8,7 @@
 #
 # 도구가 없으면 그 단계를 건너뛰고 "건너뜀"이라고 찍는다.
 # make check STRICT=1 로 돌리면 건너뛴 단계가 있을 때 실패한다.
+# 구현 예정 (status: planned)인 요구사항이 남아 있을 때도 실패한다.
 # 이 도구들은 어느 것도 qualification되지 않았다.
 
 CC      ?= cc
@@ -94,7 +95,7 @@ intro-figure: intro
 
 trace: | dirs
 	@echo "== 추적 검사"
-	@python3 tools/trace.py > build/reports/trace.txt; status=$$?; cat build/reports/trace.txt; exit $$status
+	@python3 tools/trace.py $(if $(filter 1,$(STRICT)),--strict) > build/reports/trace.txt; status=$$?; cat build/reports/trace.txt; exit $$status
 
 # ---- 정적 분석 ----
 
