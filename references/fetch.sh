@@ -87,6 +87,20 @@ fetch faa-ac-20-115d AC_20-115D.pdf \
 fetch faa-ac-20-193 AC_20-193.pdf \
     "https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_20-193.pdf"
 
+# 2026-11-22에 더한 문서
+fetch nasa-std-8739-8b NASA-STD-8739.8B.pdf \
+    "https://standards.nasa.gov/system/files/tmp/NASA-STD-87398%20REV%20B.pdf"
+fetch nasa-fault-tree-handbook Fault_Tree_Handbook_with_Aerospace_Applications_2002.pdf \
+    "https://extapps.ksc.nasa.gov/reliability/Documents/Fault_Tree_Handbook_with_Aerospace_Applications_August_2002.pdf"
+fetch nasa-system-safety-handbook-v1 20120003291.pdf \
+    "https://ntrs.nasa.gov/api/citations/20120003291/downloads/20120003291.pdf"
+fetch hse-hsg238 hsg238.pdf \
+    "https://www.hse.gov.uk/pubns/priced/hsg238.pdf"
+fetch nhtsa-etc-gasoline-fsa dot_36888_DS1.pdf \
+    "https://rosap.ntl.bts.gov/view/dot/36888/dot_36888_DS1.pdf"
+fetch easa-amc-20-193 amc_20-193_use_of_multi-core_processors.pdf \
+    "https://easa.europa.eu/sites/default/files/dfu/annex_i_to_ed_decision_2022-001-r_amc_20-193_use_of_multi-core_processors_mcps.pdf"
+
 # 로봇 (20장)
 fetch ifa-report-2-2017e rep0217e.pdf \
     "https://www.dguv.de/medien/ifa/en/pub/rep/pdf/reports-2019/report0217e/rep0217e.pdf"

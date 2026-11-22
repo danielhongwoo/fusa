@@ -11,7 +11,7 @@
 
 | 등급 | 뜻 | 수 | 해당 문서 |
 |---|---|---|---|
-| A | 무료로 받을 수 있다 | 27개 받음, 8개는 직접 받아야 함 | 사고 조사 보고서, NASA와 FAA와 EASA의 문서, SORA, AUTOSAR 공개 규격, 저자가 공개한 책과 논문 |
+| A | 무료로 받을 수 있다 | 33개 받음, 11개는 직접 받아야 함 | 사고 조사 보고서, NASA와 FAA와 EASA의 문서, SORA, AUTOSAR 공개 규격, 저자가 공개한 책과 논문 |
 | B | 온라인에서 볼 수만 있다 | 8개 | ISO와 IEC의 미리보기, KS 열람, 공개 autopilot 문서 |
 | C | 유료이거나 볼 수 없다 | 규격 대부분과 책 | ISO 26262, IEC 61508, 로봇 규격, 항공 규격, MISRA C |
 
@@ -80,6 +80,17 @@ nhtsa-etc-ev-fsa는 이 책의 관통 예제와 같은 시스템 (전기차의 �
 | easa-moc-light-uas-2510 | MoC Light-UAS.2510-01, Issue 1 (2024, SAIL IV) | EASA | 21 | 11 | 0.4 |
 | easa-moc-light-uas-high-risk-2510 | MoC Light-UAS High Risk.2510-01 (2025, SAIL V와 VI) | EASA | 21 | 16 | 0.4 |
 
+### 단계 0에서 더한 문서
+
+| id | 문서 | 올린 곳 | 쓰는 장 | 쪽 |
+|---|---|---|---|---|
+| nasa-std-8739-8b | NASA-STD-8739.8B, Software Assurance and Software Safety Standard | NASA | 5, 10-17 | 65 |
+| nasa-fault-tree-handbook | Fault Tree Handbook with Aerospace Applications (2002) | NASA | 8 | 218 |
+| nasa-system-safety-handbook-v1 | NASA System Safety Handbook Volume 1, NASA/SP-2010-580 (2011) | NASA NTRS | 3, 5, 19 | 120 |
+| hse-hsg238 | UK HSE, Out of control: Why control systems go wrong and how to prevent failure (HSG238) | HSE | 1, 10 | 53 |
+| nhtsa-etc-gasoline-fsa | Functional Safety Assessment of a Generic Accelerator Control System With Electronic Throttle Control in Gasoline-Fueled Vehicles, DOT HS 812 557 (2018) | 미국 교통부 저장소 | 6, 7 | 404 |
+| easa-amc-20-193 | EASA AMC 20-193, Use of multi-core processors (2022) | EASA | 14 | 14 |
+
 ### 받은 문서를 쓸 때 주의할 점
 
 - avizienis-2004-taxonomy: 학술지에 실린 판이 아니라 기술 보고서 (TR 2004-47) 판이다. 인용할 때 구분한다.
@@ -103,6 +114,8 @@ nhtsa-etc-ev-fsa는 이 책의 관통 예제와 같은 시스템 (전기차의 �
 | SEI CERT C Coding Standard (2016 Edition) | https://www.sei.cmu.edu/forms/secure-coding-form/ | 이름과 이메일을 넣는 등록이 필요 |
 | Standardized E-Gas Monitoring Concept | v4.0 (2007): https://downloads.regulations.gov/NHTSA-2014-0108-0021/attachment_1.pdf | 접근 거부. 아래 설명 참고 |
 | NASA의 Toyota 조사 보고서의 부록 A (소프트웨어) | https://www.nhtsa.gov/staticfiles/nvs/pdf/NASA_FR_Appendix_A_Software.pdf | 자동 요청이 거부됨 |
+| UN Regulation No. 155, No. 156 | https://unece.org 에서 검색 | 자동 요청이 거부됨 |
+| NUREG-0492, Fault Tree Handbook (1981) | https://www.nrc.gov/reading-rm/doc-collections/nuregs/staff/sr0492/index.html | 자동 요청이 거부됨 |
 | JARUS SORA 2.5의 Annex A, B, E, F, H, I | jarus-rpas.org | 아래 설명 참고 |
 
 ### E-Gas monitoring concept에 대하여
