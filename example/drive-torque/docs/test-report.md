@@ -14,6 +14,7 @@
 | 요구사항에 따른 test (`TC-`) | 63개, 모두 통과 |
 | 기능의 test (`FT-`), 대조 test (`NC-`) | 8개, 모두 통과 |
 | 추적 검사 | 구현한 software safety requirement 24개가 모두 코드와 test에 이어진다. 구현 예정이 5개 있다 (그 가운데 software safety requirement는 2개). 그래서 `make check STRICT=1`은 실패한다 |
+| 다른 compile option의 test (`make variants`) | 최적화를 켠 build (`-O2`, `-Os`)와 sanitizer를 넣은 build (AddressSanitizer, UndefinedBehaviorSanitizer)에서 test가 모두 통과하고, 출력 (잰 시간과 가속까지)이 `-O0`과 한 줄도 다르지 않다. host의 compiler에 대해서만 말해 준다 |
 | 정적 분석 | cppcheck 지적 없음, clang-tidy 경고 없음 |
 | coverage | 제품 코드 11개 파일 모두 statement, branch, MC/DC 100% |
 | 증명 | 성질 14개가 모든 입력에서 성립한다. 증명에도 결함을 넣어 보았다: 9개를 증명이 모두 잡았다 (`make proof-mutation`). 도구가 알려진 결함을 잡는지도 증명 전에 확인한다 (5절) |

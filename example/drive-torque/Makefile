@@ -1,7 +1,8 @@
 # 책의 예제다. 실제 제품에 쓸 수 없다.
 #
-#   make check     빌드, test, 추적 검사, 정적 분석, coverage, 증명을 차례로 돌린다
+#   make check     빌드, test, 다른 compile option의 test, 추적 검사, 정적 분석, coverage, 증명을 차례로 돌린다
 #   make test      빌드와 test만
+#   make variants  같은 test를 최적화를 켠 build와 sanitizer를 넣은 build로 다시 돌린다
 #   make intro     1장의 실행 예: 안전 장치가 없는 제어기와 예제의 제어기를 같은 고장에서 견준다
 #   make mutation  제품 코드에 결함을 하나씩 넣어 test가 잡는지 본다
 #   make proof-mutation  제품 코드에 결함을 하나씩 넣어 증명이 잡는지 본다
@@ -34,9 +35,9 @@ CPPCHECK   := $(shell command -v cppcheck 2>/dev/null)
 CLANG_TIDY := $(shell command -v clang-tidy 2>/dev/null || ls /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null)
 CBMC       := $(shell command -v cbmc 2>/dev/null)
 
-.PHONY: check test intro intro-figure trace static coverage prove mutation proof-mutation clean dirs skipped
+.PHONY: check test variants intro intro-figure trace static coverage prove mutation proof-mutation clean dirs skipped
 
-check: test intro trace static coverage prove skipped
+check: test variants intro trace static coverage prove skipped
 	@echo "make check: 끝"
 
 dirs:
@@ -90,6 +91,13 @@ test: build/test_unit build/test_scenario build/test_fault_app build/test_no_mon
 	@build/test_no_inverter_check
 	@echo "== 대조 test (실행의 확인을 뺀다)"
 	@build/test_no_flow_check
+
+# ---- 같은 test를 다른 compile option으로 ----
+# 최적화를 켠 build (-O2, -Os)와 sanitizer를 넣은 build에서 test의 출력이 -O0과 같은지 본다.
+# host의 compiler에 대해서만 말해 준다 (docs/tools.md)
+variants: test
+	@echo "== 같은 test를 다른 compile option으로 (최적화, sanitizer)"
+	@sh tools/variants.sh "$(CC)"
 
 # ---- 1장의 실행 예 ----
 # 같은 시나리오를 안전 장치가 없는 제어기와 예제의 제어기로 돌린다.
