@@ -89,7 +89,7 @@
   <rect x="500" y="582" width="180" height="40" rx="4" fill="#dcfce7" stroke="#555555"/>
   <text x="590" y="607" text-anchor="middle" fill="#111111">14장. 플랫폼</text>
   <rect x="690" y="582" width="190" height="40" rx="4" fill="#f3f4f6" stroke="#222222" stroke-width="3"/>
-  <text x="785" y="607" text-anchor="middle" fill="#111111">부록 E. 임베디드 기초</text>
+  <text x="785" y="607" text-anchor="middle" fill="#111111">부록 E. 차량 E/E</text>
 
   <!-- 지원 활동 -->
   <text x="20" y="646" font-size="13" fill="#555555">지원 활동</text>

@@ -1,6 +1,6 @@
 # 소프트웨어 엔지니어를 위한 기능 안전 (Functional Safety) - 가제
 
-책 개요, 초안 v0.4 (2026-11-22, 검토 반영)
+책 개요, 초안 v0.5 (2026-11-22)
 
 이 문서는 무엇을 쓰는지를 정한다: 독자, 범위, 예제, 목차.
 어떻게 쓰는지는 [PLAN.md](PLAN.md)에, 쓸 때 지키는 규칙은 [RULES.md](RULES.md)에, 참고 문서는 [references/](references/README.md)에 있다.
@@ -11,8 +11,8 @@
 
 ### 독자
 
-- 소프트웨어 엔지니어. C 계열 언어를 읽을 수 있고 요구사항, 설계, 테스트, 코드 리뷰, CI 같은 개발 과정에 익숙하다.
-- 가정하지 않는 것: 임베디드 개발 경험, 하드웨어 지식, 안전 규격 경험.
+- 임베디드 시스템 개발 경험이 있는 소프트웨어 엔지니어. C로 MCU의 firmware를 만들어 보았고, interrupt, RTOS, 통신 (예: CAN), debugging에 익숙하다.
+- 가정하지 않는 것: 안전 규격 경험, 자동차 분야의 지식, 하드웨어의 고장에 관한 정량 분석.
 
 ### 책이 답하려는 질문
 
@@ -35,7 +35,7 @@
 - 하드웨어 설계와 정량 분석의 상세 (읽는 법까지만 다룬다)
 - 특정 상용 tool의 사용법
 - 규격 원문의 대체. 이 책은 규격을 읽기 위한 안내서이고, 규격 문장과 표를 옮겨 싣지 않는다.
-- 임베디드 개발 자체. 이 책을 읽는 데 필요한 만큼만 부록 E와 장 안의 상자에서 다룬다.
+- 임베디드 개발의 기초 (MCU, interrupt, RTOS). 독자가 안다고 본다. 차량의 전자 장치에 관한 최소 지식만 부록 E에서 다룬다.
 
 ## 2. 범위
 
@@ -121,7 +121,7 @@ flowchart TD
 ## 4. 목차
 
 장마다 파일 하나가 `chapters/`에 있다. 장의 계획 (다룰 내용, 예제 산출물, 근거)은 각 파일의 앞부분에 있다.
-목표 쪽수의 합은 290쪽 안팎이다. 2026-11-22 검토에서 정한 값이고, 단계 1을 마친 뒤에 다시 본다.
+목표 쪽수는 채워야 하는 양이 아니라 넘지 않으려는 상한이다. 범위가 늘어나는 것을 막고 일정을 추정하는 데 쓴다. 합은 300쪽 안팎이고, 단계 1을 마친 뒤에 다시 본다.
 
 ### Part I. 사고방식과 기본 개념
 
@@ -140,7 +140,7 @@ flowchart TD
 | 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 16 |
 | 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 16 |
 | 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? | 14 |
-| 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? | 10-12 |
+| 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? | 8-10 |
 
 ### Part III. 안전한 소프트웨어 만들기
 
@@ -150,7 +150,7 @@ flowchart TD
 | 11 | [Software architecture for safety](chapters/ch11-software-architecture.md) | 일부가 고장 나도 안전한 구조는 어떻게 만드는가? | 18 |
 | 12 | [Software safety mechanism](chapters/ch12-safety-mechanisms.md) | 고장을 제때 감지하고 반응하는 구체적 수단은 무엇인가? | 20 |
 | 13 | [Coding for safety](chapters/ch13-coding.md) | 언어와 코딩 습관은 안전에 얼마나 기여하는가? | 16 |
-| 14 | [플랫폼: RTOS, OS, multicore](chapters/ch14-platform.md) | 내 코드 아래에 있는 소프트웨어와 프로세서는 믿을 수 있는가? | 12 |
+| 14 | [플랫폼: RTOS, OS, multicore](chapters/ch14-platform.md) | 내 코드 아래에 있는 소프트웨어와 프로세서는 믿을 수 있는가? | 10 |
 
 ### Part IV. 안전함을 보이고 유지하기
 
@@ -180,4 +180,4 @@ flowchart TD
 | B | [규격 조항 대응표](chapters/appendix-b-clause-map.md) |
 | C | [관통 예제의 산출물](chapters/appendix-c-example-artifacts.md) |
 | D | [참고 문헌](chapters/appendix-d-references.md) |
-| E | [임베디드 시스템과 차량 E/E 최소 지식](chapters/appendix-e-embedded-basics.md) |
+| E | [차량 E/E 최소 지식](chapters/appendix-e-vehicle-ee-basics.md) |
