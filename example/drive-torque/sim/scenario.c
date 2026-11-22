@@ -41,7 +41,10 @@ int scenario_run(const scenario_t *sc, sample_t *log, int log_cap)
         hal_sim_step(t);
         /* 4. task table */
         for (int i = 0; i < vcu_task_count; i++) {
-            if ((t % vcu_task_table[i].period_ms) == 0u) {
+            time_ms_t period = vcu_task_table[i].period_ms * (hal_sim_fault_on(FAULT_TASK_SLOW) ? 2u : 1u);
+            bool skipped = hal_sim_fault_on(FAULT_TASK_STOP)
+                           || (hal_sim_fault_on(FAULT_TASK_SKIP) && (hal_sim_fault_param(FAULT_TASK_SKIP) == i));
+            if (((t % period) == 0u) && !skipped) {
                 vcu_task_table[i].run(&vcu);
             }
         }
@@ -60,6 +63,7 @@ int scenario_run(const scenario_t *sc, sample_t *log, int log_cap)
             s->enable = hal_sim_enable();
             s->warning = hal_sim_warning();
             s->diag = *hal_sim_diag();
+            s->watchdog_tripped = hal_sim_watchdog_tripped();
             s->torque_act_nm = plant.torque_act_nm;
             s->speed_mps = plant.speed_mps;
             s->accel_mps2 = plant.accel_mps2;

@@ -153,6 +153,42 @@ MUTANTS = [
      "inverter의 상태를 다른 종류의 data ID로 검사한다"),
     ("src/vcu/vcu.c", "vcu->speed = vcu->speed_valid ? rx.frame.value : 0;", "vcu->speed = rx.frame.value;",
      "무효인 차량 속도의 값을 그대로 쓴다"),
+    ("src/flow/flow.c", "    if (f->count < FLOW_TASK_COUNT) {\n        f->marks[f->count] = mark;",
+     "    if (f->count <= FLOW_TASK_COUNT) {\n        f->marks[f->count] = mark;",
+     "표시를 적을 자리의 범위 검사가 하나 어긋난다 (배열의 바로 뒤에 쓴다)"),
+    ("src/flow/flow.c", "    } else {\n        f->count = (uint8_t)(FLOW_TASK_COUNT + 1u);\n    }", "    }",
+     "표시가 넘친 것을 남기지 않는다"),
+    ("src/flow/flow.c", "return (f->count == FLOW_TASK_COUNT) && (f->marks[0] == FLOW_MARK_INPUT)",
+     "return (f->marks[0] == FLOW_MARK_INPUT)", "표시의 수를 보지 않는다"),
+    ("src/flow/flow.c", "return (f->count == FLOW_TASK_COUNT) && (f->marks[0] == FLOW_MARK_INPUT)",
+     "return (f->count == FLOW_TASK_COUNT)", "첫째 표시를 보지 않는다"),
+    ("src/flow/flow.c", "           && (f->marks[1] == FLOW_MARK_APP) && (f->marks[2] == FLOW_MARK_MONITOR);",
+     "           && (f->marks[2] == FLOW_MARK_MONITOR);", "둘째 표시를 보지 않는다"),
+    ("src/flow/flow.c", "           && (f->marks[1] == FLOW_MARK_APP) && (f->marks[2] == FLOW_MARK_MONITOR);",
+     "           && (f->marks[1] == FLOW_MARK_APP);", "셋째 표시를 보지 않는다"),
+    ("src/flow/flow.c", "    uint32_t answer = f->question;", "    uint32_t answer = (uint32_t)f->question & 0u;",
+     "답에 질문의 번호를 넣지 않는다"),
+    ("src/flow/flow.c", "answer = ((answer * 31u) + f->marks[i]) & 0xFFu;", "answer = ((answer * 31u) + (uint32_t)i + 1u) & 0xFFu;",
+     "답을 남은 표시가 아니라 정해진 값에서 만든다"),
+    ("src/flow/flow.c", "    if ((out > limit) || (out < -limit)) {\n        answer ^= 0xFFu;\n    }\n", "    (void)limit;\n    (void)out;\n",
+     "보낸 토크가 허용 토크를 넘어도 답을 바꾸지 않는다"),
+    ("src/flow/flow.c", "    if ((out > limit) || (out < -limit)) {", "    if (out > limit) {",
+     "후진 쪽으로 넘는 토크를 보지 않는다"),
+    ("src/flow/flow.c", "torque_t limit = (allowed < 0) ? 0 : allowed;", "torque_t limit = allowed;",
+     "음수인 허용 토크를 0으로 자르지 않는다"),
+    ("src/flow/flow.c", "    f->count = 0u;\n    f->question = (uint8_t)", "    f->question = (uint8_t)", "주기를 닫을 때 표시를 지우지 않는다"),
+    ("src/flow/flow.c", "    f->count = 0u;\n    f->question = (uint8_t)((f->question + 1u) & 0xFFu);\n", "    f->count = 0u;\n",
+     "질문의 번호를 올리지 않는다"),
+    ("src/vcu/vcu.c", "    flow_mark(&vcu->flow, FLOW_MARK_INPUT);\n", "", "입력의 task가 표시를 남기지 않는다"),
+    ("src/vcu/vcu.c", "    flow_mark(&vcu->flow, FLOW_MARK_APP);\n", "    flow_mark(&vcu->flow, FLOW_MARK_APP);\n    flow_mark(&vcu->flow, FLOW_MARK_APP);\n",
+     "기능의 task가 표시를 두 번 남긴다"),
+    ("src/vcu/vcu.c", "hal_watchdog_write(flow_answer(&vcu->flow, vcu->torque_allowed, vcu->torque_out));",
+     "hal_watchdog_write(flow_answer(&vcu->flow, vcu->torque_allowed, 0));",
+     "답을 만들 때 보낸 토크 대신 0을 넘긴다"),
+    ("src/vcu/vcu.c", "hal_watchdog_write(flow_answer(&vcu->flow, vcu->torque_allowed, vcu->torque_out));",
+     "hal_watchdog_write(flow_answer(&vcu->flow, TORQUE_MAX, vcu->torque_out));",
+     "답을 만들 때 허용 토크 대신 최대 토크를 넘긴다"),
+    ("src/vcu/vcu.c", "    flow_next(&vcu->flow);\n", "", "주기를 닫지 않는다 (표시가 쌓인다)"),
     ("src/monitor/inverter_check.c", "        if (st->invalid_cycles < INVERTER_INVALID_CYCLES) {\n            st->invalid_cycles++;\n        }",
      "        st->invalid_cycles++;", "무효인 횟수를 한계에서 멈추지 않는다 (넘쳐서 0으로 돌아간다)"),
     ("src/monitor/inverter_check.c", "        st->invalid_cycles = 0u;\n", "", "유효한 주기가 끼어도 무효인 횟수를 지우지 않는다"),
@@ -320,12 +356,18 @@ EQUIVALENT = [
      "이어진 횟수를 한계에서 멈추지 않는다",
      "횟수가 한계에 닿은 주기에 고정되고, 고정은 풀리지 않는다. 그 뒤에 횟수가 넘쳐 0으로 돌아가도 "
      "출력과 진단 메시지는 같다"),
+    ("src/vcu/vcu.c", "    if (ok) {\n        hal_watchdog_write(", "    if (ok || !ok) {\n        hal_watchdog_write(",
+     "task의 순서가 틀려도 외부 watchdog에 답을 쓴다",
+     "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 남은 표시에서 만들므로 (flow_answer), 순서가 틀리면 답도 "
+     "틀리게 나오고 watchdog이 끊는다. 다만 표시가 틀렸는데 답이 우연히 같은 조합이 있다 (답이 8 bit다). "
+     "그 조합에서는 이 줄이 유일한 보호이므로 엄밀하게는 동등하지 않다. 순서가 틀린 표시의 답이 옳은 답과 "
+     "다르다는 것은 unit test (TC-021)가 값 하나로 본다"),
 ]
 
 # 상수를 자동으로 바꿀 파일. 안전 요구사항을 받는 부분의 상수와,
 # 감시의 한계와 맞물리는 기능의 상수 (올리는 속도, 후진의 비율)다
 CONSTANT_FILES = ["src/input/input.h", "src/input/pedal_check.c", "src/monitor/monitor.h",
-                  "src/reaction/reaction.h", "src/com/e2e.h", "src/common/types.h", "src/app/app.c"]
+                  "src/reaction/reaction.h", "src/com/e2e.h", "src/flow/flow.h", "src/common/types.h", "src/app/app.c"]
 DEFINE = re.compile(r"^(#define\s+(\w+)\s+\(\((\w+)\)(\d+)u?\))", re.M)
 
 

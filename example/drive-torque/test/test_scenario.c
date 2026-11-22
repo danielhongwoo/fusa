@@ -49,7 +49,7 @@ static void tc_101(void)
 
     for (int i = 0; i < n; i++) {
         const sample_t *s = &log_buf[i];
-        if (s->diag.pedal_fault || s->diag.latched || (s->warning != 0u)
+        if (s->diag.pedal_fault || s->diag.latched || (s->warning != 0u) || s->watchdog_tripped
             || (s->diag.clamp_count != 0u) || ((s->t_ms >= 20u) && !s->enable)) {
             bad++;
         }
@@ -1129,6 +1129,121 @@ static void tc_123(void)
     inverter_tau_ms = 20.0;
 }
 
+static int is_watchdog_tripped(const sample_t *s) { return s->watchdog_tripped; }
+
+/*
+ * TC-124: SWR-20 fault injection FI-23
+ * 달리는 중에 입력을 읽는 task가 실행되지 않게 된다. 기능과 감시는 지난 입력으로 계속 돈다.
+ * 100 ms 뒤에 운전자가 페달을 놓지만 VCU는 그것을 읽지 못한다.
+ * task의 표시가 하나 모자라므로 VCU는 외부 watchdog에 답하지 않고, watchdog이 창이 닫힐 때 구동 허용 신호를 끊는다.
+ * fault를 넣는 시각을 주기 안에서 0-9 ms로 바꿔 가며 본다.
+ */
+static void tc_124(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+        { T_FAULT + 100u, 0.0, false, GEAR_D },
+    };
+    scenario_t sc_ref = { "fi-23-ref", 3000u, driver, 3, NULL, 0, NULL };
+    int n_ref = scenario_run(&sc_ref, log_ref, LOG_CAP);
+    int worst_trip_ms = 0;
+    int worst_off_ms = 0;
+    int worst_over_ms = 0;
+
+    for (time_ms_t phase = 0u; phase < 10u; phase++) {
+        fault_event_t fault = { T_FAULT + phase, FAULT_TASK_SKIP, 0 };
+        scenario_t sc = { "fi-23", 3000u, driver, 3, &fault, 1, NULL };
+        int n = scenario_run(&sc, log_buf, LOG_CAP);
+        int over_ms = 0;
+        double max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+        int t_trip = first_time(log_buf, n, 0u, is_watchdog_tripped);
+        int t_off = first_motor_off(log_buf, n, fault.t_ms);
+
+        CHECK_EQ(n, n_ref);
+        CHECK(t_trip >= (int)fault.t_ms);
+        CHECK(t_off >= 0);
+        /* VCU는 지난 입력으로 75 Nm를 계속 보낸다. 구동을 막은 것은 watchdog이다 */
+        CHECK_EQ(log_buf[n - 1].torque_out, 750);
+        CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+        CHECK(max_excess < 0.01);
+        if ((t_trip - (int)fault.t_ms) > worst_trip_ms) {
+            worst_trip_ms = t_trip - (int)fault.t_ms;
+        }
+        if ((t_off - (int)fault.t_ms) > worst_off_ms) {
+            worst_off_ms = t_off - (int)fault.t_ms;
+        }
+        if (over_ms > worst_over_ms) {
+            worst_over_ms = over_ms;
+        }
+        if (phase == 5u) {
+            (void)scenario_write_csv("build/out/fi-23.csv", log_buf, n);
+        }
+    }
+    /* 시간 예산표 (docs/technical-safety-concept.md 9.4절): 창 15 ms + 전달 1 ms + inverter의 응답 60 ms */
+    CHECK(worst_trip_ms <= 16);
+    CHECK(worst_off_ms <= 77);
+    CHECK_EQ(worst_over_ms, 0);
+    printf("  측정 FI-23: fault부터 watchdog이 끊을 때까지 가장 나쁜 경우 %d ms, 모터의 토크가 5%% 아래로 내려갈 때까지 %d ms\n",
+           worst_trip_ms, worst_off_ms);
+}
+
+/*
+ * TC-125: SWR-20 fault injection FI-24
+ * 실행의 다른 고장 넷: 기능의 task가 빠짐, 감시와 출력의 task가 빠짐, 실행을 확인하는 task가 빠짐,
+ * task가 하나도 실행되지 않음 (MCU가 멈춤). 어느 것이든 옳은 답이 나가지 않아 watchdog이 끊는다.
+ */
+static void tc_125(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    static const fault_event_t faults[] = {
+        { T_FAULT, FAULT_TASK_SKIP, 1 },
+        { T_FAULT, FAULT_TASK_SKIP, 2 },
+        { T_FAULT, FAULT_TASK_SKIP, 3 },
+        { T_FAULT, FAULT_TASK_STOP, 0 },
+    };
+    int worst_trip_ms = 0;
+
+    for (int k = 0; k < 4; k++) {
+        scenario_t sc = { "fi-24", 3000u, driver, 2, &faults[k], 1, NULL };
+        int n = scenario_run(&sc, log_buf, LOG_CAP);
+        int t_trip = first_time(log_buf, n, 0u, is_watchdog_tripped);
+
+        CHECK(t_trip >= (int)T_FAULT);
+        CHECK((t_trip - (int)T_FAULT) <= 16);
+        CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+        if ((t_trip - (int)T_FAULT) > worst_trip_ms) {
+            worst_trip_ms = t_trip - (int)T_FAULT;
+        }
+    }
+    printf("  측정 FI-24: fault부터 watchdog이 끊을 때까지 가장 나쁜 경우 %d ms\n", worst_trip_ms);
+}
+
+/*
+ * TC-126: SWR-20 fault injection FI-25
+ * task의 주기가 두 배로 늘어난다 (clock의 고장). 소프트웨어가 주기로 세는 시간이 모두 두 배가 된다.
+ * 소프트웨어는 자기 clock이 틀린 것을 알 수 없다. 답이 창보다 늦게 가므로 watchdog이 끊는다.
+ */
+static void tc_126(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    fault_event_t fault = { T_FAULT, FAULT_TASK_SLOW, 0 };
+    scenario_t sc = { "fi-25", 3000u, driver, 2, &fault, 1, NULL };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int t_trip = first_time(log_buf, n, 0u, is_watchdog_tripped);
+
+    CHECK(t_trip >= (int)T_FAULT);
+    CHECK((t_trip - (int)T_FAULT) <= 26);
+    CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+    printf("  측정 FI-25: fault부터 watchdog이 끊을 때까지 %d ms\n", t_trip - (int)T_FAULT);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1155,6 +1270,9 @@ int main(void)
         { "TC-121", "FI-21 inverter가 요구보다 100 Nm 더 냄", tc_121 },
         { "TC-122", "FI-22 inverter가 더 내면서 알리는 값도 틀림 (알려진 한계)", tc_122 },
         { "TC-123", "고장이 없으면 inverter의 검사가 끊지 않는다", tc_123 },
+        { "TC-124", "FI-23 입력을 읽는 task가 실행되지 않음", tc_124 },
+        { "TC-125", "FI-24 task가 빠지거나 모두 멈춤", tc_125 },
+        { "TC-126", "FI-25 task의 주기가 두 배로 늘어남", tc_126 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

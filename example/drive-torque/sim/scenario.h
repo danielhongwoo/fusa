@@ -10,6 +10,7 @@
  *   5. plant를 1 ms 진행한다
  *   6. 기록한다
  * task의 실행 시간은 0이다. jitter와 마감 초과는 흉내 내지 않는다.
+ * task가 실행되지 않거나 주기가 늘어지는 고장은 4에서 넣는다 (FAULT_TASK_SKIP, FAULT_TASK_STOP, FAULT_TASK_SLOW).
  */
 #ifndef SCENARIO_H
 #define SCENARIO_H
@@ -52,6 +53,7 @@ typedef struct {
     bool enable;
     uint8_t warning;
     hal_diag_t diag;
+    bool watchdog_tripped; /* 외부 watchdog이 구동 허용 신호를 끊었는가 */
     double torque_act_nm;
     double speed_mps;
     double accel_mps2;

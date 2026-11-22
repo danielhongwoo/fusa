@@ -8,15 +8,15 @@
 # 반복문은 101번까지 펼친다 (가장 긴 반복이 100번이다). 그보다 길게 도는 반복이 있으면 실패한다.
 # CBMC는 qualification되지 않았다.
 
-INC="-Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reaction -Isrc/com"
-SRC="src/input/pedal_check.c src/input/brake_check.c src/input/gear_check.c src/monitor/monitor.c src/monitor/inverter_check.c src/reaction/reaction.c src/com/e2e.c src/app/app.c test/proof/harness.c"
+INC="-Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reaction -Isrc/com -Isrc/flow"
+SRC="src/input/pedal_check.c src/input/brake_check.c src/input/gear_check.c src/monitor/monitor.c src/monitor/inverter_check.c src/reaction/reaction.c src/com/e2e.c src/flow/flow.c src/app/app.c test/proof/harness.c"
 REPORT=build/reports/cbmc.txt
 fail=0
 
 mkdir -p build/reports
 : > "$REPORT"
 
-PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction prove_brake_check prove_message_rules prove_message_change_detected prove_gear_check prove_inverter_check"
+PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction prove_brake_check prove_message_rules prove_message_change_detected prove_gear_check prove_inverter_check prove_flow"
 count=0
 
 for prop in $PROPS; do

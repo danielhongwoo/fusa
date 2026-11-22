@@ -24,6 +24,9 @@ typedef enum {
     FAULT_INVERTER_TORQUE_OFFSET, /* inverter가 요구보다 param (0.1 Nm)만큼 더 냄 */
     FAULT_INVERTER_REPORT_OFFSET, /* inverter가 알리는 토크가 실제보다 param (0.1 Nm)만큼 큼 */
     FAULT_INVERTER_REPORT_STALE,  /* inverter가 알리는 토크가 한 주기 (10 ms) 전의 값임. 고장이 아니라 느린 경우다 */
+    FAULT_TASK_SKIP,         /* task 하나가 실행되지 않음. param은 task table의 몇 번째인가 (0부터) */
+    FAULT_TASK_STOP,         /* task가 하나도 실행되지 않음 (MCU가 멈춤) */
+    FAULT_TASK_SLOW,         /* task의 주기가 두 배로 늘어남 (clock의 고장) */
     FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
     FAULT_COUNT
@@ -39,6 +42,21 @@ void hal_sim_clear_faults(void);
 
 /* inverter가 받은 메시지를 검사하는지를 정한다. 기본은 검사한다. 거짓은 대조 test에 쓴다 */
 void hal_sim_inverter_check(bool on);
+
+/* 외부 watchdog의 model (가정 A-24). 답을 기다리는 창은 지난 답에서 5 - 15 ms다. 값은 임시다.
+ * 첫 답을 받기 전과 끊은 뒤에는 구동 허용 신호가 inverter에 닿지 않는다. 끊은 것은 다시 켤 때까지 풀리지 않는다 */
+#define SIM_WD_WINDOW_MIN_MS 5u
+#define SIM_WD_WINDOW_MAX_MS 15u
+
+/* 외부 watchdog이 있는가. 기본은 있다. 1장의 단순한 제어기에는 없다 */
+void hal_sim_watchdog_present(bool present);
+
+/* 외부 watchdog이 구동 허용 신호를 끊었는가 */
+bool hal_sim_watchdog_tripped(void);
+
+/* 넣은 fault를 본다. 시나리오 실행기가 task를 건너뛰는 데 쓴다 */
+bool hal_sim_fault_on(fault_id_t fault);
+int32_t hal_sim_fault_param(fault_id_t fault);
 
 /* inverter의 토크 응답의 시정수를 바꾼다. 기본은 20 ms (가정 A-16). 가정보다 느린 inverter를 보는 test에 쓴다 */
 void hal_sim_inverter_tau(double tau_ms);

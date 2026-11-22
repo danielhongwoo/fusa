@@ -22,6 +22,14 @@ static sample_t log_buf[LOG_CAP];
 #define T_RELEASE  4000u /* 운전자가 페달을 놓는다 */
 #define T_END      8000u
 
+/* 안전 장치가 없는 제어기에는 외부 watchdog도 없다 */
+static void no_watchdog(time_ms_t t_ms)
+{
+    if (t_ms == 0u) {
+        hal_sim_watchdog_present(false);
+    }
+}
+
 int main(int argc, char **argv)
 {
     static const driver_point_t driver[] = {
@@ -44,6 +52,9 @@ int main(int argc, char **argv)
         return 2;
     }
     naive = (strcmp(argv[1], "naive") == 0);
+    if (naive) {
+        sc.on_tick = no_watchdog;
+    }
 
     n = scenario_run(&sc, log_buf, LOG_CAP);
     if (scenario_write_csv(argv[2], log_buf, n) != 0) {

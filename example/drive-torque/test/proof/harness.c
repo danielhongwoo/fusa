@@ -17,6 +17,7 @@
 
 #include "app.h"
 #include "e2e.h"
+#include "flow.h"
 #include "input.h"
 #include "monitor.h"
 #include "reaction.h"
@@ -650,4 +651,63 @@ void prove_inverter_check(void)
     inverter_check_record(&st, sent);
     assert((st.pos >= 1) && (st.pos <= 5));
     assert(st.sent[st.pos - 1] == sent);
+}
+
+/*
+ * 성질 14 (SWR-20): 실행의 확인. 표시, 표시의 수, 질문의 번호가 어떤 값에서 시작해도 성립한다.
+ *   가. 맞다고 하는 것은 표시가 셋이고 1, 2, 3의 순서일 때뿐이다.
+ *   나. 그때 보낸 토크의 크기가 허용 토크 안이면, 답은 질문의 번호로 정해진 값 하나다.
+ *       허용 토크를 넘으면 그 값이 아니다.
+ *   다. 표시를 남길 때 배열 밖을 쓰지 않고, 표시의 수는 4를 넘지 않는다.
+ *   라. 주기를 닫으면 표시가 없는 상태가 되고, 질문의 번호가 1 오른다 (255 다음은 0).
+ * 말해 주지 않는 것: 순서가 틀린 표시에서 나온 답이 옳은 답과 반드시 다른가. 답이 8 bit여서
+ * 우연히 같은 조합이 있다. 그래서 답을 쓰기 전에 가.를 따로 확인한다.
+ */
+void prove_flow(void)
+{
+    flow_t f;
+    flow_t before;
+    torque_t allowed = nondet_int32();
+    torque_t out = nondet_int32();
+    uint8_t mark = nondet_uint8();
+    uint32_t expected;
+    uint8_t answer;
+    bool ok;
+
+    for (int i = 0; i < 3; i++) {
+        f.marks[i] = nondet_uint8();
+    }
+    f.count = nondet_uint8();
+    f.question = nondet_uint8();
+    before = f;
+    __CPROVER_assume(allowed >= 0);
+
+    /* 가 */
+    ok = flow_check(&f);
+    assert(ok == ((f.count == 3) && (f.marks[0] == 1) && (f.marks[1] == 2) && (f.marks[2] == 3)));
+    /* 나 */
+    answer = flow_answer(&f, allowed, out);
+    expected = (((uint32_t)f.question * 29791u) + 1026u) & 0xFFu;
+    if (ok) {
+        if ((out <= allowed) && (out >= -allowed)) {
+            assert(answer == expected);
+        } else {
+            assert(answer != expected);
+        }
+    }
+    /* 다 */
+    flow_mark(&f, mark);
+    assert(f.count <= 4);
+    if (before.count < 3) {
+        assert(f.count == (before.count + 1));
+        assert(f.marks[before.count] == mark);
+    } else {
+        assert(f.count == 4);
+    }
+    assert(f.question == before.question);
+    /* 라 */
+    flow_next(&f);
+    assert(f.count == 0);
+    assert(!flow_check(&f));
+    assert(f.question == ((before.question + 1) % 256));
 }

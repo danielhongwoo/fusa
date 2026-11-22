@@ -54,6 +54,10 @@ void hal_can_tx_warning(uint8_t level);
 /* 구동 허용 신호 (CAN과 별개의 선). false면 inverter는 토크를 내지 않는다 */
 void hal_enable_write(bool on);
 
+/* 외부 watchdog에 답을 쓴다. watchdog은 정해진 창 안에 옳은 답을 받지 못하면 구동 허용 신호를 끊는다.
+ * 답의 규칙은 docs/hsi.md 3절에 있다 */
+void hal_watchdog_write(uint8_t answer);
+
 /* 진단 메시지. 정비와 시험에서 VCU의 판단을 보는 데 쓴다 */
 typedef struct {
     permille_t pedal_safe;   /* 입력 검사를 거친 페달 값 */

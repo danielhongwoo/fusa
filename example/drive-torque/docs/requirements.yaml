@@ -60,7 +60,6 @@ requirements:
   - id: FSR-10
     text: "입력 검사, 감시, 출력 단계가 정해진 순서와 주기로 실행되지 않으면, VCU의 소프트웨어와 따로 동작하는 요소가 구동을 막을 수 있게 한다."
     parents: [SG-01]
-    status: planned
   - id: FSR-11
     text: "VCU는 구동 허용 신호가 쓴 대로 나가는지를 확인하고, 그렇지 않으면 구동을 허용하지 않고 운전자에게 경고를 요청한다."
     parents: [SG-01]
@@ -125,7 +124,6 @@ requirements:
   - id: TSR-14
     text: "task마다 실행한 표시를 남긴다. 주기의 끝에서 순서와 횟수를 확인하고, 맞으면 그 주기의 계산 결과에서 만든 답을 외부 watchdog에 보낸다. 틀리면 답을 보내지 않는다."
     parents: [FSR-10]
-    status: planned
   - id: TSR-15
     text: "구동 허용 신호를 쓴 뒤 그 선을 되읽어 쓴 값과 견준다. 켤 때에는 끊긴 것을 되읽어 확인한 뒤에 허용한다. 어긋나면 구동 허용 차단으로 가고 경고를 요청한다."
     parents: [FSR-11]
@@ -260,7 +258,8 @@ requirements:
     alloc: "주기 실행"
     text: "task마다 정해진 표시를 남기고, 주기의 끝에서 표시의 순서와 수가 task table과 같은지 확인한다. 같으면 그 주기의 허용 토크와 보낸 토크에서 만든 답을 외부 watchdog에 쓴다. 다르면 쓰지 않는다."
     parents: [TSR-14]
-    status: planned
+    verified_by: [TC-021, TC-124, TC-125, TC-126, TC-127]
+    proved_by: [prove_flow]
   - id: SWR-21
     alloc: "출력 단계"
     text: "구동 허용 신호를 쓴 다음 주기에 되읽은 값이 쓴 값과 다르면 구동 허용 차단의 사건을 알린다. 켤 때에는 끊긴 것을 되읽어 확인하기 전까지 허용하지 않는다."

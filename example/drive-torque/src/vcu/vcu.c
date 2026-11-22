@@ -15,6 +15,7 @@ void vcu_init(vcu_t *vcu)
     output_stage_init(&vcu->output);
     reaction_init(&vcu->reaction);
     inverter_check_init(&vcu->inverter_check);
+    flow_init(&vcu->flow);
     e2e_rx_init(&vcu->speed_rx);
     e2e_rx_init(&vcu->inverter_rx);
     e2e_tx_init(&vcu->torque_tx);
@@ -62,12 +63,14 @@ static void task_input(vcu_t *vcu)
     }
     /* SWR-16: 받아들인 기어도 여기 한 곳에서 정해 기능과 감시에 같은 값을 준다 */
     vcu->gear = gear_check_step(&vcu->gear_check, vcu->in.gear, vcu->speed_valid, vcu->speed);
+    flow_mark(&vcu->flow, FLOW_MARK_INPUT);
 }
 
 /* 기능: 토크 요구를 만든다 */
 static void task_app(vcu_t *vcu)
 {
     vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->brake, vcu->gear);
+    flow_mark(&vcu->flow, FLOW_MARK_APP);
 }
 
 /* 감시와 출력 단계 */
@@ -120,12 +123,26 @@ static void task_monitor_output(vcu_t *vcu)
     diag.gear = vcu->gear;
     diag.inverter_out_cycles = vcu->inverter_check.out_cycles;
     hal_can_tx_diag(&diag);
+    flow_mark(&vcu->flow, FLOW_MARK_MONITOR);
+}
+
+/* 실행의 확인: 이 주기에 task가 정해진 순서로 한 번씩 실행되었으면 외부 watchdog에 답한다 */
+static void task_flow(vcu_t *vcu)
+{
+    /* SWR-20: 순서나 횟수가 틀렸으면 답하지 않는다. 그러면 watchdog이 구동 허용 신호를 끊는다 */
+    bool ok = flow_check(&vcu->flow);
+
+    if (ok) {
+        hal_watchdog_write(flow_answer(&vcu->flow, vcu->torque_allowed, vcu->torque_out));
+    }
+    flow_next(&vcu->flow);
 }
 
 const vcu_task_t vcu_task_table[] = {
     { "input", CYCLE_MS, task_input },
     { "app", CYCLE_MS, task_app },
     { "monitor_output", CYCLE_MS, task_monitor_output },
+    { "flow", CYCLE_MS, task_flow },
 };
 
 const int vcu_task_count = (int)(sizeof(vcu_task_table) / sizeof(vcu_task_table[0]));

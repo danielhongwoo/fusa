@@ -7,6 +7,7 @@
 
 #include "app.h"
 #include "e2e.h"
+#include "flow.h"
 #include "input.h"
 #include "monitor.h"
 #include "reaction.h"
@@ -35,6 +36,7 @@ typedef struct {
     torque_t torque_out;     /* inverter로 보낸 토크 */
     bool enable;             /* 구동 허용 신호 */
     uint8_t warning;         /* 경고 요청: 0 없음, 1 주의, 2 경고 */
+    flow_t flow;             /* 이 주기에 task가 남긴 표시와 watchdog의 질문 번호 */
 } vcu_t;
 
 typedef struct {

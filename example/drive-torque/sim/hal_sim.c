@@ -29,6 +29,12 @@ static struct {
     bool inv_fresh;
     unsigned inv_counter;
     int32_t inv_prev_value;
+    /* 외부 watchdog */
+    bool wd_present;
+    bool wd_armed;        /* 첫 답을 받았는가 */
+    bool wd_tripped;      /* 구동 허용 신호를 끊었는가 */
+    unsigned wd_question; /* 기다리는 답의 번호 */
+    time_ms_t wd_last_ms; /* 마지막으로 옳은 답을 받은 때 */
     frame_t inv_frame;
     time_ms_t inv_rx_ms;
     /* 전송 중에 되풀이되는 토크 요구 메시지 (FAULT_TORQUE_MSG_REPEAT) */
@@ -152,13 +158,42 @@ void hal_sim_init(plant_t *plant)
     sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false, false, 0, false, GEAR_N, 0u };
     sim.enable_written_this_tick = false;
     sim.order_violations = 0u;
+    sim.wd_present = true;
+    sim.wd_armed = false;
+    sim.wd_tripped = false;
+    sim.wd_question = 0u;
+    sim.wd_last_ms = 0u;
     update_sensors();
+}
+
+/* 구동 허용 신호의 선. VCU가 쓴 값이 watchdog을 거쳐 inverter로 간다 */
+static bool enable_line(void)
+{
+    return sim.enable_out && (!sim.wd_present || (sim.wd_armed && !sim.wd_tripped));
+}
+
+static void watchdog_trip(void)
+{
+    sim.wd_tripped = true;
+    plant_send_enable(sim.plant, false);
+}
+
+/* watchdog이 기다리는 답. 제품의 코드 (src/flow/flow.c)와 따로 적었다:
+ * 질문의 번호에서 시작해 31을 곱하고 1, 2, 3을 차례로 더한 값의 아래 8 bit */
+static unsigned watchdog_expected(unsigned question)
+{
+    return ((question * 29791u) + 1026u) & 0xFFu;
 }
 
 void hal_sim_step(time_ms_t t_ms)
 {
     sim.now_ms = t_ms;
     sim.enable_written_this_tick = false;
+    /* 창이 닫힐 때까지 답이 없으면 끊는다 */
+    if (sim.wd_present && sim.wd_armed && !sim.wd_tripped
+        && ((sim.now_ms - sim.wd_last_ms) > SIM_WD_WINDOW_MAX_MS)) {
+        watchdog_trip();
+    }
     update_sensors();
     update_messages();
 }
@@ -188,6 +223,14 @@ void hal_sim_clear_faults(void)
 }
 
 void hal_sim_inverter_check(bool on) { sim.plant->check_frames = on; }
+void hal_sim_watchdog_present(bool present)
+{
+    sim.wd_present = present;
+    plant_send_enable(sim.plant, sim.enable_out && (!sim.wd_present || (sim.wd_armed && !sim.wd_tripped)));
+}
+bool hal_sim_watchdog_tripped(void) { return sim.wd_tripped; }
+bool hal_sim_fault_on(fault_id_t fault) { return sim.fault_on[fault]; }
+int32_t hal_sim_fault_param(fault_id_t fault) { return sim.fault_param[fault]; }
 void hal_sim_inverter_tau(double tau_ms) { sim.plant->inverter_tau_ms = tau_ms; }
 torque_t hal_sim_last_torque(void) { return sim.torque_out; }
 bool hal_sim_enable(void) { return sim.enable_out; }
@@ -288,7 +331,24 @@ void hal_enable_write(bool on)
 {
     sim.enable_written_this_tick = true;
     sim.enable_out = on;
-    plant_send_enable(sim.plant, on);
+    plant_send_enable(sim.plant, enable_line());
+}
+
+void hal_watchdog_write(uint8_t answer)
+{
+    if (!sim.wd_present || sim.wd_tripped) {
+        return;
+    }
+    if (sim.wd_armed && ((sim.now_ms - sim.wd_last_ms) < SIM_WD_WINDOW_MIN_MS)) {
+        watchdog_trip(); /* 너무 이르다 */
+    } else if ((unsigned)answer != watchdog_expected(sim.wd_question)) {
+        watchdog_trip(); /* 답이 틀리다 */
+    } else {
+        sim.wd_armed = true;
+        sim.wd_question = (sim.wd_question + 1u) & 0xFFu;
+        sim.wd_last_ms = sim.now_ms;
+        plant_send_enable(sim.plant, enable_line());
+    }
 }
 
 void hal_can_tx_diag(const hal_diag_t *diag)

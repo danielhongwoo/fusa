@@ -8,6 +8,7 @@
  */
 #include "app.h"
 #include "e2e.h"
+#include "flow.h"
 #include "input.h"
 #include "monitor.h"
 #include "reaction.h"
@@ -1298,6 +1299,90 @@ static void tc_020(void)
     CHECK_EQ(st.out_cycles, 2);
 }
 
+/* 표시 셋을 차례로 남긴다 */
+static void mark3(flow_t *f, uint8_t a, uint8_t b, uint8_t c)
+{
+    flow_mark(f, a);
+    flow_mark(f, b);
+    flow_mark(f, c);
+}
+
+/* TC-021: SWR-20 task가 정해진 순서로 한 번씩 실행되었을 때에만 옳은 답이 나온다 */
+static void tc_021(void)
+{
+    flow_t f;
+
+    /* 표시가 없으면 틀리다. 1, 2까지는 하나가 모자라고, 3까지 남기면 맞다 */
+    flow_init(&f);
+    CHECK(!flow_check(&f));
+    flow_mark(&f, 1u);
+    flow_mark(&f, 2u);
+    CHECK(!flow_check(&f));
+    flow_mark(&f, 3u);
+    CHECK(flow_check(&f));
+    /* 답은 질문의 번호에서 시작해 31을 곱하고 표시를 더해 가는 값의 아래 8 bit다.
+     * 0번 질문, 표시 1, 2, 3: ((0 * 31 + 1) * 31 + 2) * 31 + 3 = 1026, 아래 8 bit는 2 */
+    CHECK_EQ(flow_answer(&f, 800, 750), 2);
+    CHECK_EQ(flow_answer(&f, 800, 800), 2);
+    CHECK_EQ(flow_answer(&f, 800, -800), 2);
+    /* 보낸 토크의 크기가 허용 토크를 넘으면 답이 틀리게 나온다 */
+    CHECK_EQ(flow_answer(&f, 800, 801), 253);
+    CHECK_EQ(flow_answer(&f, 800, -801), 253);
+    /* 허용 토크가 음수로 틀려 있으면 0으로 본다 */
+    CHECK_EQ(flow_answer(&f, -5, 0), 2);
+    CHECK_EQ(flow_answer(&f, -5, 3), 253);
+    CHECK_EQ(flow_answer(&f, -5, -3), 253);
+
+    /* 주기를 닫으면 표시가 지워지고 질문의 번호가 오른다 */
+    flow_next(&f);
+    CHECK(!flow_check(&f));
+    mark3(&f, 1u, 2u, 3u);
+    CHECK(flow_check(&f));
+    CHECK_EQ(flow_answer(&f, 800, 750), 97); /* 1번 질문: (29791 + 1026)의 아래 8 bit */
+    /* 번호는 255 다음에 0이다 */
+    f.question = 255u;
+    flow_next(&f);
+    mark3(&f, 1u, 2u, 3u);
+    CHECK_EQ(flow_answer(&f, 800, 750), 2);
+
+    /* 순서가 틀리면 틀리다. 그 표시에서 나온 답은 옳은 답 (2)과 다르다 */
+    flow_init(&f);
+    mark3(&f, 2u, 1u, 3u);
+    CHECK(!flow_check(&f));
+    CHECK_EQ(flow_answer(&f, 800, 750), 164); /* ((0 * 31 + 2) * 31 + 1) * 31 + 3 = 1956 */
+    /* 자리 하나만 틀려도 틀리다 */
+    flow_next(&f);
+    mark3(&f, 3u, 2u, 3u);
+    CHECK(!flow_check(&f));
+    flow_next(&f);
+    mark3(&f, 1u, 1u, 3u);
+    CHECK(!flow_check(&f));
+    flow_next(&f);
+    mark3(&f, 1u, 2u, 2u);
+    CHECK(!flow_check(&f));
+    /* task 하나가 빠졌다 */
+    flow_next(&f);
+    flow_mark(&f, 2u);
+    flow_mark(&f, 3u);
+    CHECK(!flow_check(&f));
+    /* task 하나가 더 실행되었다. 표시가 넘치면 그 뒤에 무엇이 와도 틀리다 */
+    flow_next(&f);
+    mark3(&f, 1u, 2u, 3u);
+    flow_mark(&f, 3u);
+    CHECK(!flow_check(&f));
+    CHECK_EQ(f.count, 4);
+    flow_next(&f);
+    mark3(&f, 1u, 2u, 3u);
+    flow_mark(&f, 1u);
+    flow_mark(&f, 3u);
+    CHECK(!flow_check(&f));
+    for (int i = 0; i < 300; i++) {
+        flow_mark(&f, 1u);
+    }
+    CHECK_EQ(f.count, 4);
+    CHECK_EQ(f.question, 6); /* 표시를 남기는 것은 번호를 바꾸지 않는다. 주기를 여섯 번 닫았다 */
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1321,6 +1406,7 @@ int main(void)
         { "TC-018", "받은 메시지의 CRC, data ID, counter, 시간을 검사한다", tc_018 },
         { "TC-019", "방향의 바뀜은 속도가 유효하고 낮을 때만 받아들인다", tc_019 },
         { "TC-020", "inverter가 알린 토크를 최근에 보낸 토크의 범위와 견준다", tc_020 },
+        { "TC-021", "task가 순서대로 한 번씩 실행되었을 때에만 옳은 답이 나온다", tc_021 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },
