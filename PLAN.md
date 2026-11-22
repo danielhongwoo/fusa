@@ -253,7 +253,7 @@ Part V의 장은 그림에서 뺐다. 20, 21장은 6, 7, 11, 12장을, 22장은 
 | HARA | 6 | hazardous event 4-5개 | 전체 표 |
 | safety goal, safe state, FTTI 가정값 | 6 | 1개 | 전체 |
 | functional safety concept | 7 | safety goal 1개에 대해 | 전체 |
-| technical safety concept | 7 | 3단계 감시 구조 | 전체 |
+| technical safety concept | 7 | 입력 검사, 기능, 감시와 출력 단계로 나눈 구조 (이 책의 설계) | 전체 |
 | 가정 목록 (inverter, MCU) | 7, 9 | 5-10줄 | 전체 |
 | 시간 예산표 (FTTI, fault detection과 reaction의 시간, task 주기) | 7, 14 | 한 쪽 | 측정값 포함 |
 | decomposition 또는 coexistence 판단 | 7 | 한 줄과 근거 | 전체 |
@@ -262,7 +262,7 @@ Part V의 장은 그림에서 뺐다. 20, 21장은 6, 7, 11, 12장을, 22장은 
 | 독립성 주장 목록 (dependent failure, freedom from interference) | 8, 11 | 한 쪽 | 전체 |
 | 하드웨어 진단 목록 | 9 | 없음 | 전체 |
 | software safety requirements (ID, YAML) | 10 | 5-10개 | 전체 |
-| software architecture (응용, 감시, HAL의 3층과 task table) | 11 | 정적 view와 동적 view 각 1개 | 전체 |
+| software architecture (입력 검사, 기능, 감시와 출력 단계, HAL, task table) | 11 | 정적 view와 동적 view 각 1개 | 전체 |
 | 아키텍처 수준의 safety analysis | 11 | 없음 | 1건 |
 | safety mechanism 구현 | 12 | 토크 감시, 페달 plausibility | 추가 mechanism |
 | startup과 reset 동작 | 12 | 없음 | 구현과 test |
@@ -288,7 +288,7 @@ Part V의 장은 그림에서 뺐다. 20, 21장은 6, 7, 11, 12장을, 22장은 
 - 실행 모델: process 하나, thread 하나, 1 ms 단위의 가상 시계, 정적 task table. 실행 시간은 시뮬레이션이 넣어 주는 값이다
 - HAL 경계: ADC, 토크 출력과 enable 신호, CAN, 시간, 비휘발성 memory, watchdog, reset 원인. 응용과 감시의 코드는 HAL만 부른다
 - 페달 센서: 특성이 서로 다른 두 채널. 두 채널이 함께 틀어지는 공통 원인 고장을 한 가지 넣는다
-- fault injection: HAL 뒤에서만 한다
+- fault injection: HAL 뒤에서 넣거나, 모듈 전체를 link할 때 바꿔 끼워서 넣는다. 제품의 소스에는 test용 코드를 넣지 않는다
   - 센서: 고착, 튐, offset, 단선, 공통 원인
   - CAN: 소실, 값 정지, CRC 불일치, 지연
   - 실행: task 건너뜀, 지연 초과

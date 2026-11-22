@@ -1,0 +1,122 @@
+# 책의 예제다. 실제 제품에 쓸 수 없다.
+#
+#   make check     빌드, test, 추적 검사, 정적 분석, coverage, 증명을 차례로 돌린다
+#   make test      빌드와 test만
+#   make mutation  제품 코드에 결함을 하나씩 넣어 test가 잡는지 본다
+#   make clean     build 폴더를 지운다
+#
+# 도구가 없으면 그 단계를 건너뛰고 "건너뜀"이라고 찍는다.
+# make check STRICT=1 로 돌리면 건너뛴 단계가 있을 때 실패한다.
+# 이 도구들은 어느 것도 qualification되지 않았다.
+
+CC      ?= cc
+CFLAGS  := -std=c11 -Wall -Wextra -Werror -pedantic -O0 -g
+INC     := -Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/vcu -Isim -Itest -Itest/faulty
+
+# 제품 코드 (item의 소프트웨어)
+# 하드웨어를 부르지 않는 부분과 부르는 부분을 나눈다. unit test는 앞의 것만 link한다
+SRC_LOGIC  := src/input/pedal_check.c src/monitor/monitor.c
+SRC_IO     := src/input/input.c src/vcu/vcu.c
+SRC_SAFETY := $(SRC_LOGIC) $(SRC_IO)
+SRC_APP    := src/app/app.c
+SRC        := $(SRC_SAFETY) $(SRC_APP)
+# 시뮬레이션 (item의 밖)
+SIM        := sim/plant.c sim/hal_sim.c sim/scenario.c
+TESTLIB    := test/test_run.c
+
+# MC/DC를 재려면 GCC 14 이상이 필요하다
+GCC  := $(shell for c in gcc-16 gcc-15 gcc-14; do if command -v $$c >/dev/null 2>&1; then echo $$c; break; fi; done)
+GCOV := $(subst gcc,gcov,$(GCC))
+CPPCHECK   := $(shell command -v cppcheck 2>/dev/null)
+CLANG_TIDY := $(shell command -v clang-tidy 2>/dev/null || ls /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null)
+CBMC       := $(shell command -v cbmc 2>/dev/null)
+
+.PHONY: check test trace static coverage prove mutation clean dirs skipped
+
+check: test trace static coverage prove skipped
+	@echo "make check: 끝"
+
+dirs:
+	@mkdir -p build/out build/reports build/cov
+	@: > build/skipped
+
+# ---- 빌드와 test ----
+
+build/test_unit: $(SRC_LOGIC) $(SRC_APP) $(TESTLIB) test/test_unit.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+build/test_scenario: $(SRC) $(SIM) $(TESTLIB) test/test_scenario.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+# 기능 모듈을 결함이 있는 것으로 바꿔 끼운다.
+# 정상인 기능은 소스를 고치지 않고 함수 이름만 바꿔 compile한다.
+build/app_good.o: $(SRC_APP) | dirs
+	$(CC) $(CFLAGS) $(INC) -Dapp_init=app_good_init -Dapp_step=app_good_step -c -o $@ $<
+
+build/test_fault_app: $(SRC_SAFETY) build/app_good.o test/faulty/app_fault.c $(SIM) $(TESTLIB) test/test_fault_app.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+test: build/test_unit build/test_scenario build/test_fault_app
+	@echo "== unit test"
+	@build/test_unit
+	@echo "== 시나리오 test (fault는 HAL의 뒤에서 넣는다)"
+	@build/test_scenario
+	@echo "== 기능의 고장을 넣는 test (모듈을 바꿔 끼운다)"
+	@build/test_fault_app
+
+# ---- 추적 ----
+
+trace: | dirs
+	@echo "== 추적 검사"
+	@python3 tools/trace.py > build/reports/trace.txt; status=$$?; cat build/reports/trace.txt; exit $$status
+
+# ---- 정적 분석 ----
+
+static: | dirs
+	@echo "== 정적 분석"
+ifneq ($(CPPCHECK),)
+	@$(CPPCHECK) --std=c11 --enable=warning,style,performance,portability --inline-suppr \
+		--suppress=missingIncludeSystem --error-exitcode=1 -q $(INC) src > build/reports/cppcheck.txt 2>&1; \
+		status=$$?; cat build/reports/cppcheck.txt; \
+		if [ $$status -ne 0 ]; then exit $$status; fi; echo "cppcheck: 지적 없음"
+else
+	@echo "건너뜀: cppcheck가 없다" | tee -a build/skipped
+endif
+ifneq ($(CLANG_TIDY),)
+	@$(CLANG_TIDY) $(SRC) --quiet --checks='-*,bugprone-*,cert-*,clang-analyzer-*,-bugprone-easily-swappable-parameters' \
+		-- $(CFLAGS) $(INC) > build/reports/clang-tidy.txt 2>&1 || true
+	@echo "clang-tidy: 경고 $$(grep -c 'warning:' build/reports/clang-tidy.txt) 개 (보고서: build/reports/clang-tidy.txt)"
+else
+	@echo "건너뜀: clang-tidy가 없다" | tee -a build/skipped
+endif
+
+# ---- coverage ----
+
+coverage: | dirs
+	@echo "== coverage (statement, branch, MC/DC)"
+ifneq ($(GCC),)
+	@sh tools/coverage.sh "$(GCC)" "$(GCOV)" "$(CFLAGS)"
+else
+	@echo "건너뜀: GCC 14 이상이 없다" | tee -a build/skipped
+endif
+
+# ---- 증명 ----
+
+prove: | dirs
+	@echo "== 증명 (CBMC)"
+ifneq ($(CBMC),)
+	@sh tools/prove.sh
+else
+	@echo "건너뜀: cbmc가 없다" | tee -a build/skipped
+endif
+
+# test가 결함을 잡는지 본다. 시간이 걸려서 check에는 넣지 않았다
+mutation:
+	@python3 tools/mutation_check.py
+
+skipped:
+	@if [ -s build/skipped ]; then echo "건너뛴 단계가 있다:"; cat build/skipped; \
+		if [ "$(STRICT)" = "1" ]; then exit 1; fi; fi
+
+clean:
+	rm -rf build

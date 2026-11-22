@@ -91,8 +91,15 @@ void prove_limited_output(void)
 - cppcheck의 MISRA 검사가 규칙 7.3을 여덟 곳에서 냈다. 그 줄에는 숫자의 접미사가 없으므로 거짓 경보로 보인다. 원인은 확인하지 않았다. 단계 0.5에서 본다.
 - CBMC가 증명한 것은 C 코드의 성질이다. compiler가 만든 기계어, 실행 시간, 하드웨어의 동작은 증명하지 않는다.
 
+## 예제를 만들면서 알게 된 것 (2026-11-22)
+
+- CBMC가 실제 결함을 찾았다. 전압을 페달 위치로 바꾸는 함수가 `mv - min_mv`를 먼저 계산했다. HAL이 범위 밖의 값을 주면 이 뺄셈에서 signed overflow가 난다. unit test와 시나리오 test는 모두 통과하고 있었다. 빼기 전에 범위를 보도록 고쳤다. 15장과 16장의 예로 쓴다.
+- coverage 측정이 빠진 test를 찾았다. 처음에는 입력 읽기 (`input.c`)의 MC/DC가 42%였다. 기어 값을 알 수 없는 경우와 속도 메시지가 끊긴 경우의 test가 없었다.
+- test가 결함을 잡는지 변이로 확인했다. 제품 코드에 결함 10개를 하나씩 넣었고 test가 모두 잡았다 (`make mutation`).
+- cppcheck 2.22의 MISRA 검사는 변수 이름 `pedal`을 규칙 7.3 (숫자의 접미사 `l`) 위반으로 낸다. `brake`나 `medal`은 내지 않는다. 거짓 경보다. 작은 파일로 확인했다. 17장에서 도구도 틀린다는 예로 쓸 수 있다.
+- GCC의 gcov 옵션은 `--conditions`와 `--branch-probabilities`다. gcov는 compile한 폴더를 기준으로 소스를 찾으므로, coverage 빌드와 gcov를 같은 폴더에서 돌린다.
+
 ## 남은 것
 
-- 시제품은 임시 폴더에 있다. 단계 0.5에서 `example/drive-torque/`에 다시 만들고 `make check`에 넣는다.
-- cppcheck의 MISRA 검사가 낸 규칙 7.3의 원인을 확인한다.
-- gcovr는 설치하지 않았다. 보고서는 `gcov`의 출력으로 만든다.
+- 깨끗한 container에서 `make check`를 돌려 보지 못했다. 이 컴퓨터에서 docker가 실행 중이 아니었다.
+- gcovr는 설치하지 않았다. 보고서는 `gcov`의 출력을 `tools/coverage_summary.py`로 줄여서 만든다.

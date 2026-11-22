@@ -1,0 +1,121 @@
+# 책의 예제다. 실제 제품에 쓸 수 없다.
+# safety goal SG-01에서 software safety requirement까지의 요구사항.
+# 등급과 수치는 설명을 위한 가정이다. 규격의 요구사항을 만족하는지 확인한 것이 아니다.
+#
+# 형식은 tools/trace.py의 머리말에 있다.
+#   parents      위 단계의 요구사항
+#   alloc        요구사항을 받는 요소
+#   verified_by  이 요구사항을 보는 test case (test/의 코드에 같은 ID가 있다)
+#   proved_by    이 요구사항에 관한 성질을 증명하는 함수 (test/proof/harness.c)
+#
+# 알려진 한계
+#   - 검사 실패와 통과가 번갈아 나오는 간헐 고장은 판정되지 않는다 (SWR-03, SWR-08).
+#   - 페달 고장과 기능의 고장은 다시 켤 때까지 유지한다. 뼈대의 단순화다.
+#   - 감시 자신의 고장에 대한 요구사항은 아직 없다 (단계 2).
+requirements:
+  - id: SG-01
+    asil: "D (가정)"
+    text: "운전자의 요구보다 1.0 m/s^2 넘게 큰 가속이 200 ms 넘게 이어지지 않게 한다. 두 값은 가정이다. 운전자의 요구보다 큰 가속은 고장이 없을 때 같은 입력에서 나오는 가속과의 차이로 잰다."
+    parents: []
+
+  - id: FSR-01
+    text: "VCU는 가속 페달 위치를 서로 독립된 두 신호로 읽고, 두 신호가 범위를 벗어나거나 서로 맞지 않으면 알아챈다."
+    parents: [SG-01]
+  - id: FSR-02
+    text: "VCU는 운전자의 입력 (가속 페달, 브레이크, 기어)에서 허용 토크를 구하고, inverter로 보내는 토크 요구가 허용 토크를 넘지 않게 한다."
+    parents: [SG-01]
+  - id: FSR-03
+    text: "가속 페달 위치를 믿을 수 없으면 VCU는 토크 요구를 바로 0으로 하고 운전자에게 경고를 요청한다. 다시 켤 때까지 유지한다."
+    parents: [SG-01]
+  - id: FSR-04
+    text: "토크 요구가 허용 토크를 계속 넘으면 VCU는 기능의 고장으로 보고, 토크 요구를 0으로 하고 구동 허용 신호를 끊고 운전자에게 경고를 요청한다. 다시 켤 때까지 유지한다."
+    parents: [SG-01]
+  - id: FSR-05
+    text: "가속 페달을 놓았거나, 브레이크를 밟았거나, 기어가 P 또는 N이면 VCU는 구동 토크를 요구하지 않는다."
+    parents: [SG-01]
+
+  - id: TSR-01
+    text: "두 채널의 전압을 페달 위치 (0-1000)로 바꾼다. 채널마다 전압의 범위를 검사하고, 두 채널의 차이가 50을 넘는지 검사한다."
+    parents: [FSR-01]
+  - id: TSR-02
+    text: "검사에 실패한 주기가 3번 이어지면 페달 고장으로 판정하고, 그 주기의 출력부터 반영한다. 한 주기라도 통과하면 다시 센다. 고장이 난 때부터 반영까지 가장 나쁜 경우 30 ms다."
+    parents: [FSR-01, FSR-03]
+  - id: TSR-03
+    text: "허용 토크는 안전한 페달 값에 비례하는 상한 (최대 토크 x 페달 / 1000)에 오차 5 Nm를 더한 값이고, 최대 토크를 넘지 않는다. FSR-05의 조건에서는 0이다. 정상인 기능의 토크 요구는 이 값을 넘지 않아야 한다."
+    parents: [FSR-02, FSR-05]
+  - id: TSR-04
+    text: "출력 단계는 10 ms마다 토크 요구를 허용 토크와 기어가 정한 방향 안으로 깎아서 보낸다."
+    parents: [FSR-02]
+  - id: TSR-05
+    text: "깎인 주기가 5번 이어지면 기능의 고장으로 고정한다. 그 주기에 토크 0을 보내고 구동 허용 신호를 끊는다. 한 주기라도 깎이지 않으면 다시 센다. 고장이 난 때부터 차단까지 가장 나쁜 경우 50 ms다."
+    parents: [FSR-04]
+  - id: TSR-06
+    text: "페달 고장이나 기능의 고장을 판정한 주기에 경고 요청을 보낸다."
+    parents: [FSR-03, FSR-04]
+  - id: TSR-07
+    text: "켠 뒤에는 입력 검사를 3주기 이어서 통과하기 전까지 토크를 허용하지 않는다."
+    parents: [FSR-01]
+
+  - id: SWR-01
+    alloc: "입력 검사"
+    text: "두 채널의 전압을 페달 위치 (0-1000)로 바꾼다. 빼거나 곱하기 전에 범위를 본다."
+    parents: [TSR-01]
+    verified_by: [TC-001]
+    proved_by: [prove_pedal_check]
+  - id: SWR-02
+    alloc: "입력 검사"
+    text: "채널 1의 전압이 250-4750 mV, 채널 2의 전압이 125-2375 mV를 벗어나거나, 두 채널의 페달 위치의 차이가 50을 넘으면 그 주기의 검사는 실패다."
+    parents: [TSR-01]
+    verified_by: [TC-002, TC-102, TC-103]
+  - id: SWR-03
+    alloc: "입력 검사"
+    text: "검사에 실패한 주기가 3번 이어지면 페달 고장으로 고정한다. 한 주기라도 통과하면 다시 센다."
+    parents: [TSR-02]
+    verified_by: [TC-003, TC-102]
+    proved_by: [prove_pedal_check]
+  - id: SWR-04
+    alloc: "입력 검사"
+    text: "안전한 페달 값은 두 채널 가운데 작은 값이다. 페달 고장이거나, 켠 뒤 검사를 3주기 이어서 통과하기 전이면 0이다."
+    parents: [TSR-02, TSR-07]
+    verified_by: [TC-004, TC-102, TC-105]
+    proved_by: [prove_pedal_check]
+  - id: SWR-05
+    alloc: "감시"
+    text: "안전한 페달 값이 30 아래이거나, 브레이크를 밟았거나, 기어가 D와 R이 아니면 허용 토크는 0이다."
+    parents: [TSR-03]
+    verified_by: [TC-005, TC-104, TC-107, TC-202]
+    proved_by: [prove_allowed_torque]
+  - id: SWR-06
+    alloc: "감시"
+    text: "그 밖에는 허용 토크 = 최대 토크 x 안전한 페달 값 / 1000 + 5 Nm이고, 최대 토크를 넘지 않는다. 정상인 기능의 토크 요구는 이 값을 넘지 않는다."
+    parents: [TSR-03]
+    verified_by: [TC-006, TC-007]
+    proved_by: [prove_allowed_torque]
+  - id: SWR-07
+    alloc: "출력 단계"
+    text: "보내는 토크는 D에서는 0 이상 허용 토크 이하, R에서는 허용 토크의 음수 이상 0 이하다. 그 밖의 기어에서는 0이다. 범위 안의 토크 요구는 그대로 보낸다."
+    parents: [TSR-04]
+    verified_by: [TC-008, TC-106, TC-201, TC-203]
+    proved_by: [prove_output_clamp, prove_output_stage]
+  - id: SWR-08
+    alloc: "출력 단계"
+    text: "토크 요구를 깎은 주기가 5번 이어지면 기능의 고장으로 고정한다. 한 주기라도 깎지 않으면 다시 센다."
+    parents: [TSR-05]
+    verified_by: [TC-009, TC-201, TC-202]
+    proved_by: [prove_output_stage]
+  - id: SWR-09
+    alloc: "출력 단계"
+    text: "고정한 주기부터 토크 0을 보낸다. 고정은 다시 켤 때까지 풀리지 않는다."
+    parents: [TSR-05]
+    verified_by: [TC-010, TC-201]
+    proved_by: [prove_output_stage]
+  - id: SWR-10
+    alloc: "출력 단계"
+    text: "고정한 주기부터 구동 허용 신호를 끊는다. 고정하지 않았으면 끊지 않는다."
+    parents: [TSR-05]
+    verified_by: [TC-101, TC-201]
+  - id: SWR-11
+    alloc: "출력 단계"
+    text: "페달 고장이나 기능의 고장이면 경고를 요청한다. 고장이 없으면 요청하지 않는다."
+    parents: [TSR-06]
+    verified_by: [TC-101, TC-102, TC-201]
