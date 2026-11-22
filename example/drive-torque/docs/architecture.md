@@ -59,7 +59,7 @@ flowchart TD
 - 시뮬레이션은 VCU를 HAL로 나온 것으로만 본다. 안쪽의 값을 보려면 진단 메시지를 본다.
 - 감시는 상태를 갖지 않는다. 허용 토크가 오르는 속도를 제한하려면 지난 값이 필요한데 (`SWR-13`), 그 값은 감시의 지난 허용 토크가 아니라 출력 단계가 실제로 보낸 토크다. 감시가 자기 값을 기억하면 기능의 상태를 따라 갖는 둘째 사본이 되고, 두 사본이 어긋나는 길이 생긴다.
 
-단계 2에서 모듈이 는다 (구현 예정. [technical-safety-concept.md](technical-safety-concept.md) 9절). 하드웨어와 만나는 신호는 [hsi.md](hsi.md)에 있다.
+요구사항은 있는데 구현하지 않은 것이 하나 남아 있다 ([technical-safety-concept.md](technical-safety-concept.md) 9.1절). 하드웨어와 만나는 신호는 [hsi.md](hsi.md)에 있다.
 
 | 모듈 | 하는 일 | 요구사항 |
 |---|---|---|
