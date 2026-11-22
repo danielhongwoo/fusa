@@ -32,7 +32,7 @@ flowchart TD
 |---|---|---|---|---|
 | 입력 읽기 | `src/input/input.c` | 부른다 | 없다 | (입력 검사와 함께 `SG-01`의 요구사항을 받는다) |
 | 입력 검사 | `src/input/pedal_check.c` | 안 부른다 | counter 둘, 고장 표시 | `SWR-01` - `SWR-04` |
-| 기능 | `src/app/app.c` | 안 부른다 | 지난 주기의 토크, 제동 우선 표시 | `SG-01`의 요구사항 없음 |
+| 기능 | `src/app/app.c` | 안 부른다 | 지난 주기의 토크. 감시가 모르는 상태는 두지 않는다 | `SG-01`의 요구사항 없음 |
 | 감시 | `src/monitor/monitor.c` | 안 부른다 | 없다 | `SWR-05`, `SWR-06` |
 | 출력 단계 | `src/monitor/monitor.c` | 안 부른다 | counter, 고정 표시 | `SWR-07` - `SWR-09` |
 | 주기 실행 | `src/vcu/vcu.c` | 부른다 | 위 모듈의 상태를 담는다 | `SWR-10`, `SWR-11`, `SWR-12` |
