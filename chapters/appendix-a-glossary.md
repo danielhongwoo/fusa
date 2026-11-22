@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 여섯 개를 더했다.
 
 ## 읽는 법
 
@@ -91,6 +91,12 @@ safety function에 요구되는 safety integrity의 등급이다. SIL 1부터 SI
 
 이 절의 풀이는 대부분 미국 정부의 보고서 (`nhtsa-etc-ev-fsa`)가 ISO 26262를 적용한 방식을 근거로 한다. 그 보고서가 따른 판은 ISO 26262의 2011년 최종 초안이다. 그래서 이 절의 항목은 모두 `(2차 자료)`다.
 
+### HARA (hazard analysis and risk assessment)
+
+hazard를 찾고, hazard마다 운전 상황을 놓아 risk를 평가해 등급을 주고, safety goal을 정하는 일이다.
+
+- 근거: `nhtsa-etc-ev-fsa` 21쪽, 52쪽
+
 ### item
 
 분석의 대상이 되는 시스템이다. 차량 수준의 기능을 구현한다. 이 책의 관통 예제에서는 차량 제어기 (VCU) 하나다.
@@ -164,6 +170,28 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 - 주의: 이 책은 함수나 thread를 나눈 것만으로 방해가 없다고 쓰지 않는다. PC 시뮬레이션은 메모리 보호와 실행 시간 감시를 보이지 못하기 때문이다.
 - 근거: `autosar-safety-measures` 9쪽 (ISO 26262:2018 기준)
 
+## 구조와 고장
+
+### fault containment region
+
+안에서 난 fault가 밖으로 번지지 않고, 밖의 fault가 안으로 들어오지 않는 구역이다. 한 구역은 자기 안의 고장을 다 잡아내지 못한다. 그래서 고장을 잡으려면 서로 독립된 구역이 둘 넘게 있어야 한다.
+
+- 주의: 근거 문서는 소송에서 원고 쪽 전문가였던 사람의 발표 자료다. 여기에서는 공학의 원칙을 설명한 부분만 쓴다.
+- 근거: `koopman-toyota-ua` 31-32쪽
+
+### latent fault
+
+평소에는 드러나지 않다가 다른 fault와 겹칠 때에야 드러나는 fault다. 감시 기능의 고장이 흔한 예다. 이 풀이는 이 책의 것이다.
+
+- 주의: 미국 정부의 보고서는 주기적인 검사로 줄여야 하는 것으로 이 말을 쓴다. 규격의 정의는 확인하지 못했다 `(확인 필요)`.
+- 근거: `nhtsa-etc-ev-fsa` 67쪽
+
+### debounce
+
+이상을 한 번 보고 바로 고장으로 판정하지 않고, 이어지는지를 세어 판정하는 것이다. 세는 동안의 시간은 고장을 알아채는 시간에 들어간다.
+
+- 근거: `autosar-e2e-protocol` 244쪽
+
 ## 소프트웨어 기법
 
 ### E2E (end-to-end) protection
@@ -185,6 +213,12 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 
 - 주의: alive supervision은 실행되는 횟수만 본다. 순서가 옳은지는 logical supervision으로 본다 (`autosar-safety-measures` 22-23쪽).
 - 근거: `autosar-safety-measures` 26-27쪽
+
+### statement coverage, decision coverage
+
+structural coverage의 기준이다. statement coverage는 모든 문장이 한 번은 실행되었는지를 본다. decision coverage는 모든 판단이 참과 거짓으로 한 번씩 갔는지를 본다.
+
+- 근거: `nasa-mcdc-tutorial` 13-15쪽
 
 ### MC/DC (modified condition/decision coverage)
 
@@ -220,6 +254,13 @@ structural coverage의 기준 가운데 하나다. decision 안의 condition마�
 시스템을 제어 구조로 그리고, 제어 명령이 위험해지는 경우 (UCA, unsafe control action)를 찾는 분석이다. 부품의 고장만이 아니라 틀린 feedback, 모자란 요구사항, 설계의 오류도 원인으로 본다.
 
 - 근거: `stpa-handbook` 16-17쪽, `nhtsa-etc-ev-fsa` 24-25쪽
+
+### safety case
+
+시스템이 정해진 환경과 쓰임에서 뜻한 대로 동작한다는 것을 근거로 뒷받침해 설득하는 논증이다. 주장, 논증, 근거로 이루어진다.
+
+- 주의: ISO 26262에서는 개발하면서 만든 산출물을 모아 safety case를 이룬다고 한다 `(2차 자료)`. 기준 판은 ISO 26262:2011이다.
+- 근거: `gsn-standard-v3` 10쪽, `nhtsa-safety-standards-assessment` 33쪽
 
 ### GSN (goal structuring notation)
 
