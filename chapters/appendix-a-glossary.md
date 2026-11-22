@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다. 10 - 14장과 부록 E에서 스물일곱 개를 더했다. 15 - 17장에서 스물아홉 개를 더했다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다. 10 - 14장과 부록 E에서 스물일곱 개를 더했다. 15 - 17장에서 스물아홉 개를 더했다. 18장과 19장에서 열여덟 개를 더했다.
 
 ## 읽는 법
 
@@ -443,7 +443,7 @@ review는 사람이 산출물 (요구사항, 설계, test 계획, 코드)을 읽
 
 ### abstract interpretation, sound
 
-실제 실행의 모든 경우를 덮는 더 큰 집합을 계산하고, 그 집합이 금지된 영역에 닿지 않으면 실제 실행도 닿지 않는다고 보는 정적 분석의 방법이다. 모든 경우를 덮는 분석을 sound하다고 하고, sound한 분석기가 경보를 내지 않았다면 검사한 종류의 오류가 없다는 증명이 된다. 대가는 일어날 수 없는 오류에도 경보가 나는 거짓 경보다.
+실제 실행의 모든 경우를 덮는 더 큰 집합을 계산하고, 그 집합이 금지된 영역에 들어가지 않으면 실제 실행도 들어가지 않는다고 보는 정적 분석의 방법이다. 모든 경우를 덮는 분석을 sound하다고 하고, sound한 분석기가 경보를 내지 않았다면 검사한 종류의 오류가 없다는 증명이 된다. 대가는 일어날 수 없는 오류에도 경보가 나는 거짓 경보다.
 
 - 주의: 보장하는 것은 검사한 종류의 오류 (예: 실행 중 오류)가 없다는 것까지다. 요구사항대로 동작한다는 뜻이 아니다.
 - 주의: 이 책의 예제는 이런 도구를 쓰지 않았다. 풀이는 도구 개발 쪽의 공개된 설명 세 곳에 기댄다.
@@ -599,17 +599,47 @@ STPA의 말이다. control structure는 누가 무엇을 제어하고 무엇을 
 
 ### safety case
 
-시스템이 정해진 환경과 쓰임에서 뜻한 대로 동작한다는 것을 근거로 뒷받침해 설득하는 논증이다. 주장, 논증, 근거로 이루어진다.
+주어진 시스템이 주어진 맥락에서 받아들일 만큼 안전하다는 것을 근거로 뒷받침해 보이는 논증이다. 주장, 논증, 근거로 이루어진다. GSN 표준은 먼저 assurance case를 "시스템, 서비스, 조직이 정해진 환경과 쓰임에서 뜻한 대로 동작한다는 것을 근거로 뒷받침한 조리 있고 설득력 있는 논증"으로 정의하고, safety case를 그 가운데 안전에 초점을 둔 것으로 둔다.
 
-- 주의: ISO 26262에서는 개발하면서 만든 산출물을 모아 safety case를 이룬다고 한다 `(2차 자료)`. 기준 판은 ISO 26262:2011이다.
-- 근거: `gsn-standard-v3` 10쪽, `nhtsa-safety-standards-assessment` 33쪽
+- 주의: ISO 26262에서는 개발하면서 만든 산출물을 모아 safety case를 이룬다고 한다 `(2차 자료)`. 기준 판은 ISO 26262:2011이다. 이 항목은 처음에 assurance case의 정의를 safety case의 정의로 적고 "서비스, 조직"을 빼고 있었다.
+- 근거: `gsn-standard-v3` 10쪽 (0:2.2, 0:2.3), `nhtsa-safety-standards-assessment` 34쪽 (PDF의 쪽. 인쇄 쪽은 24)
 
 ### GSN (goal structuring notation)
 
-safety case의 논증을 그림으로 적는 표기법이다. 주장 (goal), 주장을 나누는 방법 (strategy), 근거를 가리키는 것 (solution), 입증하지 않고 두는 전제 (assumption)를 나눠 적는다.
+safety case의 논증을 그림으로 적는 표기법이다. 주장 (goal), goal과 그것을 받치는 goal 사이의 추론 (strategy), 근거 하나를 가리키는 것 (solution)을 나눠 적는다. 그 밖의 요소 (context, assumption, justification, undeveloped)는 다음의 "GSN의 요소" 항목에 있다.
 
 - 주의: 표기법은 논증이 충분하다는 것을 보장하지 않는다. 읽는 사람이 따져 볼 수 있게 할 뿐이다.
-- 근거: `gsn-standard-v3` 11-13쪽
+- 근거: `gsn-standard-v3` 11-13쪽, 17쪽
+
+### GSN의 요소: context, assumption, justification, undeveloped
+
+goal, strategy, solution 말고 GSN 표준이 정의하는 요소다. context는 주장이 성립하는 범위를 정하거나 쓴 말의 뜻을 밝히는 바탕이다. assumption은 일부러 입증하지 않고 두는 진술이다. justification은 그 주장을 두거나 그렇게 쓴 이유다. undeveloped는 goal이나 strategy에 붙여, 그 줄기를 아직 펼치지 않았음을 나타내는 표시다.
+
+- 주의: 이어지는 범위가 다르다. goal에 붙인 context와 assumption은 그 아래의 논증 전체에 이어지고, justification은 붙은 요소에만 걸린다. assumption을 붙인 goal은 그 assumption이 참인 맥락에서 내세운 주장이다.
+- 주의: assumption은 근거가 아니라 입증하지 않은 진술이다. 가정을 달아 빈 곳을 넘기는 것은 빈 곳에 이름을 붙인 것이고 메운 것이 아니다 (19장. 이 풀이는 이 책의 것이다).
+- 근거: `gsn-standard-v3` 17-18쪽, 22-23쪽
+
+### assurance case
+
+시스템, 서비스, 조직이 정해진 환경과 쓰임에서 뜻한 대로 동작한다는 것을 근거로 뒷받침해 보이는 논증이다. 안전에 초점을 둔 것이 safety case이고, 보안에 초점을 둔 것은 security case다. 논증 (argument)은 전체 주장을 세우려고 이어 놓은 주장들의 열이고, 결국은 근거를 가리켜야 한다.
+
+- 주의: 이 책은 이 말을 GSN 표준의 뜻으로 쓴다. 정의는 safety case 항목에도 있다.
+- 근거: `gsn-standard-v3` 10-11쪽 (0:2.2, 0:2.3, 0:3.1)
+
+### defeater, rebuttal, undercutting
+
+assurance case의 논증을 무너뜨릴 수 있는 도전이다. GSN 표준은 검토자의 지식으로 하는 도전을 둘로 나눈다. rebuttal은 사례가 내세운 결론에 반하는 결론에 이르는 근거가 있어서 주장과 정면으로 맞서는 경우이고, undercutting은 전제가 참인데도 결론이 거짓일 수 있게 하는 사실로 추론을 흔드는 경우다. defeater는 Bloomfield와 Rushby가 논증을 무너뜨릴 수 있는 의심과 반론을 부르는 말이다. 두 사람은 defeater를 빠짐없이 찾고 찾은 것마다 그것이 defeater가 아님을 보이거나 시스템이나 사례를 고쳐 없애자고 하며, 이 일을 hazard를 찾는 일에 견준다.
+
+- 주의: 출처가 갈린다. rebuttal과 undercutting은 GSN 표준의 말이고, defeater는 Bloomfield와 Rushby의 글의 말이다. 그 글은 반박되는 길을 둘로 나누면서 undercutting과 rebutting이라는 같은 말을 쓰지만, 두 쓰임의 범위가 같은지는 이 책이 대조하지 않았다.
+- 주의: GSN 표준은 같은 쪽의 각주에서, 이 두 말이 표준의 다른 절 (2:11)에서의 쓰임과 다르고 다음 판에서 정리하겠다고 밝힌다. Bloomfield와 Rushby의 글은 두 사람의 제안이고 규제 기관의 지침이 아니다.
+- 근거: `gsn-standard-v3` 94-95쪽 (2:7.4.5). Bloomfield와 Rushby, "Assurance 2.0: A Manifesto" (arXiv:2004.10474v3, 2021) 2-3쪽 (웹 읽기 메모 `notes/reading/ch18-19-web-facts.md` 절 15의 대조에 기댐)
+
+### confirmation bias (확증 편향)
+
+이미 가진 결론에 맞는 것을 더 찾고 더 믿는 경향이다. safety case를 만드는 쪽은 시스템을 지지하는 사례를 짓고 있어서 이 편향이 자연스러운 우려로 논의된다.
+
+- 주의: 풀이는 이 책의 것이다. 받은 문서는 이 말을 설명하지 않고 쓴다. 미국 정부의 보고서는 Leveson을 인용해, 시스템이 안전하다는 것을 증명하려 하면 이 덫에 빠질 수 있다고 적는다. Leveson의 원래 글은 이 책이 읽지 않았다.
+- 근거: `nhtsa-safety-standards-assessment` 34쪽 (PDF의 쪽. 인쇄 쪽은 24. ISO 26262:2011을 설명한 보고서가 Leveson을 인용한 부분이어서 `(2차 자료)`). Bloomfield와 Rushby (2021) 2쪽 (웹 읽기 메모 절 15의 대조에 기댐)
 
 ## 규격과 과정
 
@@ -630,7 +660,7 @@ ISO와 IEC의 문서에서 쓰는 조동사다. shall은 요구사항, should는
 
 이 책에서는 이렇게 구분한다. compliance (conformance)는 만든 쪽이 규격의 요구사항을 만족한다고 주장하는 것이다. 인증서는 제삼자 기관이 평가한 결과를 낸 문서다. 승인은 규제 당국이 법이 정한 절차로 인정하는 것이다.
 
-- 주의: 이 구분은 저자의 정리이고 규격의 정의가 아니다. "평가받았다"는 말은 무엇을 평가했는지를 함께 물어야 한다 (verification, audit, functional safety assessment 항목). 항공에서는 소프트웨어를 따로 인증하지 않고, 소프트웨어가 든 시스템을 특정한 인증의 맥락에서 승인한다 `(2차 자료)`.
+- 주의: 이 구분은 이 책의 정리이고 규격의 정의가 아니다. "평가받았다"는 말은 무엇을 평가했는지를 함께 물어야 한다 (verification, audit, functional safety assessment 항목). 항공에서는 소프트웨어를 따로 인증하지 않고, 소프트웨어가 든 시스템을 특정한 인증의 맥락에서 승인한다 `(2차 자료)`.
 - 근거: `nhtsa-safety-standards-assessment` 33-34쪽 (DO-178C와 ISO 26262:2011을 설명), `faa-ac-20-115d` 1쪽
 
 ### safety lifecycle
@@ -645,6 +675,97 @@ ISO와 IEC의 문서에서 쓰는 조동사다. shall은 요구사항, should는
 lifecycle의 활동을 이 프로젝트에서 누가, 언제, 무엇으로 하고 누가 확인하는지를 적은 계획이다.
 
 - 근거: `nasa-gb-8719-13` 23쪽, 101쪽. `nasa-std-8739-8b` 6쪽
+
+### configuration management (형상 관리)
+
+무엇이 "이 판"인지를 정하고 지키는 일이다. NASA의 지침서는 이것을 source 코드의 version control보다 훨씬 넓은 일로 보고 넷으로 나눈다. 구성 요소에 이름과 판을 붙이는 identification, baseline 제품을 두어 release와 변경을 통제하는 control, 구성 요소와 변경 요청의 상태를 기록하는 status accounting, 제품이 빠짐없고 일관된지 보는 audit and review다.
+
+- 주의: 지침서는 문서는 형상 관리 조직이, source 코드는 프로그래머가 따로 맡으면 설계 같은 문서를 코드와 맞추기 어려워진다고 경고한다.- 근거: `nasa-gb-8719-13` 88-89쪽
+
+### baseline
+
+이 책에서는 검토를 거쳐 얼려 둔 묶음, 곧 그 뒤의 변경이 정해진 절차로만 들어가는 기준이다. 이 책의 예제에서는 git의 commit 하나가 baseline이다.
+
+- 주의: 풀이는 이 책의 것이다. NASA의 지침서는 형상 관리를 설명하는 대목 (88-90쪽)에서 baseline을 정의하지 않고 control의 수단으로 쓴다. 항공의 AC 00-69는 변경 영향 분석이 먼저 변경의 바탕이 되는 출시된 baseline을 식별한다고 적는다.
+- 근거: `nasa-gb-8719-13` 89쪽, `nasa-std-8739-8b` 10쪽. FAA AC 00-69 (2017) 1쪽 (웹 읽기 메모 절 6의 대조에 기댐)
+
+### configuration item (형상 항목)
+
+baseline에 넣고 그 뒤의 변경을 추적하고 관리하는 hardware나 software의 묶음이다. 예로 요구사항 문서, data block, 코드의 단위가 든다. NASA의 보증 표준은 통제할 항목으로 기록, 코드, data, 도구, model, script를 들고, hazard 보고서와 안전 분석 같은 안전 관련 항목이 형상 관리 아래에 있는지를 보증 쪽이 평가하게 한다.
+
+- 주의: 묶음에서 빠진 문서는 코드가 바뀌어도 함께 바뀌지 않는다 (18장).
+- 근거: `nasa-std-8739-8b` 10쪽, 43쪽
+
+### change management (변경 관리), change control board (CCB)
+
+change management는 변경이 어디로 들어와 무엇을 거쳐 나가는지를 정하는 일이다. NASA의 지침서는 이 흐름을 change control이라는 절에서 설명한다. 소프트웨어가 어느 정도 성숙하면 정식 change control을 거친다. 변경 요청서에 무엇을 왜 바꿀지를 적고, CCB (변경을 심의하는 위원회)가 승인, 거부, 다른 요청과의 병합, 수정 제안 가운데 하나를 정한다. 위원에는 품질 보증의 대표가 들고, 안전이 쟁점이면 안전이나 위험 관리의 담당자도 넣는 것이 좋다 (원문은 "should")고 한다.
+
+- 주의: 성숙의 수준은 조직마다 다르다. 운영에 들어간 뒤에는 안전 분석가가 제안된 변경이 정해 둔 hazard control을 해치지 않는지 확인해야 한다고 적는다. 지침서는 test 중에 찾은 문제의 수정도 CCB를 거치게 한다.
+- 근거: `nasa-gb-8719-13` 89-90쪽, 113쪽, 202쪽
+
+### impact analysis (영향 분석)
+
+제안된 변경이 소프트웨어, 문서, 다른 산출물의 어디에 영향을 주는지를 정하는 일이다. NASA의 지침서는 명세, 설계 문서, source 코드 같은 산출물에서 출발해 변경 과정에서 다뤄야 할 항목의 목록을 낸다고 설명한다. 항공에서는 change impact analysis라고 부르고, FAA의 AC 00-69는 다룰 항목에 개발과 verification의 환경, 도구의 새 판이나 쓰임의 변화, configuration data를 든다.
+
+- 주의: 변경의 양과 그것이 지는 위험을 평가하는 정해진 기법은 없고 사람이 추론할 일이라고 지침서가 적는다. 영향 분석은 추적이 이어 준 곳까지만 쉽게 따라간다 (이 책의 판단).
+- 근거: `nasa-gb-8719-13` 113쪽, 204-205쪽. FAA AC 00-69 (2017) 1-2쪽 (웹 읽기 메모 절 6의 대조에 기댐)
+
+### regression test (회귀 test)
+
+고친 뒤에 전에 되던 것이 여전히 되는지 보는 test다. NASA의 지침서는 운영에 들어간 소프트웨어의 변경에 대해, 안전 관련 test case를 모두, 전체 시스템 test의 일부, 새 기능의 test를 넣는 것이 좋다고 적는다. 변경이 어느 구성 요소에 영향을 주는지를 알면 돌릴 test가 정해진다고도 적는다.
+
+- 주의: 풀이는 이 책의 것이다. 범위를 영향 분석으로 고르면 영향 분석이 빠뜨린 곳은 test도 빠뜨린다 (이 책의 판단).
+- 근거: `nasa-gb-8719-13` 90쪽, 202쪽
+
+### configuration data, calibration data
+
+코드를 바꾸지 않고 동작을 바꾸는 값이다. 이 책에서 configuration data는 기능을 켜고 끄거나 변형을 고르는 값이고, calibration data는 판정의 문턱, 시간, map처럼 차종과 부품에 맞춰 조정하는 값이다.
+
+- 주의: 이 둘의 구분은 이 책이 정한 것이다. 받은 문서는 이 구분을 하지 않는다. 값만 바꾼 판이 코드가 그대로라는 까닭으로 검증을 건너뛰기 쉽지만 값 하나가 요구사항을 깨뜨릴 수 있다. 이 책의 예제에서 상수 하나를 0.1 Nm 바꾸면 증명한 성질이 깨진다 (`notes/claims.md`의 C-18-044).
+- 주의: 미국 정부의 보고서는 안전에 critical한 센서, actuator, 그 밖의 parameter의 calibration이 옳은지 검사하고 검증하라는 일반 요구사항을 제안한다. 보고서의 요구사항은 예시다.
+- 근거: `nhtsa-etc-ev-fsa` 90쪽. FAA AC 00-69 (2017) 2쪽 (configuration data를 변경 영향 분석의 항목으로 든다. 웹 읽기 메모 절 6의 대조에 기댐)
+
+### parameter data item (항공)
+
+항공의 DO-178C에서 configuration data를 부르는 이름이다 `(2차 자료)`. FAA의 AC 20-115D는 DO-178C의 "Parameter Data Item" 아래에 정의된 configuration data라고 적고, 그 data를 쓰는 과정이 FAA가 앞선 프로젝트에서 평가해 받아들인 것이 아니면 DO-178C에 맞는 새 과정을 세우라고 한다 (원문은 "should"). DO-178C의 사용자 그룹이 낸 문서는 parameter data item 파일이 맞고 완전해야 한다는 목표와, 파일의 모든 요소가 verification에서 다뤄져야 한다는 목표를 설명하고 뒤의 것을 코드의 structural coverage에 견준다.
+
+- 주의: 항공의 이 개념이 자동차의 calibration data와 같은 개념인지는 이 책이 확인하지 못했다. DO-178C의 원문은 보지 않았다. 사용자 그룹의 문서는 스스로 지침이 아니라고 밝힌다.
+- 근거: `faa-ac-20-115d` 10쪽. FAS, "FTP1034 Rev 3" (2022) PDF 3-4쪽 (웹 읽기 메모 절 9의 대조에 기댐)
+
+### rollback (되돌리기)
+
+갱신이 실패했거나 문제가 있을 때 이전 판으로 돌아가는 것이다. 안전 쪽과 보안 쪽의 말이 맞선다. MCU용 bootloader인 MCUboot는 이미지의 자리를 둘 두고, 새 이미지가 스스로 확인을 마치고 표시해야 확정하며, 표시가 없으면 다음 시작에서 이전 이미지로 되돌린다. NIST의 firmware 지침은 권한 없는 되돌리기가 공격자에게 취약한 옛 이미지를 되살리게 할 수 있다고 적고, Uptane 표준은 옛 판을 설치하게 하는 공격을 rollback attack이라 부르며 이미지마다 판과 함께 오르는 counter를 두라고 권한다 (원문은 "SHOULD").
+
+- 주의: 세 문서는 모두 안전 규격이 아니다. NIST의 지침은 PC급 platform의 보안 지침이고, MCUboot는 bootloader의 설계 문서이며, Uptane는 보안 표준이다. NASA의 지침서는 version 관리가 문제가 발견되었을 때 이전 판으로 되돌리는 것을 가능하게 한다고 source 쪽에서 쓴다.
+- 근거: `nasa-gb-8719-13` 90쪽. Regenscheid, "Platform Firmware Resiliency Guidelines" (NIST SP 800-193, 2018) PDF 28쪽, 31쪽. MCUboot 프로젝트, "MCUboot design" ("Boot swap types"와 "Image slots"). Uptane 프로젝트, "Uptane Standard for Design and Implementation" 2.0.0판 4.3.3절, 5.2.3.1.1절 (뒤의 셋은 웹 읽기 메모 절 3 - 5의 대조에 기댐)
+
+### SUMS, RxSWIN
+
+UN Regulation 156 (차량의 software update와 그 관리 체계에 관한 규정)의 말이다 `(2차 자료)`. SUMS (software update management system)는 소프트웨어 갱신이 안전하고, 기능하고, 추적되고, 규정에 맞게 이뤄지게 하는 관리 체계이고, 제조사가 갱신마다 목적, 영향받는 시스템, 형식 승인의 요구에 주는 영향, 적절한 verification과 validation을 거쳤다는 확인 같은 것을 기록한다고 설명한다. RxSWIN은 형식 승인에 관련된 소프트웨어를 가리키는 식별자다. 두 자료는 갱신이 실패하면 이전 판으로 되돌릴 수 있어야 한다고 설명한다.
+
+- 주의: 이 책은 규정 본문을 읽지 못했고 2차 자료로만 확인했다. 업계 대표의 발표 자료와 시험 인증 회사 UL Solutions의 글이 근거이고, 규정의 판은 확인하지 못했다. 갱신을 마칠 만큼 전력이 있을 때만 실행할 것과 운전 중의 갱신이 안전하지 않을 수 있으면 갱신 동안 차를 몰 수 없게 할 것은 발표 자료 한 곳에서만 보았고, 발표는 그것을 요구의 "예"로 든다. UL의 글은 ISO 24089가 2023년 초에 나왔고 R156이 정한 활동의 구현 방법을 더 자세히 설명한다고 적는다. 이 책은 ISO 24089의 본문도 보지 못했다.
+- 근거: Zastrow, "UN Regulation 156 Software Update & Software Updates Management System" (2021) 슬라이드 9-11 `(2차 자료)`. UL Solutions, "Software update management systems according to UNECE R156" (연도 미표기) `(2차 자료)` (두 글은 웹 읽기 메모 절 1, 2의 대조에 기댐)
+
+### OTA (over-the-air)
+
+소프트웨어를 무선으로 내려받아 갱신하는 방식이다. 이 책은 recall의 수정을 OTA로 배포한 사례 하나 (recall 항목)에서 이 말을 쓴다.
+
+- 주의: 풀이는 이 책의 것이다. 갱신을 싣는 길도 틀릴 수 있어서 rollback과 SUMS의 물음이 따른다.
+- 근거: Tesla, Inc., "Part 573 Safety Recall Report 23V-838" (2023) PDF 5쪽. Zastrow (2021) 슬라이드 10 (R156의 요구의 예가 OTA 갱신을 하는 차량 형식을 향한다. `(2차 자료)`) (웹 읽기 메모 절 1, 13의 대조에 기댐)
+
+### recall
+
+제조사가 자동차 안전에 관련된 결함을 바로잡으려고 대상 차량에 하는 조치다. 미국에서는 연방 규정 49 CFR Part 573이 보고 의무를 정한다. 제조사나 NHTSA가 안전에 관련된다고 판단한 결함마다 제조사는 판단한 뒤 5 근무일 안에 보고서를 내고, 보고서에는 결함에 관련된 안전 위험, 판단에 이른 주요 사건의 연대기, 바로잡는 계획이 든다. NHTSA의 공개 자료실에 있는 보고서 하나 (23V-838)는 구성 요소를 "Vehicle Software"로 적고 수정을 OTA 소프트웨어로 배포한다고 적는다.
+
+- 주의: 풀이는 이 책의 것이다. 이 책은 recall 제도를 설명한 NHTSA의 쪽을 읽지 못했다 (접근 거부). 보고서의 서술은 제조사의 것이고 제조사는 NHTSA의 분석에 동의하지 않는다고 적었으며, 이 책은 사례를 평가하지 않는다.
+- 근거: "49 CFR Part 573, Defect and Noncompliance Responsibility and Reports" (2022년 10월 1일판) PDF 3쪽, 5쪽. Tesla, Inc., "Part 573 Safety Recall Report 23V-838" (2023) PDF 1쪽, 4-5쪽 (웹 읽기 메모 절 12, 13의 대조에 기댐)
+
+### CI (continuous integration)
+
+바뀐 코드를 자주 합치고 그때마다 build와 test를 자동으로 돌리는 방식이다.
+
+- 주의: 풀이는 이 책의 것이다. 이 책은 CI를 안전의 lifecycle과 함께 쓰는 조건을 다룬 규제 기관이나 표준화 기구의 공개 문서를 찾지 못했다. 논문 둘은 그것을 쓴 사람들의 제안이다. Myklebust 외는 IEC 61508을 대상으로 반복마다 추적 정보를 기록하고 반복의 끝마다 안전의 validation을 하자고 제안하고, 항공을 대상으로 한 Ribeiro 외는 추적이 대개 손으로 프로젝트의 끝에 이뤄지는 것이 agile을 막는다고 적는다. NASA의 2004년 지침서는 agile 방법을 안전 관련 요소에 권하지 않는다.
+- 근거: Myklebust 외, "Scrum, documentation and the IEC 61508-3:2010 software standard" (PSAM 12, 연도 미표기) 3쪽. Ribeiro 외, "From Waterfallish Aerospace Certification onto Agile Certifiable Iterations" (2025) 1쪽 (웹 읽기 메모 절 10, 11의 대조에 기댐). `nasa-gb-8719-13` 88쪽
 
 ### verification, validation, audit, functional safety assessment
 
@@ -662,10 +783,17 @@ lifecycle의 활동을 이 프로젝트에서 누가, 언제, 무엇으로 하�
 
 ### confirmation measure, confirmation review
 
-ISO 26262에서 산출물과 과정을 확인하는 활동을 가리키는 말이다 `(2차 자료)`. confirmation review는 등급에 따라 요구되고, 검토자가 개발자, 프로젝트 관리, 산출물의 작성자로부터 독립적이기를 요구한다고 한다 `(2차 자료)`.
+ISO 26262에서 산출물과 과정을 확인하는 활동을 가리키는 말이다 `(2차 자료)`. 회사와 업계 협회의 글 둘은 confirmation review, functional safety audit, functional safety assessment의 셋을 든다 `(2차 자료)`. confirmation review는 safety case 같은 특정 work product를 검토하는 일이고, 한 글은 safety case의 경우 그 논증이 충분히 설득력 있는지를 판단한다고 적는다 `(2차 자료)`. 등급에 따라 요구되고, 검토자가 개발자, 프로젝트 관리, 산출물의 작성자로부터 독립적이기를 요구한다고 한다 `(2차 자료)`.
 
-- 주의: 종류와 등급별 요구는 이 책이 확인하지 못했다.
-- 근거: `autosar-safety-measures` 46쪽 (ISO 26262:2018을 참조하는 문서. 용어만 나온다), `nhtsa-safety-standards-assessment` 34쪽 (ISO 26262:2011 기준)
+- 주의: 셋의 구분은 두 글이 일치하지만 둘 다 기준 판을 밝히지 않는다. 등급별로 독립이 어느 정도여야 하는지는 이 책이 확인하지 못했다.
+- 근거: `autosar-safety-measures` 46쪽 (ISO 26262:2018을 참조하는 문서. 용어만 나온다), `nhtsa-safety-standards-assessment` 34쪽 (ISO 26262:2011 기준). Chonnad 외, "The Role of Confirmation Measures in ISO 26262 Functional Safety Automotive Products" (Synopsys 백서, 연도 미표기) 2-3쪽. ZVEI, "Best Practice Guideline: Software for Safety-Related Automotive Systems" (2020) 6쪽 (두 글은 웹 읽기 메모 절 17, 18의 대조에 기댐)
+
+### functional safety audit
+
+안전에 필요한 과정이 실제로 구현되었는지, 조직이 자기 정책과 과정을 따르는지를 검토하는 일이다 `(2차 자료)`. confirmation measure의 하나다.
+
+- 주의: 과정을 본다. item이 functional safety를 달성했는지를 판단하는 functional safety assessment와 다르다. 한 글은 assessor가 보통 audit과 review의 결과에 기댄다고 적는다 `(2차 자료)`. 기준 판을 밝히지 않은 글 둘이 같게 설명하고, 규격의 원문은 이 책이 보지 않았다.
+- 근거: Chonnad 외 (Synopsys 백서) 3쪽. ZVEI (2020) 6쪽 (웹 읽기 메모 절 17, 18의 대조에 기댐)
 
 ### tailoring
 
@@ -734,7 +862,7 @@ NASA의 지침서는 사 온 것 (COTS, commercial off-the-shelf)과 다른 프�
 
 ### wrapper
 
-OTS를 나머지에서 격리해 어떤 입력이 닿지 못하게 하거나 출력을 검사하는 것이다. NASA의 지침서가 OTS를 다루는 수단으로 든다.
+OTS를 나머지에서 격리해 어떤 입력이 들어가지 못하게 하거나 출력을 검사하는 것이다. NASA의 지침서가 OTS를 다루는 수단으로 든다.
 
 - 주의: 문서가 말하지 않은 출력은 wrapper를 빠져나갈 수 있고, wrapper가 OTS만큼 커질 수도 있다.
 - 근거: `nasa-gb-8719-13` 276쪽
@@ -757,7 +885,7 @@ MISRA Compliance:2020에서 프로젝트 밖에서 온 코드를 가리키는 �
 
 사용 이력으로 믿음을 얻는 논증이다. 사용 이력이 있는 제품을 원래와 다른 환경에서 쓰려 할 때 필요하다고 Schabe와 Braband가 적고, 환경, 비교하는 부품, 고장과 사용 시간의 기록이 갖춰져야 한다고 한다.
 
-- 주의: 환경이 바뀌면 이력에 기댄 논증은 무효가 된다 (두 저자의 해석이고 Ariane 501 조사 보고서의 결론은 아니다). 시험 인증 회사 Intertek의 글은 IEC 61508의 하드웨어 쪽 proven in use를 설명하면서, 그것은 무작위 고장률을 위한 것이고 체계적 능력은 따로 보여야 한다고 적는다 `(2차 자료)` (판을 밝히지 않음. 한 회사의 글 하나). 같은 글은 체계적 능력을 보이는 길의 이름 (Route 1S, Route 2S)만 적는다. Route 2S가 사용 이력에 기대는 길이라는 것은 이 책의 검토에서 나온 말이고 확인하지 못했다 `(확인 필요)`.
+- 주의: 환경이 바뀌면 이력에 기댄 논증은 무효가 된다 (Schabe와 Braband의 해석이고 Ariane 501 조사 보고서의 결론은 아니다). 시험 인증 회사 Intertek의 글은 IEC 61508의 하드웨어 쪽 proven in use를 설명하면서, 그것은 무작위 고장률을 위한 것이고 체계적 능력은 따로 보여야 한다고 적는다 `(2차 자료)` (판을 밝히지 않음. 한 회사의 글 하나). 같은 글은 체계적 능력을 보이는 길의 이름 (Route 1S, Route 2S)만 적는다. Route 2S가 사용 이력에 기대는 길이라는 것은 이 책의 검토에서 나온 말이고 확인하지 못했다 `(확인 필요)`.
 - 근거: Schabe와 Braband, "Basic requirements for proven-in-use arguments" (arXiv:1511.01839, 2015) 1쪽, 6-7쪽 (웹에서 읽음, 2026-11-23). Intertek (2026)
 
 ## 로봇과 기계
@@ -883,6 +1011,6 @@ DTC는 제어기가 고장을 찾았을 때 남기는 고장 코드다. MIL (mal
 
 ### SW-C, RTE, complex driver
 
-AUTOSAR Classic의 말이다. SW-C는 하드웨어에 독립인 응용의 부품이고, RTE는 부품 사이로 값을 옮기는 층이며, complex driver는 입출력에 직접 닿는 부분이다.
+AUTOSAR Classic의 말이다. SW-C는 하드웨어에 독립인 응용의 부품이고, RTE는 부품 사이로 값을 옮기는 층이며, complex driver는 입출력을 직접 다루는 부분이다.
 
 - 근거: `autosar-safety-measures` 11쪽, 60쪽
