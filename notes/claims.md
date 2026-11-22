@@ -210,3 +210,146 @@
 | C-06-028 | safe state와 hazard의 차이: safe state로 들어갈 때의 변화는 제어되어 있고, hazard의 변화는 매끄럽지도 한결같지도 않을 수 있다. 운전자가 통보받는다 | nhtsa-etc-ev-fsa, 68쪽 (직접 읽음) | 1차 | 2026-11-23 |
 | C-09-009 | lockstep: 두 core가 같은 소프트웨어를 나란히 실행하고 같은 입력에서 나온 출력을 견준다 | easa-amc-20-193, 2쪽 (직접 읽음). faa-ac-20-193, 3쪽은 낱말만 | 1차 (항공의 지침. 자동차용 MCU에 대한 것이 아니다) | 2026-11-23 |
 | C-EX-022 | 증명한 성질 7: 기능이 어떻게 틀려도 나가는 토크가 정상인 기능의 요구를 5 Nm 넘게 앞서지 않는다. 변이 58개. 검토자의 변이 21개 가운데 7개를 놓쳤고 (동등 3, 진짜 4), test를 더해 잡았다 | example/drive-torque/test/proof/harness.c, make check와 make mutation의 출력, reviews/2026-11-23-stage2-part2/round1-embedded.md의 E-06 | 예제 (이 책의 증명과 측정) | 2026-11-23 |
+| C-10-003 | 모자란 요구사항이 소프트웨어 프로젝트 실패의 가장 큰 단일 원인이고 대개 가장 나쁜 결함의 뿌리다 | nasa-gb-8719-13, 109쪽 | 1차 | 2026-11-23 |
+| C-10-004 | "빠짐없다"는 앞으로의 요구를 다 알 수 없지만 알려진 것은 모두 적는다는 뜻이다. 검증 방법은 대개 test, analysis, inspection, demonstration이다. 바깥의 동작이면 자세해도 되고 부품이나 algorithm을 정하면 설계 정보다 | nasa-gb-8719-13, 111쪽 | 1차 | 2026-11-23 |
+| C-10-005 | demonstration은 소프트웨어를 그저 돌려 보는 것이고, 검증 방법은 요구사항 문서나 문서 끝의 verification matrix에 적는다 | nasa-gb-8719-13, 112쪽 | 1차 | 2026-11-23 |
+| C-10-006 | 보고서의 요구사항은 한 항에 조건, FTTI, safe state, 경고를 함께 담는다 (9.2.1-4, 9.2.1-5, 9.2.3-22) | nhtsa-etc-ev-fsa, 74쪽, 80쪽 | 1차 | 2026-11-23 |
+| C-10-007 | 안전에 중요한 특성은 요구사항에 드러나게 넣어야 하고 잊힌 안전 요구사항은 뒤에서 돌아온다. 요구사항에서 찾을 조건의 목록 (순서, 틀린 사건, 크기, 극성, 의도하지 않은 명령, 명령의 실패 등). 한계는 mode에 따라 다를 수 있다 | nasa-gb-8719-13, 123쪽 | 1차 | 2026-11-23 |
+| C-10-008 | startup 상태에서 모든 내부 변수를 알려진 값으로 둔다 | nasa-gb-8719-13, 338쪽 | 1차 | 2026-11-23 |
+| C-10-009 | 모든 상태는 모든 입력에 대해 정의된 전이를 가진다. 입력이 정한 시간 안에 없으면 time-out 같은 전이를 둔다. 범위 검사는 첫 방어선이다 | nasa-gb-8719-13, 340-341쪽 | 1차 | 2026-11-23 |
+| C-10-010 | 두 lane의 문턱 문제. 모든 실시간 data는 시간의 상한과 하한을 가진다. 제어 결정은 묵은 data가 아니라 현재 상태의 data로 한다 | nasa-gb-8719-13, 342쪽 | 1차 | 2026-11-23 |
+| C-10-011 | degraded mode에서 정상으로 돌아오는 조건을 명세하고, 계속 오가지 않을 만큼 구체적이어야 한다 | nasa-gb-8719-13, 343쪽 | 1차 | 2026-11-23 |
+| C-10-012 | 명령에 대한 반응이 너무 느리거나 빠르거나 예상 밖인 것을 찾는 장치가 필요하다. 컴퓨터 제어 시스템은 failure 없이 hazard 상태로 가지 않는다 | nasa-gb-8719-13, 344쪽 | 1차 | 2026-11-23 |
+| C-10-013 | time to criticality의 뜻과, 가장 긴 응답 시간과 가장 짧은 time to criticality 사이에 넉넉한 여유가 있어야 자동 safing이 유효하다는 것 | nasa-gb-8719-13, 117쪽 | 1차 | 2026-11-23 |
+| C-10-014 | 충돌이나 HVIL 고장 뒤 연 contactor는 고전압 시스템이 온전한지 확인될 때까지 열어 둔다 (9.2.7-5) | nhtsa-etc-ev-fsa, 89쪽 | 1차 | 2026-11-23 |
+| C-10-015 | unsafe control action의 정의와 네 유형. context를 반드시 적는다. 늘 위험한 명령이면 설계에 넣지 않았을 것이다. hazard로의 추적을 괄호로 적는다 | stpa-handbook, 35-36쪽 | 1차 | 2026-11-23 |
+| C-10-016 | unsafe control action을 뒤집어 controller constraint를 얻는다 (C-3 "within TBD seconds after touchdown [UCA-3]"). context는 믿음이 아니라 실제 상태로 적는다 | stpa-handbook, 41쪽 | 1차 | 2026-11-23 |
+| C-10-017 | 요구사항 202개 가운데 112개는 Part 3 (concept phase)의 방법으로, 90개는 STPA와 MIL-STD-882E로 얻었고, Part 4, 5, 6이 이것을 개발 단계의 요구사항으로 내린다. 예시이고 NHTSA의 공식 입장이 아니다 | nhtsa-etc-ev-fsa, 70쪽 (각주 23) | 1차 (Part 번호는 보고서가 ISO 26262를 인용한 것) | 2026-11-23 |
+| C-10-018 | 9장 (70-100쪽)에서 값의 자리는 TBD이고 숫자가 나오는 곳은 200 ms를 업계 관행으로 드는 두 곳뿐이다 | nhtsa-etc-ev-fsa, 70-100쪽 (pdftotext로 TBD 35줄, 단위가 붙은 숫자 2곳을 셈), 80-81쪽 | 1차 | 2026-11-23 |
+| C-10-019 | 신청자들이 시험 비행 지침을 조종사가 4초 안에 대응한다는 설계 가정으로 썼고, 그 지침을 뒷받침하는 연구를 찾지 못했다 (O2.8-C, O2.8-D) | b737max-jatr, 34쪽 | 1차 | 2026-11-23 |
+| C-10-020 | 모든 요구사항이 추적되지는 않고 가정이 요구사항과 따로 관리된다 (O8.1-A b) | b737max-jatr, 57쪽 | 1차 | 2026-11-23 |
+| C-10-021 | 가정을 coordination sheet에 적어 시스템 수준 요구사항에서 보이지 않았고, 가정이 계속 유효한지 확인하는 feedback loop가 분명하지 않았다 (O8.4-A) | b737max-jatr, 59쪽 | 1차 | 2026-11-23 |
+| C-10-022 | 변수 일곱 가운데 넷만 보호했고, 나머지 셋은 물리적 제한이나 여유를 이유로 보호하지 않았으며 BH에서 그 추론이 틀렸다. 근거가 코드에 없었다. 궤적 data를 SRI의 요구사항과 명세에 넣지 않기로 합의했다 | ariane-501-report, 9쪽 (OCR) | 1차 | 2026-11-23 |
+| C-10-023 | 권고 R5: 코드와 근거 문서가 장비가 주는 값에 대해 한 암묵적 가정을 모두 찾아 장비의 사용 제한과 견준다 | ariane-501-report, 17쪽 (OCR) | 1차 | 2026-11-23 |
+| C-10-024 | 추적이 있어야 요구사항 test coverage를 온전히 얻고 여분의 동작이 없는지 확인할 수 있다. 손으로 만든 추적표는 유지하기 어렵다 | nasa-gb-8719-13, 112-113쪽 | 1차 | 2026-11-23 |
+| C-10-025 | requirements criticality analysis로 안전에 닿는 요구사항을 safety-critical로 지정하고 추적 체계에 넣는다 | nasa-gb-8719-13, 122쪽 | 1차 | 2026-11-23 |
+| C-11-006 | 가장 엄격하게 결함을 줄여도 모든 fault를 막지 못하므로 어느 정도의 failure tolerance가 보통 필요하다 | nasa-gb-8719-13, 141쪽 | 1차 | 2026-11-23 |
+| C-11-007 | 한 FCR은 자기의 failure mode를 모두 스스로 감시할 수 없고, 구역 안의 failsafe가 그것이 찾는 fault로 망가질 수 있다. 각 FCR은 다른 FCR을 감시할 수 있지만 자기는 모든 경우에 감시하지 못한다. 공유 자원은 위험한 single point of failure이고 자체 시험만으로는 충분하지 않다. 완전한 보호에는 입력 값의 독립 관찰이 필요하다 | koopman-toyota-ua, 31-32쪽 | 1차 (전문가의 발표 자료) | 2026-11-23 |
+| C-11-008 | redundant 요소는 common cause failure에 대해 검증하며, 한 요소의 전원과 통신 경로의 고장이 다른 요소의 것에 영향을 주지 않아야 한다 (보고서의 예시 요구사항) | nhtsa-etc-ev-fsa, 74쪽 | 1차 | 2026-11-23 |
+| C-11-009 | ETCS-i: 두 CPU가 모두 동의해야 throttle을 열 수 있고, 센서와 CPU는 여는 쪽으로 직렬이다. 닫는 쪽으로는 redundant이고 여는 쪽으로는 아니다. CPU마다 자기 oscillator, memory 오류 검출과 정정, watchdog을 가진다 | nasa-toyota-ua-report, 67쪽 | 1차 | 2026-11-23 |
+| C-11-010 | Sub-CPU는 같은 논리를 돌려 Main CPU와 견주지 않고, Main CPU와 throttle motor의 성능에 관한 진단을 한다 | nasa-toyota-ua-report, 56쪽 | 1차 | 2026-11-23 |
+| C-11-011 | H-Bridge는 두 CPU 모두의 입력이 있어야 motor에 전원을 주고, CPU reset 중에는 출력이 low로 당겨져 motor 구동이 꺼진다. Sub-CPU는 H-Bridge의 독립 hardware enable을 준다 | nasa-toyota-ua-report, 144쪽 | 1차 | 2026-11-23 |
+| C-11-012 | Main CPU의 heartbeat는 전원 ASIC과 Sub-CPU로, Sub-CPU의 watchdog 신호는 Main CPU로 간다. Main CPU는 Sub-CPU를, 전원 ASIC은 두 CPU를 reset할 수 있다 | nasa-toyota-ua-report, 145쪽 (그림으로 읽음), 146쪽 | 1차 | 2026-11-23 |
+| C-11-013 | 두 CPU 사이의 직렬 data 전송에는 data 검사도 재시도도 없다 | nasa-toyota-ua-report, 146쪽 | 1차 | 2026-11-23 |
+| C-11-014 | NASA: watchdog을 다시 거는 함수는 가장 낮은 우선순위의 task에서 실행된다. Koopman: watchdog은 하드웨어 timer 서비스 routine에서 kick되고 주요 task의 죽음을 감지하지 못한다 (두 서술을 나란히 적고 판정하지 않는다) | nasa-toyota-ua-report, 146쪽. koopman-toyota-ua, 45쪽 | 1차 (Koopman은 전문가의 주장) | 2026-11-23 |
+| C-11-015 | high-assurance kernel은 주 소프트웨어와 기능이 같거나 범위가 더 좁을 수 있고 거의 틀림없이 덜 최적화된다 | nasa-gb-8719-13, 144쪽 | 1차 | 2026-11-23 |
+| C-11-016 | N-version은 복잡도를 높이고 복잡도는 오류 수와 직접 관계가 있다. 한 실험 항공기 연구에서 시험 중 찾은 소프트웨어 문제는 모두 redundancy management system에서 나왔고 제어 소프트웨어는 흠 없이 동작했다 | nasa-gb-8719-13, 143-144쪽 | 1차 | 2026-11-23 |
+| C-11-017 | majority voting: 3 중 2는 고장 하나, 5 중 3은 고장 둘을 견디고 홀수 개가 필요하다. 직렬 inhibit이 독립이려면 대개 서로 다른 소프트웨어를 실은 서로 다른 processor가 제어해야 한다 | nasa-gb-8719-13, 142쪽 | 1차 | 2026-11-23 |
+| C-11-018 | NSTS 1700.7B에 따르면 같은 운영체제를 도는 두 processor는 서로 독립도 아니고 서로의 failure를 견디지도 못한다 | nasa-gb-8719-13, 143쪽 | 1차 | 2026-11-23 |
+| C-11-019 | FCR은 하드웨어로 나누는 것이 가장 좋다. 논리적 firewall은 NASA 안에서 hazard mitigation으로 볼 뿐 hazard control로 보지 않는다. 하드웨어 고장이나 EMI/방사선이 무너뜨릴 수 있기 때문이다. 같은 processor 위의 FCR은 별도 memory chip, 같은 CPU에서 동시에 multitasking하지 않는 경우 같은 좁은 조건에서만 받아들여진다 | nasa-gb-8719-13, 144쪽 | 1차 | 2026-11-23 |
+| C-11-020 | ASIL이 다른 부품: 전체를 가장 높은 ASIL로 하거나 freedom from interference를 보장한다. 방해의 묶음은 memory, timing, execution, exchange of information. 안전 수단 자체가 안전 관련이다 | autosar-safety-measures, 9쪽 | 2차 (ISO 26262:2018, 72쪽) | 2026-11-23 |
+| C-11-021 | 같은 OS-Application 안에서는 memory partitioning이 방해를 막지 못한다. ASIL이 다른 부품을 같은 OS-Application에 두지 않는 편이 좋다 | autosar-safety-measures, 15쪽 | 1차 | 2026-11-23 |
+| C-11-022 | memory partitioning은 MPU 같은 하드웨어를 가정하고, core 안의 MPU는 DMA나 다른 core를 제어하지 못한다. trusted OS-Application에 적용되지 않고 task 수준은 필수가 아니다 | autosar-safety-measures, 18쪽, 20-21쪽 | 1차 | 2026-11-23 |
+| C-11-023 | OS의 timing 보호 셋 (execution budget, lock budget, time frame)과, 실행 시간의 강제에 하드웨어 지원이 필요하다는 것 | autosar-safety-measures, 26쪽 | 1차 | 2026-11-23 |
+| C-11-024 | AUTOSAR가 하지 않는 것의 목록에 dependent failure analysis가 있다 | autosar-safety-measures, 46쪽 | 1차 | 2026-11-23 |
+| C-11-025 | AUTOSAR 문서가 인용하는 ISO 26262-6 항목: 7.4.8 Coexistence, 7.4.9 Partitioning, 7.4.11 Dependent failure analysis, Annex D | autosar-safety-measures, 9쪽, 14쪽, 21쪽 | 2차 (ISO 26262:2018, 72쪽) | 2026-11-23 |
+| C-11-026 | E-Gas는 AKEGAS가 표준화했고 AUTOSAR의 일부가 아니다. 감시 SW는 입출력에 직접 닿는 CDD에 둔다. 그림 3.6은 응용과 감시 SW를 한 MC 안에 그린다. 감시 SW는 SPI의 우선 접근, ADC 시험, 차단 경로 actuator의 직접 시험, ADC/DIO/PWM의 raw 값 접근이 되어야 한다 | autosar-safety-measures, 60-64쪽 (61쪽은 그림으로 읽음) | 1차 | 2026-11-23 |
+| C-11-027 | 분할하는 소프트웨어는 분할 대상 가운데 가장 높은 IDAL 이상이어야 한다 | faa-ac-20-193, 5쪽 | 1차 | 2026-11-23 |
+| C-11-028 | MCP의 방해는 비공개 내부 기구를 통해 일어나므로 그 simulation은 목표 MCP의 시험보다 대표성이 낮고 오류를 찾을 가능성도 낮다 | faa-ac-20-193, 10쪽 | 1차 | 2026-11-23 |
+| C-11-029 | simulation으로 실패 시나리오를 시험해 볼 수 있지만 시험한 것은 simulation이고 실제 소프트웨어의 동작은 다를 수 있다 | nasa-gb-8719-13, 158쪽 | 1차 | 2026-11-23 |
+| C-11-030 | 안전 소프트웨어와 같은 물리적 platform의 소프트웨어는 충분히 분할되지 않는 한 안전 소프트웨어로 본다 | nasa-gb-8719-13, 20쪽 | 1차 | 2026-11-23 |
+| C-11-031 | 설계 단계에서 안전 부품에 영향을 줄 수 있는 부품은 그 자신이 안전 부품이 된다. independence analysis는 전역/공유 변수와 직접 넘기는 인자를 살핀다 | nasa-gb-8719-13, 157-158쪽 | 1차 | 2026-11-23 |
+| C-11-032 | 예제의 구조, 규칙, task 넷, `monitor_output_cycle`로 묶은 일, `FI-23`과 `FI-26`의 결과, `A-10`과 `A-19`, `HA-01`, 구현하지 않은 `SWR-22`와 `SWR-23` | example/drive-torque/docs/architecture.md, dfa.md, hardware-assumptions.md, technical-safety-concept.md (4, 7, 9절), test-report.md (3, 5, 6, 8절), src/vcu/vcu.c, src/app/app.c, src/monitor/monitor.h, src/reaction/reaction.h | 예제 | 2026-11-23 |
+| C-14-001 | OS와 language library처럼 널리 알려져 오류가 없다고 여겨지는 소프트웨어도 안전 시스템에서는 오류가 없다고 가정하지 않는다 | nasa-gb-8719-13, 273쪽 | 1차 | 2026-11-23 |
+| C-14-002 | OS의 종류에 OS가 없는 것 (boot loader가 application을 직접 올림)과 개발자가 쓴 단순한 task scheduler가 있다 | nasa-gb-8719-13, 241쪽 | 1차 | 2026-11-23 |
+| C-14-003 | RTOS의 조건에 priority inheritance가 있고, interrupt 지연, system call의 최대 시간, OS와 driver가 interrupt를 막는 최대 시간을 알아야 한다. priority inversion은 높은 task가 자원을 쥔 낮은 task에 막히고 중간 task가 돌아 낮은 task가 자원을 놓지 못하는 문제다 | nasa-gb-8719-13, 242-243쪽 | 1차 | 2026-11-23 |
+| C-14-004 | 고정 우선순위 선점 OS에서 마감을 지키는지는 실행 시간, 낮은 task의 자원 잠금과 interrupt 막음으로 인한 blocking time, 활성화 간격이 정한다. AUTOSAR OS는 timing 보호로 deadline supervision을 주지 않는다 (원인 task를 가려낼 수 없어서) | autosar-safety-measures, 25쪽 (CP R25-11) | 1차 | 2026-11-23 |
+| C-14-005 | memory partitioning은 OS-Application 단위로 memory를 나눠 한 partition의 코드가 다른 partition의 memory를 바꾸지 못하게 한다. MPU나 MMU를 OS가 알맞게 설정해야 하고, 위반은 하드웨어가 막고 exception을 올린다 | autosar-safety-measures, 13쪽, 20쪽 | 1차 | 2026-11-23 |
+| C-14-006 | timing 보호는 Execution Budget, Lock Budget, Time Frame의 셋이고, 실행 시간 강제에는 하드웨어 지원 (예: timing enforcement interrupt)이 필요하다. Category 1 interrupt는 OS 밖에서 실행되어 감시할 수 없다 | autosar-safety-measures, 26쪽 | 1차 | 2026-11-23 |
+| C-14-007 | memory partitioning은 trusted OS-Application에 적용되지 않는다. trusted는 감시와 보호를 끄고 privileged mode로 돌 수 있다. 구현 예에서 basic software 전부가 trusted/supervisor partition에 있다 | autosar-safety-measures, 13쪽, 17쪽, 20쪽 | 1차 | 2026-11-23 |
+| C-14-008 | 등급이 다른 SW-C를 같은 OS-Application에 넣지 말라고 권하고, 같은 OS-Application 안은 보호하지 않는다. task 수준 partition은 OS 규격이 "may"로 적어 선택 사항이다 | autosar-safety-measures, 15-16쪽, 20-21쪽 | 1차 | 2026-11-23 |
+| C-14-009 | MPU가 core 안에 있는 구현에서는 그 core의 접근만 통제하고 DMA와 다른 core는 통제하지 않는다 | autosar-safety-measures, 18쪽 | 1차 | 2026-11-23 |
+| C-14-010 | AUTOSAR의 안전 mechanism은 안전에 관련되므로 그에 맞게 개발하고 통합해야 한다 | autosar-safety-measures, 9쪽 | 1차 | 2026-11-23 |
+| C-14-011 | partitioning을 제공하는 소프트웨어는 나누는 소프트웨어 가운데 가장 높은 IDAL 이상이어야 한다 | faa-ac-20-193, 5쪽 | 1차 | 2026-11-23 |
+| C-14-012 | NSTS 1700.7B에 따르면 같은 OS를 돌리는 두 processor는 N-version programming을 해도 독립도 고장 허용도 아니다 | nasa-gb-8719-13, 143쪽 | 1차 | 2026-11-23 |
+| C-14-013 | 여러 core의 application이 공유 자원 (memory, cache, interconnect, 외부 interface)에 동시에 접근해 경쟁이 생기고, 중재 지연이 시간 간섭이 되어 혼자 돌 때보다 훨씬 오래 걸릴 수 있다. 안전 관련 application이 비결정적으로 동작하거나 시간이 모자랄 수 있다 | faa-ac-20-193, 3쪽 | 1차 | 2026-11-23 |
+| C-14-014 | interference channel은 간섭을 일으킬 수 있는 플랫폼의 성질이고, MCP platform에는 OS나 hypervisor 같은 platform software가 든다 | faa-ac-20-193, 4쪽 | 1차 | 2026-11-23 |
+| C-14-015 | 공유 cache, 공유 memory (lockout, race condition, data starvation, deadlock, live-lock, 지나친 data 지연), interconnect의 중재, 하드웨어 동적 기능 (주파수 조정, core 비활성화), MCP 설정 항목 | faa-ac-20-193, 7-8쪽 | 1차 | 2026-11-23 |
+| C-14-016 | interconnect의 중재가 jitter, data 일관성 문제, transaction 순서 변경을 낳고 과부하될 수 있다. 공유 peripheral을 포함한 interference channel을 식별하고 완화를 검증한다. 자원 요구가 가용 자원을 넘지 않음을 검증한다 | faa-ac-20-193, 9-10쪽 | 1차 | 2026-11-23 |
+| C-14-017 | WCET는 다른 core의 소프트웨어 때문에 크게 늘 수 있다. 시간 간섭 완화를 보이지 못하면 분석으로 정하고 최종 구성의 대상 MCP에서 시험으로 확인한다. MCP 내부 mechanism의 simulation은 대표성이 낮다 | faa-ac-20-193, 10-11쪽 | 1차 | 2026-11-23 |
+| C-14-018 | 소프트웨어는 시작 때 core에 정적으로 배치되고 운용 중 옮기지 않는다고 가정하며, OS나 hypervisor가 동적으로 재배치하는 플랫폼은 다루지 않는다 | faa-ac-20-193, 2쪽. easa-amc-20-193, 1-2쪽 | 1차 | 2026-11-23 |
+| C-14-019 | lockstep의 풀이 (같은 소프트웨어를 나란히 실행해 같은 입력의 출력을 견줌)와, lockstep core 사이에는 이 지침의 목표를 적용하지 않는다는 예외 | easa-amc-20-193, 2쪽. faa-ac-20-193, 3쪽 | 1차 | 2026-11-23 |
+| C-14-020 | MCP에 의도하지 않은 기능이 있을 수 있으므로 MCP와 독립인 safety net으로 MCP 안의 고장을 찾아 장비 안에 가두는 것을 고려한다. safety net은 오동작의 원인과 독립이다 | faa-ac-20-193, 12쪽, 5쪽 | 1차 | 2026-11-23 |
+| C-14-021 | watchdog을 interrupt에서 두드리지 않는다. 실제 process가 모두 막혀도 interrupt는 돌 수 있다. stack을 알려진 pattern으로 초기화하고 남은 공간을 감시한다 | nasa-gb-8719-13, 94쪽 | 1차 | 2026-11-23 |
+| C-14-022 | FAA AC 20-193은 2024-01-08, 법적 구속력이 없는 acceptable means of compliance다. EASA AMC 20-193은 ED Decision 2022/001/R의 Annex I이고 따르는 것이 의무가 아니다 | faa-ac-20-193, 1쪽. easa-amc-20-193, 1쪽 | 1차 | 2026-11-23 |
+| C-14-023 | AUTOSAR 문서는 ISO 26262-6의 Annex D (Freedom from interference between software elements)를 든다. 문서는 ISO 26262:2018을 참조한다 | autosar-safety-measures, 9쪽, 참고문헌 (ISO 26262:2018) | 2차 (ISO 26262:2018) | 2026-11-23 |
+| C-EX (14장) | 예제의 정적 task table (task 넷, 10 ms), sim의 시간 모델 (실행 시간 0), `FI-23` - `FI-25`와 `NC-005`의 결과와 시간, `HA-01`, `HA-03`, `HA-04`, `HA-06`, `HA-14`, `A-19`, `A-24`, `A-25`의 내용, 출력 순서를 세게 한 일 | `example/drive-torque/src/vcu/vcu.c`, `sim/scenario.h`, `sim/scenario.c`, `sim/hal_sim.c`, `docs/test-report.md` 3절, 6절, 8절, `docs/hardware-assumptions.md`, `docs/technical-safety-concept.md` 4절, 9.4절, 9.5절 | 예제 | 2026-11-23 |
+| C-E-004 | 페달 위치 센서는 각도를 전압으로 바꾸어 제어기에 보내며, 신호는 직결선이나 차량 bus (예: CAN)로 간다. 제어기는 전압을 토크로 바꾸고 다른 계통의 토크 요구와 조정한다 | nhtsa-etc-ev-fsa, 33쪽 | 1차 | 2026-11-23 |
+| C-E-005 | inverter 제어부, gate drive, inverter/converter, 상 전류 센서와 모터 위치 센서의 역할 | nhtsa-etc-ev-fsa, 33-34쪽 | 1차 | 2026-11-23 |
+| C-E-006 | 블록 그림: 제동/안정성 제어기가 브레이크 페달 위치와 차량 속도를, 다른 차량 센서가 선택된 기어를 EV PCM에 준다. EV PCM에서 gate drive board로 "Disable Motor (Traction Controller Bypass)" 선이 있다 | nhtsa-etc-ev-fsa, 32쪽 (그림 5. 쪽을 그림으로 그려 눈으로 읽었다) | 1차 | 2026-11-23 |
+| C-E-007 | 차량 속도는 제동/안정성 제어 모듈이 준다고 보고서가 가정한다 | nhtsa-etc-ev-fsa, 29쪽 | 1차 | 2026-11-23 |
+| C-E-008 | 기어 선택기의 위치를 transmission range sensor가 알린다 | nhtsa-etc-ev-fsa, 33쪽 | 1차 | 2026-11-23 |
+| C-E-009 | 보고서의 브레이크 입력은 페달의 각도를 재는 센서 (BPPS)다 | nhtsa-etc-ev-fsa, 35쪽 | 1차 | 2026-11-23 |
+| C-E-010 | 제어기는 고장을 찾으면 DTC를 기록하고 limp-home 같은 safe state로 보낼 수 있으며 계기판의 고장 표시등을 켜라고 명령한다. inverter 제어부가 고장이면 그것을 건너뛰고 gate drive와 직접 통신해 전류를 끊을 수 있다 | nhtsa-etc-ev-fsa, 35쪽. nhtsa-etc-gasoline-fsa, 34쪽 | 1차 | 2026-11-23 |
+| C-E-011 | 전기차와 내연기관 차의 차이: 방향은 전류가 정하고 구동 계통이 방향을 맡는다, 페달을 놓으면 coast한다, creep은 소프트웨어로 흉내 낸다, 모터는 속도 0에서 stall하지 않지만 EPS가 갑자기 꺼지면 비슷한 상태가 된다 | nhtsa-etc-ev-fsa, 30-31쪽 | 1차 | 2026-11-23 |
+| C-E-012 | 가솔린차는 흡입 공기량으로 출력을 조절하고, ECM이 PWM으로 throttle 모터를 구동한다 | nhtsa-etc-gasoline-fsa, 31쪽, 33쪽 | 1차 | 2026-11-23 |
+| C-E-013 | 고장 표시등 같은 운전자 알림은 보고서의 범위 밖이다. 범위에는 차량 bus (예: CAN)의 통신이 든다 | nhtsa-etc-ev-fsa, 27-28쪽 | 1차 | 2026-11-23 |
+| C-E-014 | 업계에서 흔한 경고의 예: amber (어길 확률 중간), red (높거나 이미 어김), chime | nhtsa-etc-ev-fsa, 68쪽 | 1차 | 2026-11-23 |
+| C-E-015 | 그 차의 페달 센서는 VPA1, VPA2를 내고 VPA2는 같은 기울기에 0.8 V 높게 시작한다. 제어기는 두 전압을 견주어 문제를 찾는다 | nasa-toyota-ua-report, 58쪽, 96쪽 | 1차 | 2026-11-23 |
+| C-E-016 | 두 센서의 견줌은 고장이 둘을 함께 유효한 전압으로 만들지 않는 한 지켜 주고, offset은 공통 원인 고장을 막으려는 것이다 | nasa-toyota-ua-report, 72쪽 | 1차 | 2026-11-23 |
+| C-E-017 | 페달 센서마다 전용의 전원선과 귀선이 있다 | nasa-toyota-ua-report, 96쪽 | 1차 | 2026-11-23 |
+| C-E-018 | DTC 표는 센서마다의 낮은/높은 전압과 두 센서의 상관, rationality를 별개 코드로 둔다 | nasa-toyota-ua-report, 63쪽 | 1차 | 2026-11-23 |
+| C-E-019 | 페달 센서 하나가 고장으로 판정되면 limp home으로 들어가 남은 센서로 제한된 범위에서 throttle을 제어한다. limp home은 고장 뒤 낮은 속도로 계속 달리게 한다. MIL이 알리고 DTC로 저장한다 | nasa-toyota-ua-report, 49쪽, 67쪽 | 1차 | 2026-11-23 |
+| C-E-020 | 고장 모드 표에 "DTC when both Brake Switch poles do not agree"라는 칸이 있다 (cruise control의 줄) | nasa-toyota-ua-report, 78쪽 (쪽을 그림으로 그려 확인) | 1차 | 2026-11-23 |
+| C-E-021 | 저항성 단락 상태에서 DTC를 지우고 MIL을 끄면 다시 켜지지 않았지만 동작은 그대로였다 | nasa-toyota-ua-report, 81쪽 | 1차 | 2026-11-23 |
+| C-E-022 | CAN CC의 frame: 11 또는 29 bit identifier, 값이 작을수록 높은 우선순위 (bit-wise arbitration), 0-8 byte data, CRC, ACK, 오류 검출 다섯 가지, error frame과 재전송, bus-off | CAN in Automation, "CAN CC", https://www.can-cia.org/can-knowledge/can-cc (2026-11-23에 봄. 날짜 없는 웹 페이지. scratchpad에 받아 글을 대조했다) | 1차 (표준 단체의 설명 페이지) | 2026-11-23 |
+| C-E-023 | E2E가 가정하는 통신 고장 목록과, 그 원인에 transceiver 고장, EMC, ECU와 gateway 안 통신 소프트웨어 (RTE, COM, network stack)의 체계적 고장이 든다 | autosar-safety-measures, 33-34쪽 | 1차 | 2026-11-23 |
+| C-E-024 | SW-C는 RTE 위에 있고 하드웨어에 독립이며 정보를 RTE로만 주고받는다. runnable은 OS task에 넣어 실행한다. partition 사이 메모리 보호. Watchdog Manager는 basic software module이다. CDD는 입출력에 직접 닿고, 감시 소프트웨어를 CDD에 두는 설계가 있다 | autosar-safety-measures, 10쪽, 11쪽, 12쪽, 23쪽, 60쪽 | 1차 | 2026-11-23 |
+| C-E-025 | AUTOSAR는 완전한 safe 해법이 아니며 그것으로도 안전하지 않은 계통을 만들 수 있다 | autosar-safety-measures, 7쪽 | 1차 | 2026-11-23 |
+| C-13-001 | MISRA C는 자동차를 위해 만들어진 C의 더 안전한 부분집합이다 (발표의 소개) | koopman-toyota-ua, 35쪽 | 1차 | 2026-11-23 |
+| C-13-002 | MISRA Compliance의 면책: 이 문서의 요구를 지키는 것만으로 오류 없는 견고한 소프트웨어가 보장되지 않는다 | misra-compliance-2020, 4쪽 | 1차 | 2026-11-23 |
+| C-13-003 | MISRA 지침은 문서화된 개발 과정 안에서 쓰도록 만들어졌고, 그 과정이 보장할 것으로 요구사항, 설계, compiler가 만든 object, test의 넷을 든다 | misra-compliance-2020, 10쪽 | 1차 | 2026-11-23 |
+| C-13-004 | 예제에서 가장 무거운 결함 셋 (허용 범위의 틈, 제동 우선 상태의 기억, 방향이 바뀌는 주기의 큰 토크)은 검토와 시제품에서 찾았다 | example/drive-torque/docs/test-report.md 6절 | 1차 | 2026-11-23 |
+| C-13-005 | undefined behavior와 implementation-defined behavior의 정의, 오른쪽 밀기의 예 | N1570, PDF 21-22쪽 (3.4.1, 3.4.3) | 1차 (공개 초안) | 2026-11-23 |
+| C-13-006 | 구현은 부호 있는 overflow에서 값을 돌리거나, trap을 내거나, 일어나지 않는다고 가정하고 object 코드를 만들 수 있다 | SEI CERT C, INT32-C (웹) | 1차 | 2026-11-23 |
+| C-13-007 | 식의 결과가 수학적으로 정의되지 않거나 형의 범위를 넘으면 undefined behavior다 | N1570, PDF 94쪽 (6.5 문단 5) | 1차 (공개 초안) | 2026-11-23 |
+| C-13-008 | 부호 없는 형으로의 변환은 최댓값보다 하나 큰 수를 더하거나 빼서 정해진다 | N1570, PDF 69쪽 (6.3.1.3 문단 2) | 1차 (공개 초안) | 2026-11-23 |
+| C-13-009 | int보다 작은 정수형은 int로 승격된다 (integer promotion) | N1570, PDF 69쪽 (6.3.1.1 문단 2) | 1차 (공개 초안) | 2026-11-23 |
+| C-13-041 | typedef는 새 형을 만들지 않고 같은 형의 다른 이름일 뿐이다 | N1570, PDF 155쪽 (6.7.8) | 1차 (공개 초안) | 2026-11-23 |
+| C-13-010 | INT32-C는 부호 있는 연산의 overflow를 막으라는 규칙이고 연산 전 검사를 보인다 | SEI CERT C, INT32-C (웹) | 1차 | 2026-11-23 |
+| C-13-011 | INT31-C는 음수를 부호 없는 형으로 바꾸는 것을 결과가 정해져 있어도 위반으로 본다 | SEI CERT C, INT31-C (웹) | 1차 | 2026-11-23 |
+| C-13-012 | 부분집합을 두는 이유 둘, coding standard로 만든 부분집합은 compiler가 집행하지 않는다 | nasa-gb-8719-13, 208쪽 | 1차 | 2026-11-23 |
+| C-13-013 | C에서는 정수 계산이 overflow하지 않음을 보이기 어렵다. 배열과 문자열의 경계 검사가 없다. 전역 변수 100개면 인자 2개인 함수가 사실상 102개 | nasa-gb-8719-13, 215쪽, 216쪽 | 1차 | 2026-11-23 |
+| C-13-014 | 가장 안전한 언어로 Ada와 SPARK를 꼽고, 익숙한 언어에 남는 것이 최선일 때가 많으며, C를 고르면 표준을 만들어 집행하고 검사와 test에 시간을 더 쓰라고 한다 | nasa-gb-8719-13, 233쪽 | 1차 | 2026-11-23 |
+| C-13-015 | style 요구를 coding standard에서 떼어 둔다 (표준이 선반에 올려지는 것을 막으려고) | nasa-gb-8719-13, 147쪽 | 1차 | 2026-11-23 |
+| C-13-016 | style guide는 코드의 정확성에 직접 영향이 없는 외형의 규칙이다 | misra-compliance-2020, 11쪽 | 1차 | 2026-11-23 |
+| C-13-017 | 준수 주장이 뜻을 가지려면 밝혀야 할 다섯 가지 | misra-compliance-2020, 9쪽 | 1차 | 2026-11-23 |
+| C-13-018 | rule과 directive의 구분 | misra-compliance-2020, 16쪽 | 1차 | 2026-11-23 |
+| C-13-019 | mandatory, required, advisory의 뜻. mandatory는 바꿀 수 없고 required는 advisory나 disapplied로 낮출 수 없다 | misra-compliance-2020, 23쪽 | 1차 | 2026-11-23 |
+| C-13-020 | deviation record의 내용과 적용 위치의 목록 | misra-compliance-2020, 20쪽 | 1차 | 2026-11-23 |
+| C-13-021 | deviation을 받아들이면 안 되는 경우 (편의, 다른 방법이 있음, 영향을 따지지 않음) | misra-compliance-2020, 21쪽 | 1차 | 2026-11-23 |
+| C-13-022 | 불변인 식과 실행될 수 없는 코드를 금하는 지침을 지키면 어떤 방어 조치를 쓸 수 없고, 그때 위반이 받아들여질 수 있다 | misra-compliance-2020, 22쪽 | 1차 | 2026-11-23 |
+| C-13-023 | 이상적인 정적 분석 도구는 만들 수 없다. 도구마다 강조가 달라 둘 이상이 필요할 수 있다 | misra-compliance-2020, 13쪽 | 1차 | 2026-11-23 |
+| C-13-024 | decidable, undecidable한 rule. 진단이 없다는 것이 "예"를 뜻하지 않는다. 보수적이고 방어적인 코딩으로 불확실성을 없앨 수 있다 | misra-compliance-2020, 18-19쪽 | 1차 | 2026-11-23 |
+| C-13-025 | 도구 메시지의 네 분류와 조사, 기록 | misra-compliance-2020, 17-18쪽 | 1차 | 2026-11-23 |
+| C-13-026 | NASA의 Toyota 조사에서 쓴 정적 분석 도구 셋의 성격 | nasa-toyota-ua-report, 149쪽 | 1차 | 2026-11-23 |
+| C-13-027 | 쓴 도구로는 단독으로 UA를 일으키는 소프트웨어 결함을 찾지 못했다 | nasa-toyota-ua-report, 152쪽 | 1차 | 2026-11-23 |
+| C-13-028 | 어떤 합리적인 분석이나 test로도 오류가 없음을 증명할 수 없고, 증거가 없다는 것이 무죄를 뜻하지 않는다 | nasa-toyota-ua-report, 20쪽 | 1차 | 2026-11-23 |
+| C-13-029 | MISRA C 규칙 35개 중 14개 위반, read/write 변수 11,253개, 안전 규칙은 보통 재귀를 금하고 ETCS는 재귀를 쓴다 (원고 쪽 전문가의 발표, NASA 부록 A와 증언 인용) | koopman-toyota-ua, 36쪽, 40쪽, 43쪽 | 1차 (발표자의 의견) | 2026-11-23 |
+| C-13-030 | defensive programming의 풀이, 결함의 출처, 범위 검사와 대응, 계속 진행은 권하지 않음, 전략의 일관성 | nasa-gb-8719-13, 147-148쪽 | 1차 | 2026-11-23 |
+| C-13-031 | cyclomatic complexity가 10을 넘으면 단순화를 검토, 10보다 높은 한계는 경험과 추가 test가 있을 때만 | nasa-gb-8719-13, 96쪽, 150쪽 | 1차 | 2026-11-23 |
+| C-13-032 | 지표와 한계값은 산업, 조직, 프로젝트가 정한다. 크기와 복잡도의 균형이 coverage를 얻는 시간을 줄인다 | misra-compliance-2020, 11-12쪽 | 1차 | 2026-11-23 |
+| C-13-033 | complexity 50을 넘으면 test할 수 없다고 본다. Toyota 코드에 50을 넘는 함수 67개 (증언 인용) | koopman-toyota-ua, 38쪽 | 1차 (발표자의 의견) | 2026-11-23 |
+| C-13-034 | interrupt 분석의 물음 (막는 구간의 길이, 쌓아 둘 수 있는가, 낮은 우선순위가 중요한 data를 바꾸는가) | nasa-gb-8719-13, 174쪽 | 1차 | 2026-11-23 |
+| C-13-035 | 공유 전역이 늘 interrupt를 막은 채 접근되지는 않았다 (NASA 부록 A 인용) | koopman-toyota-ua, 42쪽 | 1차 (발표자의 인용) | 2026-11-23 |
+| C-13-036 | wild pointer가 관계없는 함수를 망가뜨릴 수 있고, FCR은 자기의 고장을 모두 감시할 수 없다 | koopman-toyota-ua, 31쪽 | 1차 | 2026-11-23 |
+| C-13-037 | 실행 환경의 자원 (처리 시간, stack)과 산술 overflow 같은 run-time 오류의 부재를 과정이 보이고 기록한다 | misra-compliance-2020, 15쪽 | 1차 | 2026-11-23 |
+| C-13-038 | 경고를 켜고 읽고 가능하면 오류로 한다 | nasa-gb-8719-13, 372쪽 | 1차 | 2026-11-23 |
+| C-13-039 | 동적 memory를 그냥 금하는 것이 반드시 최선은 아니다 | nasa-gb-8719-13, 218쪽 | 1차 | 2026-11-23 |
+| C-13-040 | 일부 과정 표준 (IEC 61508, ISO 26262, DO-178)은 어떤 경우 compiler와 정적 분석 도구의 qualification을 요구한다 | misra-compliance-2020, 14쪽 (참고 문헌은 최신 판을 가리킨다고 적음, 판 표기 없음) | 2차 (ISO 26262, 판 없음) | 2026-11-23 |
+| C-EX-023 | 예제의 compile option, cppcheck와 clang-tidy의 설정, CBMC의 네 검사 | example/drive-torque/Makefile, tools/prove.sh | 1차 | 2026-11-23 |
+| C-EX-024 | 제품 코드에 malloc/free, 재귀, 쓰기 가능한 전역 변수, float/double이 없고, 함수 pointer는 task table 하나다. .c 11개 944줄 | example/drive-torque/src (grep, wc로 확인) | 1차 | 2026-11-23 |
+| C-EX-025 | Apple clang 21에서 이 option으로 쓰지 않는 인자와 쓰지 않는 static 함수가 오류가 된다 | 작은 파일로 실험 (scratchpad) | 1차 (실험) | 2026-11-23 |
+| C-EX-026 | to_permille의 signed overflow, CRC 변환 셋, clang-tidy 경고 7개, compile되지 않는 변이, 상수 이름을 쓴 test, cppcheck MISRA 7.3 거짓 경보 | example/drive-torque/docs/test-report.md 6절, 7절; notes/tool-check.md | 1차 | 2026-11-23 |
+| C-EX-027 | 증명 성질 4, 8, 13, 14가 망가진 상태 값에서도 성립한다. 증명은 C 코드의 논리이고 기계어를 덮지 않는다 | example/drive-torque/docs/test-report.md 5절; test/proof/harness.c | 1차 | 2026-11-23 |
+| C-EX-028 | 현재 cppcheck 지적 없음, clang-tidy 경고 0 | `make static`을 2026-11-23에 돌림 | 1차 | 2026-11-23 |
