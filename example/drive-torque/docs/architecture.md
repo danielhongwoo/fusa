@@ -44,7 +44,7 @@ flowchart TD
 | 입력 검사 (기어) | `src/input/gear_check.c` | 안 부른다. 차량 속도는 주기 실행부가 넘겨 준다 | 마지막으로 받아들인 방향, 받아들이지 못한 횟수 | `SWR-16` |
 | 기능 | `src/app/app.c` | 안 부른다 | 지난 주기의 토크. 감시가 모르는 상태는 두지 않는다 | `SG-01`의 요구사항 없음. `SG-02`에서 온 `SWR-26` (목표, 오르는 속도, 받은 상한을 넘지 않는다) |
 | 감시 | `src/monitor/monitor.c` | 안 부른다 | 없다. 지난 주기에 보낸 토크는 출력 단계가 기억하고, 주기 실행부가 넘겨 준다 | `SWR-05`, `SWR-06`, `SWR-13` |
-| 감시 (inverter) | `src/monitor/inverter_check.c` | 안 부른다. 알린 토크와 보낸 토크는 주기 실행부가 넘겨 준다 | 최근 5주기에 보낸 토크, counter 둘 | `SWR-19` |
+| 감시 (inverter) | `src/monitor/inverter_check.c` | 안 부른다. 알린 토크, 그것이 유효한지와 이번 주기에 새로 받은 것인지, 보낸 토크는 주기 실행부가 넘겨 준다 | 최근 5주기에 보낸 토크, counter 둘 | `SWR-19` |
 | 출력 단계 | `src/monitor/monitor.c` | 안 부른다 | counter, 지난 주기에 보낸 토크 | `SWR-07` - `SWR-09` |
 | 상태 기계 | `src/reaction/reaction.c` | 안 부른다 | 고장 대응의 상태 | `SWR-25`, `SWR-24` (줄여 감의 상한) |
 | 통신 | `src/com/e2e.c` | 안 부른다. 메시지를 주고받는 것은 주기 실행부가 HAL로 한다 | 보내는 counter. 받는 쪽마다 지난 counter와 지난 판정 | `SWR-17`, `SWR-18` |
