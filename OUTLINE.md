@@ -150,8 +150,8 @@ flowchart TD
 | 장 | 제목 (원고) | 장 계획 | 핵심 질문 | 목표 쪽수 |
 |---|---|---|---|---|
 | 5 | [Safety lifecycle과 safety management](chapters/ch05-safety-lifecycle.md) | [계획](plans/ch05-safety-lifecycle.md) | 안전은 왜 기술만이 아니라 프로세스와 조직의 문제인가? | 12 |
-| 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | [계획](plans/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 24 |
-| 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | [계획](plans/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 16 |
+| 6 | [Hazard analysis and risk assessment](chapters/ch06-hara.md) | [계획](plans/ch06-hara.md) | 무엇이 위험한지 어떻게 빠짐없이 찾고, 등급을 매기는가? | 12 |
+| 7 | [Safety concept: 요구사항을 아래로 내리기](chapters/ch07-safety-concept.md) | [계획](plans/ch07-safety-concept.md) | safety goal 한 문장이 어떻게 소프트웨어 요구사항 수십 개가 되는가? | 15 |
 | 8 | [Safety analysis 기법](chapters/ch08-safety-analysis.md) | [계획](plans/ch08-safety-analysis.md) | 설계가 safety goal을 위반할 수 있는 경로를 어떻게 찾는가? | 14 |
 | 9 | [소프트웨어 엔지니어가 알아야 할 하드웨어](chapters/ch09-hardware-for-software-engineers.md) | [계획](plans/ch09-hardware-for-software-engineers.md) | 하드웨어는 어떻게 고장 나고, 그중 무엇이 소프트웨어의 일이 되는가? | 8-10 |
 

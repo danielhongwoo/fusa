@@ -195,3 +195,14 @@
 | C-06-025 | safety goal의 꼴: 크기와 시간이 함께 있는 것은 하나이고 값은 모두 정하지 않았다. safe state의 세 종류와 일곱 예, hazard와의 차이 둘 | nhtsa-etc-ev-fsa, 58쪽, 67-68쪽 (직접 읽음) | 1차. safe state의 세 종류는 2차 (ISO 26262 FDIS 2011) | 2026-11-23 |
 | C-06-026 | creep을 제어하지 못하는 고장은 그보다 빠른 속도에서의 고장보다 FTTI가 길 수 있다 | nhtsa-etc-ev-fsa, 80쪽 (직접 읽음) | 1차 | 2026-11-23 |
 | C-EX-020 | 예제의 HARA: hazard 다섯의 등급 표, H-04의 운전 상황 다섯 줄, safety goal 둘, safe state 넷. SG-02는 H-04의 일부만 다룬다 | example/drive-torque/docs/hara.md. 값은 nhtsa-etc-ev-fsa의 부록 F에서 빌린 가정 | 예제 | 2026-11-23 |
+| C-07-009 | functional safety concept이 다루는 다섯 가지. 요구사항을 끌어내는 틀. 요구사항은 뒤의 단계에서 더 자세한 요구사항으로 내려간다 | nhtsa-etc-ev-fsa, 66쪽, 70-71쪽 (66, 71쪽은 직접 읽음) | 2차 (ISO 26262 FDIS 2011) | 2026-11-23 |
+| C-07-010 | 고장과 safe state와 경고의 짝: 중복 요소 하나의 고장은 올리는 속도를 늦춘 상태와 주의 표시, 둘 다이거나 하나뿐인 요소의 고장은 낮은 속도로만 가는 상태와 경고 표시. 성능을 낮춘 상태에 들어가면 운전자에게 알린다 | nhtsa-etc-ev-fsa, 68쪽, 73-74쪽 (68, 74쪽은 직접 읽음) | 1차 | 2026-11-23 |
+| C-07-011 | 소프트웨어의 safety requirement는 위에서 내려오거나 hazard 분석에서 올라온다. 올라온 것은 시스템의 명세로 먼저 올린 뒤 다시 내린다. generic과 specific의 구분 | nasa-gb-8719-13, 105쪽, 114쪽, 121쪽 (직접 읽음) | 1차 | 2026-11-23 |
+| C-07-012 | must work와 must not work 기능. 앞의 것은 독립된 병렬 중복, 뒤의 것은 독립된 직렬의 막음으로 지키고, 직렬의 막음은 대개 다른 processor가 맡아야 독립이다 | nasa-gb-8719-13, 141-142쪽, 348쪽 (직접 읽음) | 1차 | 2026-11-23 |
+| C-07-013 | safety strategy의 항목: 주 제어기가 멀쩡한지를 다른 processor로 확인한다 | nhtsa-etc-ev-fsa, 67쪽 (직접 읽음) | 1차 | 2026-11-23 |
+| C-07-014 | 알아채는 시간과 FTTI를 따로 적는다. FTTI는 업계의 자료로 정하고 없으면 기술이 허락하는 만큼 빨리. 숫자는 200 ms 두 군데뿐이고 근거가 없다. FTTI를 정의하는 문장은 없다 | nhtsa-etc-ev-fsa, 11쪽, 71-72쪽, 80-81쪽 (71, 80쪽은 직접 읽음) | 1차 | 2026-11-23 |
+| C-07-015 | time to criticality. 자동으로 대응하는 수단은 가장 긴 대응 시간과 가장 짧은 그 시간 사이에 여유가 충분할 때만 쓸모가 있다 | nasa-gb-8719-13, 117쪽 (직접 읽음) | 1차 | 2026-11-23 |
+| C-07-016 | safe state를 고를 때 쓸 수 있는 정도를 가장 크게 하려 한다. 고장을 알아채면 멈추는 것이 언제나 가장 안전하다는 것은 잘못이다. 보호 수단이 새 hazard를 만들지 않는지, 서로 맞는지를 묻는다 | nhtsa-etc-ev-fsa, 67쪽. nasa-gb-8719-13, 22쪽. ifa-report-2-2017e, 27쪽 (모두 직접 읽음) | 1차. ifa는 2차 (EN ISO 12100) | 2026-11-23 |
+| C-07-017 | 안전 기능을 정할 때 적을 것: 전원이 있을 때와 끊겼을 때, 고장을 알아챘을 때의 반응, 반응 시간. hardware-software interface의 명세에 ISO 26262가 요구하는 것은 받은 문서에 없다 | ifa-report-2-2017e, 30쪽 (직접 읽음). 없음은 notes/reading/ch07-facts.md의 찾지 못한 것 | 2차 (EN ISO 13849-1:2015) | 2026-11-23 |
+| C-07-018 | 요구사항 하나에 등급이 둘 넘게 붙을 수 있다. 독립을 보일 수 없으면 높은 쪽을 따른다. 소프트웨어의 중복이 정말 독립인지는 설계의 처음에 확인하기 매우 어렵다 | nhtsa-etc-ev-fsa, 73쪽, 79-80쪽 (73쪽은 직접 읽음). nhtsa-safety-standards-assessment, 29쪽 (직접 읽음) | 2차 (ISO 26262 FDIS 2011). 뒤의 것은 1차 (보고서의 의견) | 2026-11-23 |
+| C-EX-021 | 예제의 요구사항 62개 (safety goal 2, FSR 16, TSR 19, SWR 25) 가운데 30개가 구현 예정. 감시의 틈을 세 번 고친 경위. 오차의 예산 셋. 고장 대응의 상태 넷 | example/drive-torque/docs/requirements.yaml, technical-safety-concept.md 3절과 9절, functional-safety-concept.md 4절. make trace의 출력 | 예제 (이 책의 측정과 증명) | 2026-11-23 |
