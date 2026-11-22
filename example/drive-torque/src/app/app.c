@@ -46,11 +46,20 @@ torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear)
     /* 토크는 천천히 올리고, 내릴 때는 바로 내린다.
      * 알려진 단순화: 주행 중에 기어가 D에서 R로 바뀌면 한 주기에 양수에서 음수로 넘어간다.
      * 차량 속도를 보고 막는 것은 하지 않았다 (docs/technical-safety-concept.md 6절) */
-    if ((target > 0) && (target > (st->prev + RISE_PER_CYCLE))) {
-        target = (st->prev > 0) ? (st->prev + RISE_PER_CYCLE) : RISE_PER_CYCLE;
+    /* 올리기 시작하는 곳은 지난 주기의 토크다. 방향이 바뀌었으면 0에서 다시 올린다.
+     * 방향이 바뀔 때 지난 주기의 토크와 견주면, 작은 목표를 넘는 토크가 나간다
+     * (단계 2의 설계 토론에서 찾은 결함. reviews/2026-11-23-example-stage2/) */
+    if (target > 0) {
+        torque_t from = (st->prev > 0) ? st->prev : 0;
+        if (target > (from + RISE_PER_CYCLE)) {
+            target = from + RISE_PER_CYCLE;
+        }
     }
-    if ((target < 0) && (target < (st->prev - RISE_PER_CYCLE))) {
-        target = (st->prev < 0) ? (st->prev - RISE_PER_CYCLE) : -RISE_PER_CYCLE;
+    if (target < 0) {
+        torque_t from = (st->prev < 0) ? st->prev : 0;
+        if (target < (from - RISE_PER_CYCLE)) {
+            target = from - RISE_PER_CYCLE;
+        }
     }
     st->prev = target;
     return target;

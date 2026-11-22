@@ -224,6 +224,47 @@ static void tc_007(void)
     CHECK_EQ(clamped, 0);
     CHECK(max_gap < 550);
     CHECK_EQ(max_gap, 50); /* 실제로는 허용 오차 5 Nm뿐이다 */
+
+    /* 무작위 운전: 페달, 브레이크, 기어가 아무 때나 바뀌어도 정상인 기능은 깎이지 않고,
+     * 토크 요구의 크기는 그 주기의 목표 (페달에 비례하는 값. 후진은 그 40%)를 넘지 않는다 */
+    {
+        app_t app;
+        uint32_t seed = 12345u;
+        permille_t pedal = 0;
+        bool brake = false;
+        gear_t gear = GEAR_D;
+        int over_target = 0;
+
+        clamped = 0;
+        app_init(&app);
+        for (int i = 0; i < 100000; i++) {
+            seed = (seed * 1664525u) + 1013904223u;
+            if (((seed >> 8) % 6u) == 0u) {
+                pedal = (permille_t)((seed >> 12) % 1001u);
+            }
+            if (((seed >> 20) % 11u) == 0u) {
+                brake = !brake;
+            }
+            if (((seed >> 24) % 13u) == 0u) {
+                gear = gears[(seed >> 28) % 4u];
+            }
+            torque_t req = app_step(&app, pedal, brake, gear);
+            torque_t allowed = monitor_allowed_torque(pedal, brake, gear);
+            torque_t mag = (req < 0) ? -req : req;
+            torque_t target = (pedal * 2500) / 1000;
+            if (gear == GEAR_R) {
+                target = (target * 40) / 100;
+            }
+            if (output_clamp(req, allowed, gear) != req) {
+                clamped++;
+            }
+            if (mag > target) {
+                over_target++;
+            }
+        }
+        CHECK_EQ(clamped, 0);
+        CHECK_EQ(over_target, 0);
+    }
 }
 
 /* 운전자의 입력 한 벌 */
@@ -259,6 +300,10 @@ static void tc_011(void)
         { { 1000, true, GEAR_R }, { 1000, false, GEAR_R }, 2 },
         { { 1000, false, GEAR_D }, { 1000, false, GEAR_R }, 2 }, /* 페달을 밟은 채 D에서 R로 */
         { { 1000, false, GEAR_R }, { 1000, false, GEAR_D }, 7 },
+        /* 방향이 바뀔 때 목표가 한 주기에 올릴 수 있는 양보다 작은 경우.
+         * 기능은 목표를 넘는 토크를 내면 안 된다 */
+        { { 199, false, GEAR_D }, { 199, false, GEAR_R }, 0 },
+        { { 1000, false, GEAR_R }, { 40, false, GEAR_D }, 0 },
     };
 
     for (int c = 0; c < (int)(sizeof(cases) / sizeof(cases[0])); c++) {
