@@ -55,7 +55,8 @@ static int first_latched(const sample_t *log, int n)
 
 /*
  * TC-201: SWR-07, SWR-08, SWR-09, SWR-10, SWR-11 fault injection FI-02
- * 주행 중에 기능이 30 Nm 더 큰 토크를 요구한다. fault를 켜는 시각을 주기 안에서 0-9 ms로 바꿔 가며 본다.
+ * 주행 중에 기능이 100 Nm 더 큰 토크를 요구한다. fault를 켜는 시각을 주기 안에서 0-9 ms로 바꿔 가며 본다.
+ * 100 Nm는 감시가 없으면 SG-01을 어기는 크기다 (test/test_no_monitor.c가 그것을 보인다).
  */
 static void tc_201(void)
 {
@@ -71,7 +72,7 @@ static void tc_201(void)
     double max_excess = 0.0;
 
     for (time_ms_t phase = 0u; phase < 10u; phase++) {
-        int n = run(&sc, log_fault, APP_FAULT_OFFSET, 300, T_FAULT + phase);
+        int n = run(&sc, log_fault, APP_FAULT_OFFSET, 1000, T_FAULT + phase);
         int t_latch = first_latched(log_fault, n);
         int over_limit = 0;
         int after_latch_bad = 0;
@@ -180,12 +181,57 @@ static void tc_203(void)
     (void)scenario_write_csv("build/out/fi-05.csv", log_fault, n);
 }
 
+/*
+ * TC-204: SWR-06, SWR-07, SWR-08 fault injection FI-06
+ * 후진하는 중에 기능이 페달과 상관없이 최대 토크를 요구한다.
+ * 후진의 허용 토크는 전진의 40%다. 출력은 그것을 넘지 않고, 차량의 가속 차이는 SG-01 안에 있다.
+ */
+static void tc_204(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_R },
+        { T_PEDAL_ON, 0.3, false, GEAR_R },
+    };
+    scenario_t sc = { "fi-06", 3000u, driver, 2, NULL, 0, switch_fault_on };
+    int n_ref = run(&sc, log_ref, APP_FAULT_NONE, 0, T_FAULT);
+    int n = run(&sc, log_fault, APP_FAULT_FULL, 0, T_FAULT);
+    int t_latch = first_latched(log_fault, n);
+    int over_limit = 0;
+    int excess_ms = 0;
+    double max_excess = 0.0;
+
+    CHECK_EQ(n, n_ref);
+    for (int i = 0; i < n; i++) {
+        const sample_t *s = &log_fault[i];
+        /* 후진의 가속은 음수다. 크기의 차이를 본다 */
+        double excess = log_ref[i].accel_mps2 - s->accel_mps2;
+        if ((s->torque_out > 0) || (-s->torque_out > s->diag.torque_allowed)) {
+            over_limit++;
+        }
+        if (excess > max_excess) {
+            max_excess = excess;
+        }
+        if (excess > SG01_ACCEL_EXCESS) {
+            excess_ms++;
+        }
+    }
+    CHECK_EQ(over_limit, 0);
+    CHECK_EQ(log_fault[T_FAULT + 20u].torque_out, -(300 + 50)); /* 허용 토크: 30 Nm + 오차 5 Nm */
+    CHECK(t_latch >= 0);
+    CHECK((t_latch - (int)T_FAULT) <= 50);
+    CHECK(!log_fault[n - 1].enable);
+    CHECK(excess_ms <= SG01_TIME_MS);
+    printf("  측정 FI-06: 후진에서 가속의 차이는 가장 클 때 %.2f m/s^2, %.1f m/s^2를 넘은 시간 %d ms\n",
+           max_excess, SG01_ACCEL_EXCESS, excess_ms);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
         { "TC-201", "FI-02 기능이 너무 큰 토크를 요구", tc_201 },
         { "TC-202", "FI-04 서 있는데 기능이 토크를 요구", tc_202 },
         { "TC-203", "FI-05 기능이 토크를 덜 냄 (SG-01의 범위 밖)", tc_203 },
+        { "TC-204", "FI-06 후진에서 기능이 최대 토크를 요구", tc_204 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

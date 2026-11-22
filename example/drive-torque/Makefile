@@ -56,13 +56,19 @@ build/app_good.o: $(SRC_APP) | dirs
 build/test_fault_app: $(SRC_SAFETY) build/app_good.o test/faulty/app_fault.c $(SIM) $(TESTLIB) test/test_fault_app.c | dirs
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
-test: build/test_unit build/test_scenario build/test_fault_app
+# 대조: 감시와 출력 단계를 아무것도 하지 않는 모듈로 바꿔 끼운다
+build/test_no_monitor: src/input/pedal_check.c src/input/input.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+test: build/test_unit build/test_scenario build/test_fault_app build/test_no_monitor
 	@echo "== unit test"
 	@build/test_unit
 	@echo "== 시나리오 test (fault는 HAL의 뒤에서 넣는다)"
 	@build/test_scenario
 	@echo "== 기능의 고장을 넣는 test (모듈을 바꿔 끼운다)"
 	@build/test_fault_app
+	@echo "== 대조 test (감시를 뺀다)"
+	@build/test_no_monitor
 
 # ---- 추적 ----
 

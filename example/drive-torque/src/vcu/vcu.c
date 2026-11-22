@@ -20,6 +20,8 @@ void vcu_init(vcu_t *vcu)
     vcu->torque_out = 0;
     vcu->enable = false;
     vcu->warning = WARNING_NONE;
+    /* SWR-12: 켤 때 구동 허용 신호를 끊은 상태에서 시작한다.
+     * reset 직후의 출력이 어떤 상태인지는 믿지 않는다 */
     hal_enable_write(false);
 }
 
@@ -33,8 +35,7 @@ static void task_input(vcu_t *vcu)
 /* 기능: 토크 요구를 만든다 */
 static void task_app(vcu_t *vcu)
 {
-    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->in.brake, vcu->in.gear,
-                               vcu->in.speed_valid, vcu->in.speed);
+    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->in.brake, vcu->in.gear);
 }
 
 /* 감시와 출력 단계 */
@@ -44,8 +45,9 @@ static void task_monitor_output(vcu_t *vcu)
     vcu->torque_out = output_stage_step(&vcu->output, vcu->torque_req, vcu->torque_allowed,
                                         vcu->in.gear);
 
-    /* SWR-10: 기능의 고장으로 고정되면 구동 허용 신호를 끊는다 */
-    vcu->enable = !vcu->output.latched;
+    /* SWR-10: 기능의 고장으로 고정되면 구동 허용 신호를 끊는다.
+     * SWR-12: 켠 뒤 입력 검사를 충분히 통과하기 전에는 구동을 허용하지 않는다 */
+    vcu->enable = vcu->pedal_check.ready && !vcu->output.latched;
 
     /* SWR-11: 페달 고장이나 기능의 고장을 알아채면 경고를 요청한다 */
     vcu->warning = (vcu->pedal_check.fault || vcu->output.latched) ? WARNING_RED : WARNING_NONE;

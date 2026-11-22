@@ -13,6 +13,7 @@
 #include "types.h"
 
 #define TORQUE_TOLERANCE    ((torque_t)50)  /* 허용 오차: 5 Nm */
+#define ALLOWED_REVERSE_PCT ((int32_t)40)   /* 후진의 허용 토크는 전진의 40% */
 #define EXCESS_LATCH_CYCLES ((uint8_t)5)    /* 초과가 이만큼 이어지면 기능의 고장으로 고정 */
 
 /* 출력 단계의 상태 */

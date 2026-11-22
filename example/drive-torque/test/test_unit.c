@@ -2,6 +2,9 @@
  * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 요구사항에 따른 unit test: 입력 검사, 감시, 출력 단계.
  * test마다 어느 요구사항을 보는지 "TC-번호: SWR-번호"로 적는다.
+ *
+ * 기댓값은 요구사항 (docs/requirements.yaml)의 숫자를 그대로 적는다.
+ * 제품 코드의 상수 이름을 쓰지 않는다. 상수가 잘못 바뀌면 test가 실패해야 하기 때문이다.
  */
 #include "app.h"
 #include "input.h"
@@ -14,7 +17,7 @@ static millivolt_t apps2(permille_t pedal) { return 250 + (2 * pedal); }
 
 static inputs_t inputs(millivolt_t a1, millivolt_t a2)
 {
-    inputs_t in = { a1, a2, false, GEAR_D, true, 0 };
+    inputs_t in = { a1, a2, false, GEAR_D };
     return in;
 }
 
@@ -23,7 +26,7 @@ static void make_ready(pedal_check_t *st)
 {
     inputs_t in = inputs(apps1(0), apps2(0));
     pedal_check_init(st);
-    for (int i = 0; i < (int)PEDAL_READY_CYCLES; i++) {
+    for (int i = 0; i < 3; i++) {
         (void)pedal_check_step(st, &in);
     }
 }
@@ -48,14 +51,14 @@ static void tc_001(void)
     CHECK_EQ(pedal_check_step(&st, &in), 1000);
 }
 
-/* 같은 입력을 PEDAL_FAULT_CYCLES번 넣은 뒤에 페달 고장인지 돌려준다 */
+/* 같은 입력을 3번 넣은 뒤에 페달 고장인지 돌려준다 */
 static bool faults_after_cycles(millivolt_t a1, millivolt_t a2)
 {
     pedal_check_t st;
     inputs_t in = inputs(a1, a2);
 
     make_ready(&st);
-    for (int i = 0; i < (int)PEDAL_FAULT_CYCLES; i++) {
+    for (int i = 0; i < 3; i++) {
         (void)pedal_check_step(&st, &in);
     }
     return st.fault;
@@ -122,6 +125,7 @@ static void tc_004(void)
 {
     pedal_check_t st;
     inputs_t in;
+    inputs_t bad;
 
     /* 작은 쪽을 쓴다 */
     make_ready(&st);
@@ -144,14 +148,24 @@ static void tc_004(void)
     CHECK_EQ(pedal_check_step(&st, &in), 0);
     CHECK_EQ(pedal_check_step(&st, &in), 0);
     CHECK_EQ(pedal_check_step(&st, &in), 500);
+
+    /* 3주기는 이어서 통과해야 한다. 사이에 실패가 끼면 다시 센다 */
+    pedal_check_init(&st);
+    bad = inputs(apps1(900), apps2(500));
+    CHECK_EQ(pedal_check_step(&st, &in), 0);  /* 통과 1 */
+    CHECK_EQ(pedal_check_step(&st, &in), 0);  /* 통과 2 */
+    CHECK_EQ(pedal_check_step(&st, &bad), 0); /* 실패: 다시 센다 */
+    CHECK_EQ(pedal_check_step(&st, &in), 0);  /* 통과 1 */
+    CHECK_EQ(pedal_check_step(&st, &in), 0);  /* 통과 2 */
+    CHECK_EQ(pedal_check_step(&st, &in), 500); /* 통과 3 */
 }
 
 /* TC-005: SWR-05 허용 토크가 0인 조건 */
 static void tc_005(void)
 {
     CHECK_EQ(monitor_allowed_torque(0, false, GEAR_D), 0);
-    CHECK_EQ(monitor_allowed_torque(PEDAL_RELEASED - 1, false, GEAR_D), 0);
-    CHECK(monitor_allowed_torque(PEDAL_RELEASED, false, GEAR_D) > 0);
+    CHECK_EQ(monitor_allowed_torque(29, false, GEAR_D), 0);
+    CHECK_EQ(monitor_allowed_torque(30, false, GEAR_D), 75 + 50); /* 3%의 7.5 Nm + 오차 5 Nm */
     CHECK_EQ(monitor_allowed_torque(500, true, GEAR_D), 0);
     CHECK_EQ(monitor_allowed_torque(500, false, GEAR_P), 0);
     CHECK_EQ(monitor_allowed_torque(500, false, GEAR_N), 0);
@@ -162,47 +176,83 @@ static void tc_005(void)
 /* TC-006: SWR-06 허용 토크는 페달 위치에 비례하는 상한에 오차를 더한 값이다 */
 static void tc_006(void)
 {
-    CHECK_EQ(monitor_allowed_torque(500, false, GEAR_D), 1250 + TORQUE_TOLERANCE);
-    CHECK_EQ(monitor_allowed_torque(100, false, GEAR_D), 250 + TORQUE_TOLERANCE);
-    CHECK_EQ(monitor_allowed_torque(100, false, GEAR_R), 250 + TORQUE_TOLERANCE);
-    /* 최대 토크를 넘지 않는다 */
-    CHECK_EQ(monitor_allowed_torque(1000, false, GEAR_D), TORQUE_MAX);
+    /* 토크의 단위는 0.1 Nm다. 오차 5 Nm는 50이다 */
+    CHECK_EQ(monitor_allowed_torque(500, false, GEAR_D), 1250 + 50);
+    CHECK_EQ(monitor_allowed_torque(100, false, GEAR_D), 250 + 50);
+    CHECK_EQ(monitor_allowed_torque(100, false, GEAR_R), 100 + 50); /* 후진은 40% */
+    CHECK_EQ(monitor_allowed_torque(1000, false, GEAR_R), 1000 + 50);
+    /* 최대 토크 (250 Nm)를 넘지 않는다 */
+    CHECK_EQ(monitor_allowed_torque(979, false, GEAR_D), 2447 + 50);
+    CHECK_EQ(monitor_allowed_torque(981, false, GEAR_D), 2500);
+    CHECK_EQ(monitor_allowed_torque(1000, false, GEAR_D), 2500);
     /* 범위 밖의 페달 값은 자른다 */
-    CHECK_EQ(monitor_allowed_torque(5000, false, GEAR_D), TORQUE_MAX);
+    CHECK_EQ(monitor_allowed_torque(5000, false, GEAR_D), 2500);
     CHECK_EQ(monitor_allowed_torque(-5, false, GEAR_D), 0);
 }
 
 /*
- * TC-007: SWR-06 허용 토크는 정상인 기능의 토크 요구보다 작지 않다.
- * 정상인 기능을 입력의 격자에서 돌려, 한 번도 깎이지 않는지 본다.
+ * TC-007: SWR-06 허용 토크와 정상인 기능의 토크 요구는 두 방향으로 맞물린다.
+ *   1. 정상인 기능의 토크 요구는 허용 토크를 넘지 않는다 (한 번도 깎이지 않는다).
+ *   2. 둘의 차이는 55 Nm보다 작다. 55 Nm는 SG-01의 가속 한계 (1.0 m/s^2)에 해당하는 토크다.
+ * 정상인 기능을 입력의 격자에서 돌려 본다. 페달은 기능이 따라갈 수 있는 속도로 움직인다.
  */
 static void tc_007(void)
 {
     static const gear_t gears[] = { GEAR_P, GEAR_R, GEAR_N, GEAR_D };
-    static const speed_t speeds[] = { -500, 0, 800, 1500, 3000, 6000 };
     int clamped = 0;
+    torque_t max_gap = 0;
 
     for (int g = 0; g < 4; g++) {
-        for (int s = 0; s < 6; s++) {
-            for (int valid = 0; valid < 2; valid++) {
-                for (int brake = 0; brake < 2; brake++) {
-                    app_t app;
-                    app_init(&app);
-                    /* 페달을 올렸다가 내린다. 기능에는 지난 주기의 상태가 있다 */
-                    for (permille_t p = 0; p <= 2000; p += 7) {
-                        permille_t pedal = (p <= 1000) ? p : (2000 - p);
-                        torque_t req = app_step(&app, pedal, brake != 0, gears[g], valid != 0,
-                                                speeds[s]);
-                        torque_t allowed = monitor_allowed_torque(pedal, brake != 0, gears[g]);
-                        if (output_clamp(req, allowed, gears[g]) != req) {
-                            clamped++;
-                        }
-                    }
+        for (int brake = 0; brake < 2; brake++) {
+            app_t app;
+            app_init(&app);
+            /* 페달을 올렸다가 내린다. 기능에는 지난 주기의 상태가 있다 */
+            for (permille_t p = 0; p <= 2000; p += 7) {
+                permille_t pedal = (p <= 1000) ? p : (2000 - p);
+                torque_t req = app_step(&app, pedal, brake != 0, gears[g]);
+                torque_t allowed = monitor_allowed_torque(pedal, brake != 0, gears[g]);
+                torque_t mag = (req < 0) ? -req : req;
+                if (output_clamp(req, allowed, gears[g]) != req) {
+                    clamped++;
+                }
+                if ((allowed - mag) > max_gap) {
+                    max_gap = allowed - mag;
                 }
             }
         }
     }
     CHECK_EQ(clamped, 0);
+    CHECK(max_gap < 550);
+    CHECK_EQ(max_gap, 50); /* 실제로는 허용 오차 5 Nm뿐이다 */
+}
+
+/*
+ * TC-011: SWR-06 기능이 토크를 올리는 동안에는 허용 토크와의 차이가 55 Nm를 넘을 수 있다.
+ * 그 시간은 SG-01의 시간 (200 ms)보다 짧아야 한다.
+ */
+static void tc_011(void)
+{
+    static const gear_t gears[] = { GEAR_D, GEAR_R };
+
+    for (int g = 0; g < 2; g++) {
+        app_t app;
+        int wide_cycles = 0;
+
+        app_init(&app);
+        /* 페달을 한 번에 끝까지 밟는다 */
+        for (int i = 0; i < 100; i++) {
+            torque_t req = app_step(&app, 1000, false, gears[g]);
+            torque_t allowed = monitor_allowed_torque(1000, false, gears[g]);
+            torque_t mag = (req < 0) ? -req : req;
+            if ((allowed - mag) >= 550) {
+                wide_cycles++;
+            }
+        }
+        CHECK((wide_cycles * 10) < 200);
+        if (gears[g] == GEAR_D) {
+            CHECK_EQ(wide_cycles, 7); /* 25 Nm씩 올린다: 70 ms */
+        }
+    }
 }
 
 /* TC-008: SWR-07 토크는 기어가 정한 방향으로만, 허용 토크까지만 나간다 */
@@ -267,12 +317,11 @@ static void tc_010(void)
 }
 
 /* 기능을 같은 입력으로 여러 주기 돌린 뒤의 토크 요구 */
-static torque_t app_settle(app_t *app, permille_t pedal, bool brake, gear_t gear, bool speed_valid,
-                           speed_t speed)
+static torque_t app_settle(app_t *app, permille_t pedal, bool brake, gear_t gear)
 {
     torque_t req = 0;
     for (int i = 0; i < 40; i++) {
-        req = app_step(app, pedal, brake, gear, speed_valid, speed);
+        req = app_step(app, pedal, brake, gear);
     }
     return req;
 }
@@ -282,40 +331,45 @@ static torque_t app_settle(app_t *app, permille_t pedal, bool brake, gear_t gear
  * 그래도 기능의 코드에 같은 방법 (test와 coverage 측정)을 적용한다.
  */
 
-/* FT-001: 토크 요구는 페달 위치에 비례하고, 높은 속도에서는 줄어든다 */
+/* FT-001: 토크 요구는 페달 위치에 비례한다. 후진은 그 40%다 */
 static void ft_001(void)
 {
     app_t app;
 
     app_init(&app);
-    CHECK_EQ(app_settle(&app, 500, false, GEAR_D, true, 0), 1250);
-    CHECK_EQ(app_settle(&app, 1000, false, GEAR_D, true, 1500), 2500);
-    CHECK_EQ(app_settle(&app, 1000, false, GEAR_D, true, 3000), 1250);  /* 속도가 2배면 절반 */
-    CHECK_EQ(app_settle(&app, 1000, false, GEAR_D, true, 9000), 625);   /* 속도의 상한은 60 m/s */
-    CHECK_EQ(app_settle(&app, 1000, false, GEAR_D, false, 0), 1250);    /* 속도를 모르면 절반 */
-    CHECK_EQ(app_settle(&app, 1000, false, GEAR_D, true, -3000), 1250); /* 속도의 부호는 보지 않는다 */
+    CHECK_EQ(app_settle(&app, 500, false, GEAR_D), 1250);
+    CHECK_EQ(app_settle(&app, 1000, false, GEAR_D), 2500);
+    CHECK_EQ(app_settle(&app, 29, false, GEAR_D), 0);  /* 놓음 구간 */
+    CHECK_EQ(app_settle(&app, 30, false, GEAR_D), 75);
     /* 범위 밖의 페달 값은 자른다 */
-    CHECK_EQ(app_settle(&app, 1500, false, GEAR_D, true, 0), 2500);
-    CHECK_EQ(app_settle(&app, -5, false, GEAR_D, true, 0), 0);
+    CHECK_EQ(app_settle(&app, 1500, false, GEAR_D), 2500);
+    CHECK_EQ(app_settle(&app, -5, false, GEAR_D), 0);
     /* P와 N에서는 0, R에서는 음수이고 40%까지 */
-    CHECK_EQ(app_settle(&app, 500, false, GEAR_P, true, 0), 0);
-    CHECK_EQ(app_settle(&app, 500, false, GEAR_N, true, 0), 0);
-    CHECK_EQ(app_settle(&app, 500, false, GEAR_R, true, 0), -500);
+    CHECK_EQ(app_settle(&app, 500, false, GEAR_P), 0);
+    CHECK_EQ(app_settle(&app, 500, false, GEAR_N), 0);
+    CHECK_EQ(app_settle(&app, 500, false, GEAR_R), -500);
+    CHECK_EQ(app_settle(&app, 1000, false, GEAR_R), -1000);
 }
 
-/* FT-002: 토크는 한 주기에 10 Nm씩 올리고, 내릴 때는 바로 내린다 */
+/* FT-002: 토크는 한 주기에 25 Nm씩 올리고, 내릴 때는 바로 내린다 */
 static void ft_002(void)
 {
     app_t app;
 
     app_init(&app);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_D, true, 0), 100);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_D, true, 0), 200);
-    CHECK_EQ(app_step(&app, 40, false, GEAR_D, true, 0), 100);
-    CHECK_EQ(app_step(&app, 0, false, GEAR_D, true, 0), 0);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_R, true, 0), -100);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_R, true, 0), -200);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_N, true, 0), 0);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_D), 250);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_D), 500);
+    CHECK_EQ(app_step(&app, 40, false, GEAR_D), 100);
+    CHECK_EQ(app_step(&app, 0, false, GEAR_D), 0);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -250);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -500);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_N), 0);
+
+    /* 알려진 단순화: 전진 토크를 내다가 기어가 R로 바뀌면 다음 주기에 바로 음수가 된다 */
+    app_init(&app);
+    (void)app_step(&app, 1000, false, GEAR_D);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_D), 500);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -250);
 }
 
 /* FT-003: 제동 우선은 두 페달을 함께 밟으면 걸리고, 가속 페달을 놓아야 풀린다 */
@@ -324,14 +378,14 @@ static void ft_003(void)
     app_t app;
 
     app_init(&app);
-    CHECK(app_settle(&app, 500, false, GEAR_D, true, 0) > 0);
-    CHECK_EQ(app_step(&app, 500, true, GEAR_D, true, 0), 0);  /* 함께 밟음 */
-    CHECK_EQ(app_step(&app, 500, false, GEAR_D, true, 0), 0); /* 브레이크만 놓음: 아직 0 */
-    CHECK_EQ(app_step(&app, 0, false, GEAR_D, true, 0), 0);   /* 가속 페달을 놓음: 풀림 */
-    CHECK(app_step(&app, 500, false, GEAR_D, true, 0) > 0);
+    CHECK(app_settle(&app, 500, false, GEAR_D) > 0);
+    CHECK_EQ(app_step(&app, 500, true, GEAR_D), 0);  /* 함께 밟음 */
+    CHECK_EQ(app_step(&app, 500, false, GEAR_D), 0); /* 브레이크만 놓음: 아직 0 */
+    CHECK_EQ(app_step(&app, 0, false, GEAR_D), 0);   /* 가속 페달을 놓음: 풀림 */
+    CHECK(app_step(&app, 500, false, GEAR_D) > 0);
     /* 가속 페달을 놓은 채 브레이크만 밟으면 걸리지 않는다 */
-    CHECK_EQ(app_step(&app, 0, true, GEAR_D, true, 0), 0);
-    CHECK(app_step(&app, 500, false, GEAR_D, true, 0) > 0);
+    CHECK_EQ(app_step(&app, 0, true, GEAR_D), 0);
+    CHECK(app_step(&app, 500, false, GEAR_D) > 0);
 }
 
 int main(void)
@@ -343,10 +397,11 @@ int main(void)
         { "TC-004", "안전한 페달 값은 작은 쪽이고, 믿을 수 없으면 0이다", tc_004 },
         { "TC-005", "허용 토크가 0인 조건", tc_005 },
         { "TC-006", "허용 토크의 계산", tc_006 },
-        { "TC-007", "정상인 기능은 깎이지 않는다", tc_007 },
+        { "TC-007", "허용 토크와 정상인 기능의 토크 요구가 맞물린다", tc_007 },
         { "TC-008", "출력은 기어의 방향과 허용 토크 안에 있다", tc_008 },
         { "TC-009", "깎인 주기가 5번 이어지면 고정한다", tc_009 },
         { "TC-010", "고정된 뒤에는 토크 0이다", tc_010 },
+        { "TC-011", "토크를 올리는 동안의 차이는 200 ms보다 짧다", tc_011 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

@@ -3,6 +3,9 @@
  * 하드웨어 추상화 계층 (HAL)의 interface.
  * 기능과 감시의 코드는 하드웨어를 이 함수들로만 만난다.
  * 시뮬레이션에서는 sim/hal_sim.c가 구현하고, fault는 그 뒤에서만 넣는다.
+ *
+ * 단계 1의 VCU는 차량 속도, inverter의 상태, 시간을 읽는 함수를 부르지 않는다.
+ * 단계 2에서 쓰려고 interface에 남겨 두었다 (docs/technical-safety-concept.md 6절).
  */
 #ifndef HAL_H
 #define HAL_H

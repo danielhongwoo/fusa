@@ -5,8 +5,8 @@
  */
 #include <stddef.h>
 
-#include "monitor.h"
 #include "scenario.h"
+#include "vcu.h"
 #include "test.h"
 
 #define LOG_CAP 8000
@@ -49,7 +49,7 @@ static void tc_101(void)
     for (int i = 0; i < n; i++) {
         const sample_t *s = &log_buf[i];
         if (s->diag.pedal_fault || s->diag.latched || (s->warning != 0u)
-            || (s->diag.clamp_count != 0u) || ((s->t_ms >= 10u) && !s->enable)) {
+            || (s->diag.clamp_count != 0u) || ((s->t_ms >= 20u) && !s->enable)) {
             bad++;
         }
     }
@@ -71,7 +71,7 @@ static void tc_102(void)
         { 0u, 0.0, false, GEAR_D },
         { T_PEDAL_ON, 0.3, false, GEAR_D },
     };
-    const torque_t limit_true = 750 + TORQUE_TOLERANCE; /* 실제 페달 위치의 허용 토크 */
+    const torque_t limit_true = 750 + 50; /* 실제 페달 위치 (30%)의 허용 토크: 75 Nm + 오차 5 Nm */
     int worst_ms = 0;
     int worst_plant_ms = 0;
 
@@ -94,7 +94,7 @@ static void tc_102(void)
                 excess++;
             }
             /* 페달 고장은 기능의 고장이 아니다: 고정하지 않고 구동 허용 신호도 끊지 않는다 */
-            if (s->diag.latched || ((s->t_ms >= 10u) && !s->enable)) {
+            if (s->diag.latched || ((s->t_ms >= 20u) && !s->enable)) {
                 escalated++;
             }
             /* 판정한 뒤로는 토크 0과 경고가 유지된다 */
@@ -185,6 +185,33 @@ static void tc_105(void)
     CHECK(log_buf[30].torque_out > 0);
 }
 
+/* TC-108: SWR-12 켤 때 구동 허용 신호는 끊겨 있고, 입력 검사를 3주기 통과한 뒤에 허용한다 */
+static void tc_108(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+    };
+    scenario_t sc = { "startup-enable", 100u, driver, 1, NULL, 0, NULL };
+    plant_t plant;
+    vcu_t vcu;
+    int n;
+
+    /* 시뮬레이션의 HAL은 켠 직후의 출력을 "허용"으로 둔다. 초기화가 그것을 끊어야 한다 */
+    plant_init(&plant);
+    hal_sim_init(&plant);
+    CHECK(hal_sim_enable());
+    vcu_init(&vcu);
+    CHECK(!hal_sim_enable());
+
+    n = scenario_run(&sc, log_buf, LOG_CAP);
+    CHECK(n == 100);
+    for (int t = 0; t < 20; t++) {
+        CHECK(!log_buf[t].enable);
+    }
+    CHECK(log_buf[20].enable);
+    CHECK(log_buf[99].enable);
+}
+
 /* TC-106: SWR-07 후진 기어에서는 음수 토크만 나간다 */
 static void tc_106(void)
 {
@@ -202,7 +229,8 @@ static void tc_106(void)
         }
     }
     CHECK_EQ(positive, 0);
-    CHECK(log_buf[n - 1].torque_out < 0);
+    CHECK_EQ(log_buf[n - 1].torque_out, -300); /* 페달 30%, 후진은 40%: -30 Nm */
+    CHECK_EQ(log_buf[n - 1].diag.torque_allowed, 300 + 50);
     CHECK(log_buf[n - 1].speed_mps < -0.5);
     CHECK_EQ(log_buf[n - 1].diag.clamp_count, 0);
 }
@@ -228,35 +256,6 @@ static void tc_107(void)
     CHECK_EQ(log_buf[n - 1].diag.clamp_count, 0);
 }
 
-/*
- * RT-001: 차량 속도 메시지가 끊긴다.
- * 안전 요구사항과 무관한 robustness test다. 감시는 속도를 쓰지 않는다.
- * 기능은 속도를 모르면 토크를 절반만 요구한다.
- */
-static void rt_001(void)
-{
-    static const driver_point_t driver[] = {
-        { 0u, 0.0, false, GEAR_D },
-        { T_PEDAL_ON, 1.0, false, GEAR_D },
-    };
-    fault_event_t late = { 1000u, FAULT_SPEED_MSG_LOSS, 0 };
-    fault_event_t never = { 0u, FAULT_SPEED_MSG_LOSS, 0 };
-    scenario_t sc = { "speed-loss", 1500u, driver, 2, &late, 1, NULL };
-    int n = scenario_run(&sc, log_buf, LOG_CAP);
-
-    /* 메시지가 끊기고 50 ms가 지나면 절반으로 줄인다 */
-    CHECK_EQ(log_buf[990].torque_out, 2500);
-    CHECK_EQ(log_buf[1040].torque_out, 2500);
-    CHECK_EQ(log_buf[1070].torque_out, 1250);
-    CHECK(!log_buf[n - 1].diag.latched);
-    CHECK_EQ(log_buf[n - 1].warning, 0);
-
-    /* 처음부터 받지 못한 경우 */
-    sc.faults = &never;
-    n = scenario_run(&sc, log_buf, LOG_CAP);
-    CHECK_EQ(log_buf[n - 1].torque_out, 1250);
-}
-
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -267,7 +266,7 @@ int main(void)
         { "TC-105", "켠 직후에는 토크를 내지 않는다", tc_105 },
         { "TC-106", "후진 기어의 방향", tc_106 },
         { "TC-107", "기어가 P, N, 알 수 없는 값이면 토크 0", tc_107 },
-        { "RT-001", "차량 속도 메시지가 끊김 (robustness)", rt_001 },
+        { "TC-108", "켤 때 구동 허용 신호는 끊겨 있다", tc_108 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

@@ -24,8 +24,13 @@ torque_t monitor_allowed_torque(permille_t pedal_safe, bool brake, gear_t gear)
         return 0;
     }
 
-    /* SWR-06: 허용 토크는 페달 위치에 비례하는 상한에 오차를 더한 값이다 */
-    allowed = ((p * TORQUE_MAX) / PEDAL_FULL) + TORQUE_TOLERANCE;
+    /* SWR-06: 허용 토크는 페달 위치에 비례하는 상한에 오차를 더한 값이다.
+     * 후진에서는 상한이 전진의 40%다 */
+    allowed = (p * TORQUE_MAX) / PEDAL_FULL;
+    if (gear == GEAR_R) {
+        allowed = (allowed * ALLOWED_REVERSE_PCT) / 100;
+    }
+    allowed += TORQUE_TOLERANCE;
     if (allowed > TORQUE_MAX) {
         allowed = TORQUE_MAX;
     }

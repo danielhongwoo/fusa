@@ -8,9 +8,6 @@
 
 void input_read(inputs_t *in)
 {
-    time_ms_t age_ms = 0u;
-    speed_t speed = 0;
-
     in->apps1_mv = hal_adc_read_mv(HAL_ADC_APPS1);
     in->apps2_mv = hal_adc_read_mv(HAL_ADC_APPS2);
     in->brake = hal_brake_pressed();
@@ -18,6 +15,4 @@ void input_read(inputs_t *in)
     if ((in->gear != GEAR_P) && (in->gear != GEAR_R) && (in->gear != GEAR_D)) {
         in->gear = GEAR_N; /* 알 수 없는 값은 N으로 본다 */
     }
-    in->speed_valid = hal_can_rx_speed(&speed, &age_ms) && (age_ms <= SPEED_TIMEOUT_MS);
-    in->speed = in->speed_valid ? speed : 0;
 }

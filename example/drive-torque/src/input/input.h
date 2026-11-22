@@ -14,8 +14,6 @@ typedef struct {
     millivolt_t apps2_mv;
     bool brake;
     gear_t gear;
-    bool speed_valid; /* 속도 메시지를 제때 받았는가 */
-    speed_t speed;
 } inputs_t;
 
 /* 페달 검사의 상태 */
@@ -30,7 +28,6 @@ typedef struct {
 #define PEDAL_MISMATCH_MAX  ((permille_t)50) /* 두 채널의 차이가 이 값을 넘으면 불일치 */
 #define PEDAL_FAULT_CYCLES  ((uint8_t)3)     /* 검사 실패가 이만큼 이어지면 페달 고장 */
 #define PEDAL_READY_CYCLES  ((uint8_t)3)     /* 켠 뒤 이만큼 이어서 통과해야 페달 값을 쓴다 */
-#define SPEED_TIMEOUT_MS    ((time_ms_t)50)
 
 void input_read(inputs_t *in);
 
