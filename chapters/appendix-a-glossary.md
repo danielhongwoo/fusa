@@ -212,6 +212,7 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 
 그곳 하나가 고장 나면 다른 것이 막아 주지 못하고 그대로 시스템의 failure가 되는 곳이다. 하드웨어만이 아니다. 여러 요소가 함께 쓰는 입력이나, 여러 벌이 똑같이 도는 소프트웨어도 single point of failure가 될 수 있다.
 
+- 주의: 자동차의 하드웨어 지표에 비슷한 이름의 말이 있다. 뜻이 같다고 보지 않는다. 9장에서 다룬다.
 - 근거: Leveson과 Turner (1993) 38쪽 (hardware interlock을 없앤 것이 소프트웨어를 single point of failure로 만들었다), `ariane-501-report` 9쪽 (두 장치가 같은 소프트웨어를 돌린다), `koopman-toyota-ua` 33-34쪽 (재판에서 원고 쪽 전문가였던 사람의 발표 자료)
 
 ### interlock
@@ -339,11 +340,11 @@ ISO와 IEC의 문서에서 쓰는 조동사다. shall은 요구사항, should는
 - 주의: 다른 기관의 문서는 다르게 정의한다. SORA는 should를 강한 의무의 뜻으로 쓴다. 문서마다 정의를 먼저 찾는다.
 - 근거: ISO/IEC Directives, Part 2 (2021) 3.3.3 - 3.3.7, 7절 (웹에서 읽음, 2026-11-22). `sora-2-5-main-body` 29쪽
 
-### compliance, assessment, certification
+### compliance, 인증서, 승인
 
-이 책에서는 이렇게 구분한다. compliance는 만든 쪽이 규격의 요구사항을 만족한다고 주장하는 것이다. assessment는 만든 쪽에서 떨어진 누군가가 그 주장을 따져 보는 것이다. certification은 권한이 있는 기관이 결과를 공식으로 인정하는 것이다.
+이 책에서는 이렇게 구분한다. compliance (conformance)는 만든 쪽이 규격의 요구사항을 만족한다고 주장하는 것이다. 인증서는 제삼자 기관이 평가한 결과를 낸 문서다. 승인은 규제 당국이 법이 정한 절차로 인정하는 것이다.
 
-- 주의: 이 구분은 저자의 정리이고 규격의 정의가 아니다. 항공에서는 소프트웨어를 따로 인증하지 않고, 소프트웨어가 든 시스템을 특정한 인증의 맥락에서 승인한다 `(2차 자료)`.
+- 주의: 이 구분은 저자의 정리이고 규격의 정의가 아니다. "평가받았다"는 말은 무엇을 평가했는지를 함께 물어야 한다 (verification, audit, functional safety assessment 항목). 항공에서는 소프트웨어를 따로 인증하지 않고, 소프트웨어가 든 시스템을 특정한 인증의 맥락에서 승인한다 `(2차 자료)`.
 - 근거: `nhtsa-safety-standards-assessment` 33-34쪽 (DO-178C와 ISO 26262:2011을 설명), `faa-ac-20-115d` 1쪽
 
 ### safety lifecycle
@@ -359,16 +360,16 @@ lifecycle의 활동을 이 프로젝트에서 누가, 언제, 무엇으로 하�
 
 - 근거: `nasa-gb-8719-13` 23쪽, 101쪽. `nasa-std-8739-8b` 6쪽
 
-### verification, audit, assessment
+### verification, validation, audit, functional safety assessment
 
-만든 것을 확인하는 세 가지 일이다. verification은 산출물이 그 단계의 입력을 만족하는지를 본다. audit은 정한 과정을 따랐는지를 본다. assessment는 증거를 바탕으로 functional safety가 달성되었는지를 판단한다.
+만든 것을 확인하는 네 가지 일이다. verification은 산출물이 그 단계의 입력을 만족하는지를 본다. validation은 만든 것이 정해진 쓰임에서 요구사항을 만족하는지를 본다. audit은 정한 과정을 따랐는지를 본다. functional safety assessment는 만든 쪽에서 독립된 사람이 증거를 바탕으로 functional safety가 달성되었는지를 판단한다.
 
-- 주의: 셋은 서로를 대신하지 못한다. 16장의 test는 verification의 한 수단이다.
+- 주의: 넷은 서로를 대신하지 못한다. audit과 functional safety assessment를 섞지 않는다. 앞의 것은 과정을, 뒤의 것은 결과를 본다. 16장의 test는 verification의 한 수단이다. validation의 뜻은 문서마다 조금 다르다. 요구사항의 명세 자체가 옳은지를 validation에 넣는 문서도 있고, HSE는 그것을 functional safety assessment에 넣는다.
 - 근거: `hse-hsg238` 43쪽, 52쪽. `nasa-std-8739-8b` 10쪽
 
 ### independence (독립)
 
-확인하는 사람이 만든 사람에게서 떨어져 있는 정도다. 기술의 독립 (개발에 참여하지 않았다), 관리의 독립 (다른 조직이고 스스로 정한다), 재정의 독립 (예산을 개발 조직이 쥐지 않는다)으로 나눌 수 있다.
+확인하는 사람이 만든 사람에게서 떨어져 있는 정도다. NASA는 독립된 검증 조직에 대해 기술의 독립 (개발에 참여하지 않았다), 관리의 독립 (다른 조직이고 스스로 정한다), 재정의 독립 (예산을 개발 조직이 쥐지 않는다)의 셋을 든다.
 
 - 주의: ISO 26262가 등급에 따라 요구하는 독립의 정도는 이 책이 확인하지 못했다. 소프트웨어 요소 사이의 독립 (freedom from interference)과는 다른 말이다.
 - 근거: `nasa-std-8739-8b` 48쪽. `nhtsa-safety-standards-assessment` 34쪽 `(2차 자료)` (ISO 26262:2011 기준)
