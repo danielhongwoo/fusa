@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다. 10, 11, 13, 14장과 부록 E에서 스물여섯 개를 더했다.
 
 ## 읽는 법
 
@@ -263,6 +263,44 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 
 - 근거: `autosar-e2e-protocol` 244쪽
 
+### hazard의 mitigation과 control
+
+NASA의 지침서가 쓰는 구분이다. control은 hazard를 막는 수단이고 mitigation은 줄이는 수단이다. 소프트웨어와 논리로만 만든 격리 (논리적인 firewall)는 하드웨어의 고장이나 전자파로 무너질 수 있어서 mitigation으로만 센다.
+
+- 근거: `nasa-gb-8719-13` 144쪽
+
+### partitioning
+
+OS가 아는 영역마다 memory를 나누어, 한 영역의 코드가 다른 영역의 memory를 바꾸지 못하게 하는 것이다. 실제로 막는 것은 MPU 같은 하드웨어이고 OS는 그것을 설정한다. 소스 코드를 파일이나 함수로 나눈 것은 partitioning이 아니다.
+
+- 주의: 같은 영역 안의 부품끼리는 막지 않는다. DMA나 다른 core의 접근을 막지 못하는 구현이 있다.
+- 근거: `autosar-safety-measures` 13쪽, 15쪽, 18쪽, 20쪽 `(2차 자료)` (ISO 26262:2018 기준)
+
+### mixed criticality
+
+등급이 다른 소프트웨어를 한 제어기에 함께 싣는 것이다. 높은 쪽이 낮은 쪽에게서 방해받지 않음을 보이지 못하면 전체를 높은 등급으로 만든다.
+
+- 근거: `autosar-safety-measures` 9쪽, 15쪽 `(2차 자료)` (ISO 26262:2018 기준). `nasa-gb-8719-13` 20쪽
+
+### majority voting
+
+홀수 개의 채널이 같은 일을 하고 다수의 결과를 따르는 것이다. 셋 가운데 둘이면 고장 하나를 견딘다.
+
+- 근거: `nasa-gb-8719-13` 142쪽
+
+### limp home
+
+고장이 난 뒤에 출력을 줄여 계속 달리게 하는 동작이다. 이 책의 예제에서는 "줄여 감" 상태다.
+
+- 근거: `nasa-toyota-ua-report` 49쪽, 67쪽
+
+### time to criticality
+
+고장이 난 때부터 시스템이 위험한 상태에 이를 때까지의 시간이다. 자동으로 대응할 때 쓸 수 있는 여유를 정한다.
+
+- 주의: 자동차의 FTTI와 닮았지만 다른 문서의 말이다.
+- 근거: `nasa-gb-8719-13` 117쪽
+
 ## 소프트웨어 기법
 
 ### E2E (end-to-end) protection
@@ -312,6 +350,60 @@ structural coverage의 기준 가운데 하나다. decision 안의 condition마�
 
 - 주의: 개발자의 편의는 이유가 되지 못한다.
 - 근거: `misra-compliance-2020` 20-21쪽
+
+### traceability (추적)
+
+요구사항을 위로는 그것이 나온 곳에, 아래로는 구현한 코드와 확인한 test에 ID로 잇는 것이다. 이어져 있다는 것이 이어진 내용이 옳다는 뜻은 아니다.
+
+- 근거: `nasa-gb-8719-13` 112-113쪽
+
+### defensive programming
+
+fault가 failure가 되지 않게 하려고 입력과 자기 상태를 의심하며 쓰는 방법의 모음이다. 입력의 범위 검사가 가장 단순한 예다.
+
+- 근거: `nasa-gb-8719-13` 147쪽
+
+### undefined behavior, implementation-defined behavior
+
+undefined behavior는 틀린 구성이나 틀린 data에 대해 C 규격이 아무것도 요구하지 않는 동작이다. implementation-defined behavior는 compiler가 고르되 어떻게 골랐는지를 문서로 밝혀야 하는 동작이다.
+
+- 근거: N1570 (C11의 공개된 최종 초안) 3.4.1절, 3.4.3절
+
+### integer promotion
+
+`int`보다 작은 정수형이 식 안에서 먼저 `int`로 넓어지는 것이다. 부호 없는 작은 형끼리 빼거나 밀어도 계산은 부호 있는 `int`로 한다.
+
+- 근거: N1570 6.3.1.1절
+
+### language subset, coding standard
+
+언어의 구성 가운데 모호하거나 틀리기 쉬운 것을 쓰지 않기로 해서 만든 부분집합이고, 그것을 적은 문서가 coding standard다. 규칙으로 만든 부분집합은 compiler가 지키게 해 주지 않는다.
+
+- 근거: `nasa-gb-8719-13` 208쪽
+
+### rule, directive (MISRA)
+
+MISRA의 지침은 둘로 나뉜다. rule은 source 코드만 보고 판정할 수 있는 요구이고, directive는 과정이나 문서에 걸쳐 있어 코드만으로는 판정되지 않는 요구다. 지침마다 mandatory (어길 수 없다), required (deviation이 있어야 어길 수 있다), advisory (할 수 있는 만큼 따른다)의 category가 있다.
+
+- 근거: `misra-compliance-2020` 16쪽, 23쪽
+
+### decidable, undecidable rule
+
+decidable한 rule은 도구가 늘 예나 아니오로 답할 수 있는 rule이다. 실행 중의 값이나 흐름에 달린 rule은 undecidable해서, 도구가 진단을 내지 않았다는 것이 지켰다는 뜻이 되지 않는다.
+
+- 근거: `misra-compliance-2020` 17-19쪽
+
+### false positive (거짓 경보)
+
+도구가 위반이 아닌 것을 위반으로 알리는 것이다. 모든 위반을 찾으면서 거짓 경보가 없는 정적 분석 도구는 만들 수 없다.
+
+- 근거: `misra-compliance-2020` 12-13쪽
+
+### cyclomatic complexity
+
+함수 안의 판단의 수에서 나오는 값으로, 서로 독립인 경로의 수에 해당한다. 한계값은 문서마다 다르다.
+
+- 근거: `nasa-gb-8719-13` 96쪽
 
 ## 분석과 논증
 
@@ -479,6 +571,21 @@ SORA에서 운용자가 만족해야 하는 안전 목표다. SAIL에 따라 목
 
 - 근거: `sora-2-5-main-body` 53-55쪽
 
+### robustness
+
+SORA에서 대책이 얼마나 든든한지를 나타내는 수준이다. 위험을 얼마나 잘 줄이는가 (integrity)와 그것이 달성되었다고 얼마나 확신할 수 있는가 (assurance)를 함께 본다.
+
+- 근거: `sora-2-5-main-body` 25-26쪽
+
+### DAL (development assurance level)
+
+항공에서 개발 오류를 줄이는 활동의 엄격함을 나타내는 등급이다. 기능이 관여하는 failure condition의 심각도에 따라 정한다. 기능에 주는 것을 FDAL, 소프트웨어나 전자 하드웨어 같은 item에 주는 것을 IDAL이라고 한다.
+
+- 주의: 드론에서는 SAIL이 높은 운용에서 쓰인다. EASA의 문서는 SAIL IV에서 DAL C의 목표를 쓸 수 있는 방법 가운데 하나로 든다.
+- 근거: `easa-moc-light-uas-2510` 5쪽, 9쪽. `easa-moc-light-uas-high-risk-2510` 5-6쪽, 9쪽
+
+## 플랫폼
+
 ### hardware-software interface
 
 소프트웨어와 하드웨어가 만나는 신호를 하나씩 적은 명세다. 신호마다 단위와 범위, 켠 직후의 값, 고장이 났을 때 소프트웨어에 어떻게 보이는가, 누가 진단하는가를 적는다. 소프트웨어의 요구사항이 뜻으로 적은 것 (브레이크를 밟았으면)과 코드가 읽는 것 (pin의 전압) 사이를 잇는다.
@@ -492,15 +599,64 @@ SORA에서 운용자가 만족해야 하는 안전 목표다. SAIL에 따라 목
 - 주의: 풀이는 항공의 multicore 지침에서 가져왔다. 자동차용 MCU가 이 방식을 어떻게 쓰는지는 확인하지 못했다.
 - 근거: `easa-amc-20-193` 2쪽
 
-### robustness
+### OS-Application
 
-SORA에서 대책이 얼마나 든든한지를 나타내는 수준이다. 위험을 얼마나 잘 줄이는가 (integrity)와 그것이 달성되었다고 얼마나 확신할 수 있는가 (assurance)를 함께 본다.
+AUTOSAR의 OS가 보호를 나누는 단위다. task와 interrupt 처리 루틴 등을 묶은 것이다. trusted로 둔 것에는 memory 보호와 감시를 끌 수 있다.
 
-- 근거: `sora-2-5-main-body` 25-26쪽
+- 근거: `autosar-safety-measures` 13쪽
 
-### DAL (development assurance level)
+### priority inversion
 
-항공에서 개발 오류를 줄이는 활동의 엄격함을 나타내는 등급이다. 기능이 관여하는 failure condition의 심각도에 따라 정한다. 기능에 주는 것을 FDAL, 소프트웨어나 전자 하드웨어 같은 item에 주는 것을 IDAL이라고 한다.
+낮은 우선순위의 task가 자원을 쥔 채 중간 우선순위의 task에 밀리는 동안, 그 자원을 기다리는 높은 우선순위의 task도 함께 멈추는 문제다.
 
-- 주의: 드론에서는 SAIL이 높은 운용에서 쓰인다. EASA의 문서는 SAIL IV에서 DAL C의 목표를 쓸 수 있는 방법 가운데 하나로 든다.
-- 근거: `easa-moc-light-uas-2510` 5쪽, 9쪽. `easa-moc-light-uas-high-risk-2510` 5-6쪽, 9쪽
+- 근거: `nasa-gb-8719-13` 243쪽
+
+### WCET (worst-case execution time)
+
+가장 나쁜 경우의 실행 시간이다. multicore에서는 다른 core의 소프트웨어 때문에 크게 늘 수 있다.
+
+- 근거: `faa-ac-20-193` 7쪽, 10-11쪽
+
+### interference channel
+
+multicore 프로세서에서, 함께 쓰는 자원 (cache, memory, interconnect) 때문에 소프트웨어 사이에 간섭이 생길 수 있게 하는 플랫폼의 성질이다. 항공의 지침이 쓰는 말이다.
+
+- 근거: `faa-ac-20-193` 4쪽
+
+### safety net
+
+오동작의 원인과 상관없이 동작하는, 프로세서 바깥의 완화 수단이다. 이 책의 예제에서는 외부 watchdog이 이 자리에 있다.
+
+- 근거: `faa-ac-20-193` 5쪽
+
+## 차량의 전자 장치
+
+### ECU (electronic control unit)
+
+차량의 제어기다. 이 책의 예제에서 구동 토크를 정하는 제어기는 VCU (vehicle control unit)라고 부른다. 미국 정부의 보고서는 같은 자리의 제어기를 EV PCM이라고 부른다.
+
+- 근거: `nhtsa-etc-ev-fsa` 33쪽
+
+### inverter
+
+배터리의 직류를 모터가 쓰는 교류로 바꾸고 모터의 전류를 제어하는 장치다. 이 책의 예제에서는 item 밖에 있다.
+
+- 근거: `nhtsa-etc-ev-fsa` 33-34쪽
+
+### CAN, bus-off
+
+CAN은 차량의 제어기를 잇는 bus다. frame은 identifier를 싣고, identifier의 값이 작을수록 우선순위가 높다. 오류를 되풀이하는 노드가 스스로 bus에서 물러나는 것을 bus-off라고 한다.
+
+- 근거: CAN in Automation의 공개 페이지 "CAN CC" (https://www.can-cia.org/can-knowledge/can-cc, 2026-11-23에 봄)
+
+### DTC (diagnostic trouble code), MIL
+
+DTC는 제어기가 고장을 찾았을 때 남기는 고장 코드다. MIL (malfunction indicator light)은 계기판의 고장 표시등이다. 둘은 고장의 기록이고 고장 자체가 아니다.
+
+- 근거: `nhtsa-etc-ev-fsa` 35쪽. `nasa-toyota-ua-report` 81쪽
+
+### SW-C, RTE, complex driver
+
+AUTOSAR Classic의 말이다. SW-C는 하드웨어에 독립인 응용의 부품이고, RTE는 부품 사이로 값을 옮기는 층이며, complex driver는 입출력에 직접 닿는 부분이다.
+
+- 근거: `autosar-safety-measures` 11쪽, 60쪽
