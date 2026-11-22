@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다. 10 - 14장과 부록 E에서 스물일곱 개를 더했다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다. 10 - 14장과 부록 E에서 스물일곱 개를 더했다. 15 - 17장에서 스물아홉 개를 더했다.
 
 ## 읽는 법
 
@@ -344,8 +344,9 @@ NASA의 지침서가 쓰는 구분이다. control은 hazard를 막는 수단이�
 
 ### statement coverage, decision coverage
 
-structural coverage의 기준이다. statement coverage는 모든 문장이 한 번은 실행되었는지를 본다. decision coverage는 모든 판단이 참과 거짓으로 한 번씩 갔는지를 본다.
+structural coverage의 기준이다. statement coverage는 모든 문장이 한 번은 실행되었는지를 본다. decision coverage는 모든 판단이 참과 거짓으로 한 번씩 갔는지를 본다. condition coverage는 판단 안의 조건마다 참과 거짓을 가졌는지를 본다. multiple condition coverage는 입력의 모든 조합을 해 보는 것이어서 입력이 n개면 2^n개의 test가 든다.
 
+- 주의: 2^n의 n은 조건의 수가 아니라 입력의 수다. `(A and B) or (A and C)`는 입력이 셋이고 조건이 넷이다.
 - 근거: `nasa-mcdc-tutorial` 13-15쪽
 
 ### MC/DC (modified condition/decision coverage)
@@ -353,6 +354,7 @@ structural coverage의 기준이다. statement coverage는 모든 문장이 한 
 structural coverage의 기준 가운데 하나다. decision 안의 condition마다 그 condition이 decision의 결과를 혼자서 바꿀 수 있음을 test로 보인다. 입력이 n개인 decision에는 보통 test가 적어도 n+1개 필요하다.
 
 - 주의: 혼자서 바꿀 수 있음을 보이는 방식이 둘이다. unique-cause는 다른 condition을 모두 고정한다. masking은 다른 condition이 결과에 영향을 주지 못하는 것을 논리로 보인다.
+- 주의: unique-cause는 판단의 논리를 분석하지 않아도 되지만 같은 condition이 되풀이되거나 강하게 묶인 판단에는 쓸 수 없다. masking은 논리 분석이 필요하고 그런 판단에도 쓸 수 있다. 연산자가 한 종류인 판단에서는 두 방식이 같다.
 - 주의: structural coverage는 요구사항에 따라 만든 test가 코드를 얼마나 실행했는지 확인하는 수단이다. test를 만드는 방법이 아니다.
 - 근거: `nasa-mcdc-tutorial` 10-12쪽, 15-17쪽, 19쪽, 79-82쪽
 
@@ -416,6 +418,137 @@ decidable한 rule은 도구가 늘 예나 아니오로 답할 수 있는 rule이
 함수 안의 판단의 수에서 나오는 값으로, 서로 독립인 경로의 수에 해당한다. 한계값은 문서마다 다르다.
 
 - 근거: `nasa-gb-8719-13` 96쪽
+
+### review, inspection (Formal Inspection)
+
+review는 사람이 산출물 (요구사항, 설계, test 계획, 코드)을 읽어 결함이나 어긋남을 찾는 일을 두루 가리킨다. NASA의 지침서가 다루는 Formal Inspection은 정해진 단계와 검토자마다의 역할을 갖춘 구조화된 review로, 만든 사람의 이름을 따 Fagan Inspection이라고도 한다.
+
+- 주의: Formal Inspection은 formal method가 아니다. 사람이 구조를 갖춰 읽는 방법이고, 수학으로 명세하고 증명하는 방법과 다르다.
+- 주의: 읽은 사람이 떠올린 것만 찾으므로 빠짐없음은 보장하지 못한다. 앞의 풀이 가운데 review를 두루 가리키는 말은 이 책의 풀이다.
+- 근거: `nasa-gb-8719-13` 118-119쪽, 176쪽
+
+### 정적 분석 (static analysis)
+
+코드를 실행하지 않고 읽어서 결함이나 규칙 위반을 찾는 방법과 그 도구다. 분석 시간과 정밀도는 맞바뀌고, 도구마다 보는 것이 다르다.
+
+- 주의: 진단이 없다는 것은 그 도구가 검사하는 종류에서 그 도구가 보는 방식대로 지적하지 않았다는 뜻이다. 결함이 없다는 뜻이 아니다. false positive와 decidable, undecidable rule 항목도 본다.
+- 근거: `misra-compliance-2020` 13쪽, 18-19쪽. `nasa-toyota-ua-report` 149쪽
+
+### formal method (formal specification, formal verification)
+
+수학으로 요구사항을 쓰고 그것이 지켜짐을 보이는 방법의 모음이다. 요구사항을 형식적인 수학 언어로 쓰는 것이 formal specification이고, 결과물이 그 명세를 만족한다는 증명을 주는 것이 formal verification이다.
+
+- 주의: NASA의 지침서는 formal method가 높은 수준의 assurance를 준다고 인정되지만 정량적인 신뢰도를 보장하지는 않는다고 적는다. 증명 없이 명세를 쓰는 과정만으로도 요구사항의 문제를 찾은 사례가 있다.
+- 근거: `nasa-gb-8719-13` 68-69쪽
+
+### abstract interpretation, sound
+
+실제 실행의 모든 경우를 덮는 더 큰 집합을 계산하고, 그 집합이 금지된 영역에 닿지 않으면 실제 실행도 닿지 않는다고 보는 정적 분석의 방법이다. 모든 경우를 덮는 분석을 sound하다고 하고, sound한 분석기가 경보를 내지 않았다면 검사한 종류의 오류가 없다는 증명이 된다. 대가는 일어날 수 없는 오류에도 경보가 나는 거짓 경보다.
+
+- 주의: 보장하는 것은 검사한 종류의 오류 (예: 실행 중 오류)가 없다는 것까지다. 요구사항대로 동작한다는 뜻이 아니다.
+- 주의: 이 책의 예제는 이런 도구를 쓰지 않았다. 풀이는 도구 개발 쪽의 공개된 설명 세 곳에 기댄다.
+- 근거: Cousot, "Abstract Interpretation in a Nutshell" 7절, 9절, 11절, 13절 (웹에서 읽음, 2026-11-23). Brat 외, "IKOS" (NASA Ames, 2014) 1쪽. Astree 연구 팀 (ENS, INRIA)의 소개 쪽 (웹에서 읽음, 2026-11-23)
+
+### model checking, state explosion
+
+유한한 상태의 시스템을 자동으로 검증하는 formal method다. 시스템을 상태의 모델로, 성질을 temporal logic으로 적으면 도구가 상태 공간을 훑어 성질이 성립하는지 본다. 상태의 수가 memory나 시간을 넘기 쉬운 문제를 state explosion이라 하고, 이것이 주된 어려움이다.
+
+- 주의: 모델에 대한 검증이다. 코드가 모델과 같다는 것은 따로 보여야 한다.
+- 근거: `nasa-gb-8719-13` 128-129쪽. `nasa-toyota-ua-report` 150쪽, 152쪽
+
+### bounded model checking, unwinding (unwinding assertion)
+
+프로그램의 실행을 정해진 단계 수까지만 모델로 만들어 검증하는 방법이다. 반복문을 정한 횟수만큼 펼치는 것 (unwinding)으로 구현한다. 펼친 횟수가 모자라면 더 깊은 경로의 결함을 놓칠 수 있어서, 마지막 복사본에서 반복 조건이 거짓인지를 단언하는 unwinding assertion을 넣고, 그것이 모두 성립하면 준 한계가 그 프로그램에 충분하다. 이 책의 예제가 쓰는 CBMC가 이 방법의 도구다.
+
+- 주의: 한계를 세는 법이 문서마다 다르게 읽힌다. 이 책은 CBMC 6.11에서 열 번 도는 반복문이 `--unwind 11`에서 증명되고 `--unwind 10`에서 unwinding assertion이 실패함을 직접 확인했다.
+- 주의: 한계가 충분한지 보이지 않았다면 실행의 앞부분만 본 것이어서 증명이 아니다.
+- 근거: CPROVER Manual, "Understanding Loop Unwinding". CBMC training, "Loop unwinding". Cousot 6절 (모두 웹에서 읽음, 2026-11-23). 이 책의 확인 (cbmc 6.11.0, 2026-11-23, `notes/claims.md`의 C-15-025)
+
+### 불변식 (invariant)
+
+프로그램이 시작할 때 성립하고 한 단계를 돌 때마다 유지되어, 어느 단계에서나 성립하는 상태의 조건이다. 이 책의 예제에서 성질 7은 한 주기를 돌기 전의 조건이 한 주기 뒤에도 성립함을 보이고, 켠 직후가 그 조건을 지킴을 따로 보여, 이 둘을 이어 불변식으로 쓴다. 한 주기의 증분이 아니므로 여러 주기에 쌓이지 않는다.
+
+- 주의: 풀이는 이 책의 것이고, 받은 문서는 이 말을 설명하지 않는다. 이 예제의 성질 7을 한 주기의 증분으로 잘못 읽은 일이 있었다 (15장).
+- 근거: `example/drive-torque/test/proof/harness.c` 성질 7 (`prove_faulty_function_bounded`), `reviews/2026-11-23-stage2-part3/README.md`
+
+### requirements-based test
+
+요구사항에서 출발해 만든 test다. 기댓값을 코드가 아니라 요구사항에서 정하므로 구현되지 않은 요구사항을 찾을 수 있고, 코드의 출력을 기댓값으로 여기는 치우침이 없다. 이 책은 기댓값을 요구사항의 숫자로 적는다.
+
+- 주의: 코드를 보고 만든 test는 코드가 하는 일을 확인할 뿐이고 해야 하는 일을 확인하지 못한다. structural coverage는 이 test가 코드를 얼마나 실행했는지를 재는 수단이지 test를 만드는 방법이 아니다.
+- 근거: `nasa-mcdc-tutorial` 10-12쪽, 16쪽 (DO-248A를 인용한 부분은 `(2차 자료)`)
+
+### equivalence class, boundary value
+
+equivalence class는 같은 방식으로 처리될 입력을 묶은 갈래이고, boundary value는 갈래가 바뀌는 경계의 값이다. 요구사항 하나에서 test를 뽑을 때 갈래마다 하나를 고르고 경계에서는 한계의 값, 그 아래, 그 위를 고른다.
+
+- 주의: 받은 문서에서 이 둘은 test 계획 항목에 이름으로만 나온다. 풀이는 이 책의 것이다. 경계와 성능의 요구사항을 한계에서, 아래에서, 위에서 test하라는 말은 NASA의 지침서에 있다.
+- 근거: `nasa-gb-8719-13` 179쪽, 187쪽. `nasa-mcdc-tutorial` 24-25쪽
+
+### 단락 평가 (short-circuit evaluation)
+
+C의 `&&`와 `||`에서 왼쪽만으로 결과가 정해지면 오른쪽을 평가하지 않는 것이다. MC/DC에서는 평가하지 않는 피연산자를 "상관없음"으로 두어 최소 test를 줄일 수 있다.
+
+- 주의: 그렇게 줄인 최소 test는 compiler가 최적화할 때에도 옳게 동작할 때에만 유효하다. 앞의 풀이 가운데 단락 평가의 뜻은 이 책의 풀이다.
+- 근거: `nasa-mcdc-tutorial` 49-51쪽
+
+### dead code, deactivated code
+
+coverage가 100%에 못 미칠 때 실행되지 않은 코드의 출처로 드는 두 가지다. 이 책의 말로 풀면 dead code는 어떤 요구사항에도 쓰이지 않는 코드이고, deactivated code는 일부러 넣었지만 이 설정이나 이 쓰임에서는 실행되지 않게 해 둔 코드다.
+
+- 주의: 풀이는 이 책의 것이고 받은 문서는 두 말의 정의를 싣지 않는다. 같은 문서가 dead code는 지우는 것이 좋고 deactivated code는 설명하고 다루는 것이 좋다고 둘을 나눠 적는다.
+- 주의: 17장의 dormant code와 다른 말이다.
+- 근거: `nasa-mcdc-tutorial` 53쪽 `(2차 자료)` (DO-178B를 설명), 67-68쪽
+
+### instrumentation
+
+coverage 도구가 실행된 곳을 알려고 코드에 probe나 flag를 넣는 일이다. 코드를 바꾸므로 오류를 숨기거나 만들지 않음을 보여야 하고, 보통 원래 코드와 probe를 넣은 코드에 같은 test를 돌려 견준다.
+
+- 주의: 도구가 확인하는 것은 probe를 넣은 코드이고, 넣지 않은 코드도 그렇다는 것은 가정이다. probe를 넣자 compiler가 함수의 호출 순서를 바꾼 예가 있다.
+- 근거: `nasa-mcdc-tutorial` 56쪽, 59-60쪽
+
+### mutation testing (변이 검사), equivalent mutant
+
+프로그램에 작은 구문의 변화를 하나씩 넣은 변이 (mutant)를 만들고, test 묶음이 원래 프로그램과 다른 결과를 내어 그 변이를 가려내는지 보는 방법이다. 가려낸 변이의 비율이 test 묶음의 질을 나타낸다. 구문만 다르고 기능이 같아 어떤 test로도 가려낼 수 없는 변이를 equivalent mutant라 한다.
+
+- 주의: 프로그램이 같은지는 판정할 수 없는 문제여서 equivalent mutant를 모두 자동으로 찾을 수는 없다. 그래서 "동등하다"는 이유를 사람이 적고, 그 이유가 틀릴 수 있다.
+- 주의: "모두 잡음"은 넣어 본 변이를 모두 잡았다는 뜻이다. 이 책의 예제에서는 다른 사람이 넣은 변이가 네 번 구멍을 찾았다.
+- 근거: Jia와 Harman, "An Analysis and Survey of the Development of Mutation Testing" (저자 원고, 2010) 1쪽, 3쪽, 4쪽 (웹에서 읽음, 2026-11-23). `example/drive-torque/docs/test-report.md`
+
+### 대조 test
+
+이 예제의 용어다. 안전 수단을 뺀 채 같은 fault를 넣어 보아, 수단이 없으면 safety goal이 깨짐을 보이는 test다 (예제의 ID는 `NC-`). 수단이 있을 때 통과하는 test가 정말 수단을 시험하는지 확인한다.
+
+- 주의: 다른 수단이 같은 fault를 막기 시작하면 대조는 더는 대조가 아니게 된다. 수단을 더할 때마다 대조를 다시 본다.
+- 근거: `example/drive-torque/docs/test-report.md` 3절, 6절
+
+### model-in-the-loop, software-in-the-loop, processor-in-the-loop, hardware-in-the-loop
+
+test를 돌리는 환경을 나눈 말이다. 회사의 설명에 따르면 software-in-the-loop는 개발 컴퓨터에서 compile한 source를 실행하고, processor-in-the-loop는 cross-compile한 코드를 target processor에서 실행하며, hardware-in-the-loop는 제어기의 하드웨어와 소프트웨어 같은 실물 부품을 모의 환경과 짝지어 쓴다 `(2차 자료)`. model-in-the-loop는 C 코드를 만드는 model을 돌리는 것으로 구분한 논문이 있다.
+
+- 주의: 이 책은 이 말들을 줄여 쓰지 않는다. SIL이 safety integrity level과 헷갈리기 때문이다.
+- 주의: 받은 문서에는 이 구분이 없어서 회사의 설명 둘과 논문 하나로 확인했다. 환경마다 보이는 것과 못 보이는 것은 이 책의 정리다.
+- 근거: MathWorks, "Model Development Processes" (설명서). Synopsys (2025) 2쪽 (백서). Jordan 외 (2018) 5쪽 (모두 웹에서 읽음, 2026-11-23)
+
+### back-to-back test
+
+model에서 생성한 코드가 model의 시뮬레이션과 같은 결과를 내는지 견주는 test다. equivalence test라고도 한다 `(2차 자료)`.
+
+- 주의: 이 책은 이 설명을 한 회사의 문서로만 확인했다. 규격이 이 test를 권하는지는 확인하지 못했다.
+- 근거: MathWorks, "Back-to-Back Equivalence Testing" (설명서, 웹에서 읽음, 2026-11-23)
+
+### negative test
+
+소프트웨어가 의도한 기능만 하고 그 밖의 기능은 하지 않는다는 것을 보이는 test다. 예를 들어 고장이 없을 때 대응이 일어나지 않음을 본다.
+
+- 근거: `nasa-gb-8719-13` 194쪽
+
+### sanitizer
+
+이 책의 예제가 쓰는 뜻으로는, 검사를 끼워 넣은 build (AddressSanitizer와 UndefinedBehaviorSanitizer)로 test를 돌려 test가 지나간 길의 memory 오류와 정의되지 않은 동작을 알리는 도구다.
+
+- 주의: test가 지나간 길에서만 본다. 이 예제에서 한 칸 넘는 쓰기가 같은 stack 변수 안의 이웃에 떨어졌을 때 AddressSanitizer는 알리지 않았다. 도구가 알리지 않았다는 것은 그 도구가 보는 범위에서 알리지 않았다는 뜻이다.
+- 근거: `example/drive-torque/docs/tools.md` 2절, `example/drive-torque/tools/variants.sh`
 
 ## 분석과 논증
 
@@ -545,6 +678,87 @@ ISO 26262에서 산출물과 과정을 확인하는 활동을 가리키는 말�
 과정이 종이에 있는 것으로 그치지 않고 실제로 지켜지게 하는 조직의 성질을 가리키는 말이다. 받은 문서에 정의는 없고, 그것이 없을 때의 모습 (일정의 압박, 규칙을 무시하라는 압박, 소통의 실패, 안전이 우선순위를 받지 못함)이 적혀 있다.
 
 - 근거: `hse-hsg238` 7쪽, 32쪽. `nasa-gb-8719-13` 265쪽. `b737max-jatr` 50쪽
+
+## 도구와 밖에서 온 소프트웨어
+
+이 절의 풀이는 대부분 공개된 웹 자료와 NASA, MISRA의 문서에 기댄다. 규격의 용어는 모두 `(2차 자료)`다.
+
+### tool qualification
+
+이 책에서는 도구나 소프트웨어를 쓰기 전에, 그것이 정한 목적에 맞게 동작한다는 근거를 갖추는 일을 뜻한다. 이 풀이는 이 책의 것이다.
+
+- 주의: 필요한 경우와 방법은 규격마다 다르다. 항공의 지침은 도구의 출력을 다른 verification 활동이 확인하면 qualification이 필요하지 않다고 읽힌다. MISRA Compliance:2020은 어떤 과정 표준이 어떤 경우 compiler와 정적 분석 도구의 qualification을 요구한다고만 적고, 그 경우가 무엇인지는 적지 않는다.
+- 근거: `misra-compliance-2020` 14쪽 `(2차 자료)` (판을 밝히지 않음). FAA Order 8110.49 (2003년 판의 9장, Chg 2는 2017) PDF 37-38쪽 `(2차 자료)` (DO-178B 기준)
+
+### development tool, verification tool
+
+항공의 옛 규격 DO-178B에서 쓰던 도구의 두 분류다. development tool은 오류를 시스템에 직접 넣을 수 있는 도구이고, verification tool은 이미 있는 오류를 놓칠 수만 있는 도구다 `(2차 자료)`. 오류가 제품에 남으려면 개발과 verification 두 과정이 함께 모자라야 하므로 두 종류에 다른 엄격함을 요구한다.
+
+- 주의: verification 중에 쓰는 도구가 모두 verification tool은 아니다. 감시 코드를 넣었다 걷어 내는 도구는 제품을 바꿀 수 있다. 분류는 최종 제품에 미치는 영향으로 정한다.
+- 근거: FAA Order 8110.49 PDF 37-38쪽 (DO-178B 기준, 발행 기관의 문서를 통한 `(2차 자료)`). `faa-ac-20-115d` 11쪽
+
+### TCL (tool confidence level), TI, TD
+
+자동차의 ISO 26262에서 도구를 쓰는 데 대한 확신을 나눈 분류를 어느 자료가 이렇게 설명한다 `(2차 자료)`. TI (tool impact)는 도구가 오류를 넣거나 놓칠 수 있는가이고, TD (tool error detection)는 도구의 오동작을 막거나 찾아낼 것이라는 확신의 높이다. 둘을 맞대어 TCL이 정해지고, TCL1은 더 qualification할 필요가 없는 경우다.
+
+- 주의: TCL은 도구가 따내는 등급이 아니라 그 프로젝트에서 그 도구를 쓰는 방식에 대한 분류다. 판정의 책임은 쓰는 쪽에 있어서, 공급자가 미리 정한 TCL도 쓰는 쪽이 자기 쓰임에 맞는지 확인해야 한다고 Synopsys의 글이 적는다.
+- 근거: Synopsys, "Understanding How to Assess Tool Confidence Levels for ISO 26262" (2017) 1-5쪽 `(2차 자료)` (ISO 26262:2011 기준). Siemens (2022) `(2차 자료)` (ISO 26262:2018 기준)
+
+### TQL (tool qualification level)
+
+항공의 DO-330과 DO-178C에서 도구의 qualification 엄격함을 나타내는 등급이다. 도구의 쓰임을 기준 셋 (출력이 소프트웨어가 되어 오류를 넣는 것, verification을 자동화해 다른 과정을 줄이는 근거가 되는 것, 의도한 범위에서 오류를 놓치는 것)으로 나누고 소프트웨어의 level과 맞대어 정한다. 번호가 낮을수록 엄격하다고 회사 셋이 같게 설명한다 `(2차 자료)`.
+
+- 주의: 이름이 TCL과 비슷하지만 항공의 것이고 자동차의 TCL과 같은 분류가 아니다. FAA의 문서 (AC 20-115D)는 DO-178B로 qualification한 도구를 새 기준에 대응시키는 표만 준다.
+- 근거: AFuzion (연도 미표기). LDRA (2021) 3쪽. Rapita Systems (연도 미표기) `(2차 자료)` (모두 DO-330을 설명한 글). `faa-ac-20-115d` 11쪽
+
+### T1, T2, T3 (IEC 61508의 도구 부류)
+
+IEC 61508이 off-line 지원 도구를 나눈 세 부류를 어느 자료가 이렇게 설명한다 `(2차 자료)`. T1은 실행 코드에 기여하지 않는 도구 (편집기), T2는 test와 verification을 돕고 그 오류가 결함을 못 찾게 할 수 있는 도구 (coverage 측정, 정적 분석), T3은 실행 코드에 기여하는 출력을 내는 도구 (최적화 compiler)다. T3에는 도구가 자기 명세에 맞는다는 증거가 필요하고 도구의 새 판마다 qualification한다고 설명한다.
+
+- 주의: 근거 세 곳 가운데 둘은 부류의 정의를 거의 같은 문장으로 적어서 서로 독립한 근거로는 약하다. 기준 판이 자료마다 다르다.
+- 근거: Conrad 외 (2010경) 3쪽 (IEC 61508 2판 초안 기준). El-Sayed (UL, 2024) 10-11쪽 (2판 기준). AbsInt (연도 미표기, 판을 밝히지 않음)
+
+### OTS, COTS, SOUP
+
+NASA의 지침서는 사 온 것 (COTS, commercial off-the-shelf)과 다른 프로젝트에서 다시 쓰는 것을 함께 OTS (off-the-shelf)라 부르고, SOUP (software of uncertain pedigree, 출신이 불확실한 소프트웨어)는 문제를 앞에 내세워서 낫다고 적는다. 문서가 모자라고 source가 없으면 어떤 안전 분석은 할 수 없고, 잘 알려진 소프트웨어도 오류가 없다고 가정하지 말라고 한다.
+
+- 주의: 같은 지침서가 OTS의 안전에 확신을 주는 일이 아직 "black art"에 가깝다고 적는다.
+- 근거: `nasa-gb-8719-13` 271-273쪽, 280쪽
+
+### dormant code
+
+필요 없는 기능이 들어 있는 소프트웨어에서, 그 기능을 꺼도 다시 compile하지 않으면 남아 있는 코드다. NASA의 지침서는 이런 코드를 찾으려면 source가 필요하다고 적는다.
+
+- 주의: dormant fault와 다른 말이다. dormant fault는 지금 error를 일으키고 있지 않은 fault의 상태를 가리키고, dormant code는 제품에 들어 있지만 쓰이지 않는 코드를 가리킨다.
+- 근거: `nasa-gb-8719-13` 272쪽, 278쪽
+
+### wrapper
+
+OTS를 나머지에서 격리해 어떤 입력이 닿지 못하게 하거나 출력을 검사하는 것이다. NASA의 지침서가 OTS를 다루는 수단으로 든다.
+
+- 주의: 문서가 말하지 않은 출력은 wrapper를 빠져나갈 수 있고, wrapper가 OTS만큼 커질 수도 있다.
+- 근거: `nasa-gb-8719-13` 276쪽
+
+### adopted code
+
+MISRA Compliance:2020에서 프로젝트 밖에서 온 코드를 가리키는 말이다. 표준 library, driver, 제3자 library, 자동 생성 코드, legacy 코드가 든다.
+
+- 주의: 그 문서는 adopted code가 시스템의 integrity에 미치는 영향을 간과하거나 무해하다고 가정해서는 안 된다고 한다. MISRA 지침의 준수는 adopted code의 품질에 필요조건도 충분조건도 아니라고 적는다.
+- 근거: `misra-compliance-2020` 25-26쪽
+
+### SEooC (safety element out of context)
+
+특정 차량이나 item을 모른 채, 쓰일 맥락을 가정해 개발한 요소다. 두 회사의 글이 이렇게 설명한다 `(2차 자료)`. 통합할 때 가정이 맞는지 확인하고, 맞지 않으면 영향 분석을 해서 item 쪽이나 SEooC 쪽을 바꾼다.
+
+- 주의: 쓰는 쪽에서 보면 안전하다고 끝난 부품이 아니라 "이 가정이 맞으면"이라는 조건이 딸린 근거다. AUTOSAR의 문서는 자기 명세가 SEooC를 정의하지 않는다고 적는다.
+- 근거: Embitel (2019, 판을 밝히지 않음). Guo (Renesas, 2021) `(2차 자료)` (ISO 26262:2018 기준). `autosar-safety-measures` 46쪽
+
+### proven in use
+
+사용 이력으로 믿음을 얻는 논증이다. 사용 이력이 있는 제품을 원래와 다른 환경에서 쓰려 할 때 필요하다고 Schabe와 Braband가 적고, 환경, 비교하는 부품, 고장과 사용 시간의 기록이 갖춰져야 한다고 한다.
+
+- 주의: 환경이 바뀌면 이력에 기댄 논증은 무효가 된다 (두 저자의 해석이고 Ariane 501 조사 보고서의 결론은 아니다). IEC 61508의 proven in use는 하드웨어의 무작위 고장률을 위한 것이고 체계적 능력의 요구를 대신하지 않는다고 시험 인증 회사 Intertek의 글이 설명한다 `(2차 자료)` (판을 밝히지 않음. 한 회사의 글 하나).
+- 근거: Schabe와 Braband, "Basic requirements for proven-in-use arguments" (arXiv:1511.01839, 2015) 1쪽, 6-7쪽 (웹에서 읽음, 2026-11-23). Intertek (2026)
 
 ## 로봇과 기계
 
