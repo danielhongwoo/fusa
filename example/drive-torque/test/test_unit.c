@@ -6,6 +6,8 @@
  * 기댓값은 요구사항 (docs/requirements.yaml)의 숫자를 그대로 적는다.
  * 제품 코드의 상수 이름을 쓰지 않는다. 상수가 잘못 바뀌면 test가 실패해야 하기 때문이다.
  */
+#include <string.h>
+
 #include "app.h"
 #include "e2e.h"
 #include "flow.h"
@@ -1695,6 +1697,105 @@ static void tc_021(void)
     }
 }
 
+/* TC-023: 켠 직후의 상태는 memory에 남아 있던 값과 상관없이 정해진 값이다.
+ * 요소마다 상태를 쓰레기 값으로 채운 뒤에 init을 부르고, 모든 필드를 값으로 본다.
+ * 초기화 한 줄을 빠뜨려도 다른 test는 통과한다: stack에 남은 값이 우연히 0이거나,
+ * 쓰레기 값이 음수여서 0처럼 다루어지기 때문이다. sanitizer도 초기화하지 않은 값의 읽기는 알리지 않는다 */
+static void init_state_is_defined(int fill)
+{
+    pedal_check_t pedal;
+    brake_check_t brake;
+    gear_check_t gear;
+    inverter_check_t inverter;
+    flow_t flow;
+    reaction_t reaction;
+    output_stage_t out;
+    e2e_tx_t tx;
+    e2e_rx_t rx;
+    app_t app;
+
+    memset(&pedal, fill, sizeof(pedal));
+    pedal_check_init(&pedal);
+    CHECK_EQ(pedal.bad_cycles, 0);
+    CHECK_EQ(pedal.good_cycles, 0);
+    CHECK(!pedal.ready);
+    CHECK(!pedal.fault);
+    CHECK_EQ(pedal.window_pos, 0);
+    CHECK_EQ(pedal.suspect, 0);
+    CHECK_EQ(pedal.excluded, 0);
+    {
+        int stale = 0;
+        for (int i = 0; i < 100; i++) {
+            if (pedal.window[i]) {
+                stale++;
+            }
+        }
+        CHECK_EQ(stale, 0);
+    }
+
+    memset(&brake, fill, sizeof(brake));
+    brake_check_init(&brake);
+    CHECK_EQ(brake.release_cycles, 0);
+    CHECK_EQ(brake.mismatch_cycles, 0);
+    CHECK(brake.pressed); /* 켠 직후에는 밟은 것으로 본다 */
+    CHECK(!brake.fault);
+
+    memset(&gear, fill, sizeof(gear));
+    gear_check_init(&gear);
+    CHECK_EQ(gear.direction, GEAR_N); /* 받아들인 방향이 아직 없다 */
+    CHECK_EQ(gear.reject_cycles, 0);
+    CHECK(!gear.caution);
+
+    memset(&inverter, fill, sizeof(inverter));
+    inverter_check_init(&inverter);
+    CHECK_EQ(inverter.pos, 0);
+    CHECK_EQ(inverter.out_cycles, 0);
+    CHECK_EQ(inverter.invalid_cycles, 0);
+    for (int i = 0; i < 5; i++) {
+        CHECK_EQ(inverter.sent[i], 0);
+    }
+
+    memset(&flow, fill, sizeof(flow));
+    flow_init(&flow);
+    CHECK_EQ(flow.count, 0);
+    CHECK_EQ(flow.question, 0);
+    for (int i = 0; i < 3; i++) {
+        CHECK_EQ(flow.marks[i], 0);
+    }
+
+    memset(&reaction, fill, sizeof(reaction));
+    reaction_init(&reaction);
+    CHECK_EQ(reaction.state, REACTION_NORMAL);
+
+    memset(&out, fill, sizeof(out));
+    output_stage_init(&out);
+    CHECK_EQ(out.excess_cycles, 0);
+    CHECK_EQ((int)out.clamp_count, 0);
+    CHECK_EQ(out.last_out, 0);
+
+    memset(&tx, fill, sizeof(tx));
+    e2e_tx_init(&tx);
+    CHECK_EQ(tx.counter, 0);
+
+    memset(&rx, fill, sizeof(rx));
+    e2e_rx_init(&rx);
+    CHECK_EQ(rx.last_counter, 0);
+    CHECK(!rx.synced);
+    CHECK(!rx.ok);
+
+    memset(&app, fill, sizeof(app));
+    app_init(&app);
+    CHECK_EQ(app.prev, 0);
+}
+
+static void tc_023(void)
+{
+    /* 쓰레기 값을 두 가지로 넣는다. 0이 아닌 값은 0이나 거짓으로 정해야 하는 필드를,
+     * 0은 참이나 0이 아닌 값으로 정해야 하는 필드 (켠 직후의 브레이크는 밟음)를 드러낸다 */
+    init_state_is_defined(0xA5);
+    init_state_is_defined(0x00);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1720,6 +1821,7 @@ int main(void)
         { "TC-020", "inverter가 알린 토크를 최근에 보낸 토크의 범위와 견준다", tc_020 },
         { "TC-021", "task가 순서대로 한 번씩 실행되었을 때에만 옳은 답이 나온다", tc_021 },
         { "TC-022", "채널 하나만 범위를 벗어나면 그 채널을 빼고 남은 채널로 간다", tc_022 },
+        { "TC-023", "켠 직후의 상태는 memory에 남아 있던 값과 상관없이 정해져 있다", tc_023 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

@@ -44,4 +44,9 @@ $GCOV --conditions --branch-probabilities \
     pedal_check.gcda brake_check.gcda gear_check.gcda input.gcda monitor.gcda inverter_check.gcda reaction.gcda e2e.gcda flow.gcda vcu.gcda app.gcda > gcov.txt 2>&1
 
 cd "$R"
-python3 tools/coverage_summary.py build/cov/gcov.txt | tee build/reports/coverage.txt
+# 요약 도구의 종료 상태를 그대로 넘긴다. 전에는 출력을 tee로 넘겨서 pipe의 끝 (tee)의 상태만 남았고,
+# 100%에 못 미친다고 찍고도 이 단계가 통과했다 (docs/test-report.md 6절)
+status=0
+python3 tools/coverage_summary.py build/cov/gcov.txt > build/reports/coverage.txt || status=$?
+cat build/reports/coverage.txt
+exit "$status"

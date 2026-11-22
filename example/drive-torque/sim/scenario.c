@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "vcu.h"
 
@@ -18,6 +19,9 @@ int scenario_run(const scenario_t *sc, sample_t *log, int log_cap)
 
     plant_init(&plant);
     hal_sim_init(&plant);
+    /* 켜기 전의 memory는 정해진 값이 아니다. 쓰레기 값으로 채워, 초기화를 빠뜨린 곳이
+     * stack에 남은 값 덕분에 우연히 통과하는 일을 줄인다. 값으로 보는 것은 TC-023과 TC-133이다 */
+    memset(&vcu, 0xA5, sizeof(vcu));
     vcu_init(&vcu);
 
     for (time_ms_t t = 0u; t < sc->duration_ms; t++) {

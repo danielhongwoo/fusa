@@ -86,7 +86,6 @@ void prove_output_stage(void)
     st.clamp_count = nondet_uint32();
     st.last_out = nondet_int32();
     reaction.state = (reaction_state_t)nondet_int32(); /* 망가진 값도 포함한다 */
-    __CPROVER_assume(st.excess_cycles <= 5);
     __CPROVER_assume((allowed >= 0) && (allowed <= 2500));
     before = reaction_state(&reaction);
     excess_before = st.excess_cycles;
@@ -126,8 +125,6 @@ void prove_pedal_check(void)
     st.good_cycles = nondet_uint8();
     st.ready = nondet_bool();
     st.fault = nondet_bool();
-    __CPROVER_assume(st.bad_cycles <= 3);
-    __CPROVER_assume(st.good_cycles <= 3);
     in.apps1_mv = nondet_int32(); /* HAL이 어떤 값을 주더라도 */
     in.apps2_mv = nondet_int32();
     in.brake1 = nondet_bool();
@@ -546,7 +543,6 @@ void prove_message_change_detected(void)
     rx0.last_counter = nondet_uint8();
     rx0.synced = nondet_bool();
     rx0.ok = nondet_bool();
-    __CPROVER_assume(age_ok <= 50u);
 
     changed = sent;
     if ((which % 4u) == 0u) {

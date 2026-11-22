@@ -23,6 +23,7 @@ test가 실패하면 그 결함을 잡은 것이다. 하나라도 놓치면 이 
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -402,6 +403,29 @@ MUTANTS = [
      "기능에 판정한 브레이크가 아니라 접점 1을 넘긴다"),
     ("src/input/input.c", "in->gear = GEAR_N; /* 알 수 없는 값은 N으로 본다 */",
      "in->gear = GEAR_D;", "알 수 없는 기어 값을 D로 본다"),
+    # 켠 직후의 상태를 정하는 줄을 뺀 변이. 다른 test는 stack에 남은 값 덕분에 통과하기 쉽다.
+    # 쓰레기 값으로 채운 뒤에 init을 부르고 필드를 값으로 보는 test (TC-023, TC-133)가 잡아야 한다
+    ("src/app/app.c", "    st->prev = 0;\n}", "    (void)st;\n}", "기능의 켠 직후 상태를 정하지 않는다"),
+    ("src/vcu/vcu.c", "    vcu->brake = true;\n", "", "켠 직후의 브레이크 상태 (밟음)를 정하지 않는다"),
+    ("src/vcu/vcu.c", "    vcu->gear = GEAR_N;\n", "", "켠 직후의 받아들인 기어 (N)를 정하지 않는다"),
+    ("src/vcu/vcu.c", "    app_init(&vcu->app);\n", "", "켤 때 기능의 init을 부르지 않는다"),
+    ("src/vcu/vcu.c", "    e2e_rx_init(&vcu->inverter_rx);\n", "", "켤 때 inverter 상태 메시지의 검사의 init을 부르지 않는다"),
+    ("src/vcu/vcu.c", "    reaction_init(&vcu->reaction);\n", "", "켤 때 상태 기계의 init을 부르지 않는다"),
+    ("src/input/gear_check.c", "    st->direction = GEAR_N; /* 받아들인 방향이 아직 없다 */\n", "",
+     "켠 직후의 받아들인 방향 (없음)을 정하지 않는다"),
+    ("src/monitor/inverter_check.c", "    st->pos = 0u;\n    st->out_cycles = 0u;\n", "    st->pos = 0u;\n",
+     "inverter 검사의 벗어난 횟수를 켤 때 정하지 않는다"),
+    ("src/reaction/reaction.c", "    r->state = REACTION_NORMAL;\n}", "    (void)r;\n}",
+     "상태 기계의 켠 직후 상태를 정하지 않는다"),
+    ("src/com/e2e.c", "    st->counter = 0u;\n}", "    (void)st;\n}", "보내는 counter를 켤 때 정하지 않는다"),
+    ("src/input/brake_check.c", "    st->release_cycles = 0u;\n    st->mismatch_cycles = 0u;\n",
+     "    st->release_cycles = 0u;\n", "브레이크 검사의 어긋난 횟수를 켤 때 정하지 않는다"),
+    ("src/input/pedal_check.c", "    st->ready = false;\n    st->fault = false;\n", "    st->fault = false;\n",
+     "켠 직후에 검사를 통과했는지를 정하지 않는다"),
+    ("src/monitor/monitor.c", "    st->clamp_count = 0u;\n    st->last_out = 0;\n}", "    st->clamp_count = 0u;\n}",
+     "출력 단계의 지난 출력을 켤 때 정하지 않는다"),
+    ("src/flow/flow.c", "    f->count = 0u;\n    f->question = 0u;\n}", "    f->count = 0u;\n}",
+     "질문의 번호를 켤 때 정하지 않는다"),
     # 배열을 구조체의 끝에 둔다는 약속을 깨는 변이. 증명 도구는 구조체의 끝만 보므로, 이 약속이 깨지면
     # 한 칸 넘는 쓰기를 증명도 test도 알리지 못한다. compile할 때의 확인 (_Static_assert)이 잡아야 한다
     ("src/flow/flow.h", "    uint8_t marks[FLOW_TASK_COUNT]; /* 이 주기에 task가 남긴 표시. 남긴 순서대로다 */\n",
@@ -463,12 +487,29 @@ def constant_mutants():
     return found
 
 
+def run_tests(copy):
+    """복사본에서 test를 돌린다. 돌려주는 것: (종료 상태, 출력, 끝나지 않았는가).
+
+    끝나지 않으면 make와 그 아래의 프로세스를 모두 끝내고 실패로 돌려준다. make만 끝내면 test 실행 파일이
+    남아 계속 돈다 (그렇게 남은 프로세스가 한 시간 넘게 돌고 있던 것을 찾았다. docs/test-report.md 6절)."""
+    proc = subprocess.Popen(["make", "-s", "test"], cwd=copy, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, start_new_session=True)
+    try:
+        output, _ = proc.communicate(timeout=TEST_TIMEOUT_S)
+        return proc.returncode, output, False
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        output, _ = proc.communicate()
+        return 1, output, True
+
+
 def main():
     mutants = [m + (None,) for m in MUTANTS + constant_mutants()] + EQUIVALENT
     count = len(mutants) - len(EQUIVALENT)
     work = tempfile.mkdtemp(prefix="mutation-")
     missed = 0
     by_build = 0
+    not_by_value = 0
     try:
         for i, (path, old, new, what, why_equivalent) in enumerate(mutants):
             copy = os.path.join(work, "m%02d" % i)
@@ -480,13 +521,8 @@ def main():
                 missed += 1
                 continue
             open(target, "w", encoding="utf-8").write(text.replace(old, new))
-            try:
-                result = subprocess.run(["make", "-s", "test"], cwd=copy, capture_output=True, text=True,
-                                        timeout=TEST_TIMEOUT_S)
-            except subprocess.TimeoutExpired:
-                # 끝나지 않는 test는 실패한 test다
-                result = subprocess.CompletedProcess([], 1, "", "")
-            output = result.stdout + result.stderr
+            # 끝나지 않는 test는 실패한 test다
+            returncode, output, timed_out = run_tests(copy)
             if what in BUILD_CAUGHT:
                 if ("error:" in output) and (BUILD_CAUGHT[what] in output):
                     by_build += 1
@@ -500,7 +536,7 @@ def main():
                 print("오류  compile되지 않는 변이다 (%s)" % what)
                 missed += 1
                 continue
-            caught = result.returncode != 0
+            caught = returncode != 0
             if why_equivalent is not None:
                 if caught:
                     print("오류  동등하다고 적은 변이를 test가 잡았다 (%s)" % what)
@@ -510,12 +546,26 @@ def main():
                 continue
             if not caught:
                 missed += 1
-            print("%s  %s" % ("잡음" if caught else "놓침", what))
+                print("놓침  %s" % what)
+                continue
+            # 어떻게 잡았는가. test가 값을 견주어 실패를 찍은 것과, 끝나지 않거나 죽은 것을 가른다.
+            # 뒤의 것은 compiler와 memory의 배치에 달린 일이어서 잡았다고 믿기 어렵다
+            if timed_out:
+                not_by_value += 1
+                print("잡음 (끝나지 않음)  %s" % what)
+            elif re.search(r"^실패  ", output, re.M) is None:
+                not_by_value += 1
+                print("잡음 (실패를 찍지 않고 죽음)  %s" % what)
+            else:
+                print("잡음  %s" % what)
     finally:
         shutil.rmtree(work, ignore_errors=True)
     print("결함 %d개 가운데 %d개를 test가, %d개를 build (_Static_assert)가 잡았다. 동등한 변이 %d개는 세지 않았다"
           % (count, count - missed - by_build, by_build, len(EQUIVALENT)))
-    return 1 if missed else 0
+    if not_by_value:
+        print("test가 잡은 것 가운데 %d개는 값의 검사가 아니라 끝나지 않거나 죽어서 잡혔다. 값으로 잡히게 test를 고친다"
+              % not_by_value)
+    return 1 if (missed or not_by_value) else 0
 
 
 if __name__ == "__main__":

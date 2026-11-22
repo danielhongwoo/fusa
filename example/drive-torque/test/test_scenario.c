@@ -4,6 +4,7 @@
  * test마다 어느 요구사항을 보는지 "TC-번호: SWR-번호"로 적는다.
  */
 #include <stddef.h>
+#include <string.h>
 
 #include "scenario.h"
 #include "vcu.h"
@@ -439,7 +440,7 @@ static void inverter_does_not_check(time_ms_t t_ms)
  * TC-112: SWR-17 fault injection FI-13
  * 토크 요구 메시지의 값이 전송 중에 100 Nm 커진다. VCU가 붙인 CRC가 값과 맞지 않으므로 inverter가 버린다.
  * 옳은 메시지가 50 ms 오지 않아 inverter는 토크를 내지 않는다 (가정 A-21).
- * VCU는 자기가 보낸 것이 바뀐 줄 모른다. 그래서 경고를 요청하지 않는다 (남은 것. docs/safety-case.md 5절).
+ * VCU는 자기가 보낸 것이 바뀐 줄 모른다. 그래서 경고를 요청하지 않는다 (남은 것. docs/safety-case.md 3절의 H3.7).
  */
 static void tc_112(void)
 {
@@ -795,7 +796,7 @@ static void tc_117(void)
  * TC-118: SWR-16 fault injection FI-19 (알려진 한계)
  * 차량 속도의 값이 0에 얼어붙은 채 메시지는 계속 온다 (보내는 쪽의 고장). 달리는 중에 기어가 R로 바뀐다.
  * VCU가 아는 속도는 0이므로 받아들인다. 반대 방향의 토크가 나가고 SG-02의 첫째 구절을 어긴다.
- * 방향의 판정이 속도를 쓰면서 새로 생긴 길이다 (docs/safety-case.md 5절의 열린 가지).
+ * 방향의 판정이 속도를 쓰면서 새로 생긴 길이다 (docs/safety-case.md 3절의 H2.2).
  */
 static void tc_118(void)
 {
@@ -1466,6 +1467,59 @@ static void tc_126(void)
     printf("  측정 FI-25: fault부터 watchdog이 끊을 때까지 %d ms\n", t_trip - (int)T_FAULT);
 }
 
+/* TC-133: SWR-12 켠 직후의 VCU의 상태는 memory에 남아 있던 값과 상관없이 정해진 값이다.
+ * 상태를 쓰레기 값으로 채운 뒤에 vcu_init을 부르고 필드를 값으로 본다.
+ * 요소마다의 init을 부르는 줄이 하나 빠져도, 주기 실행부의 값 하나를 정하지 않아도 여기에서 드러난다 */
+static void vcu_init_state_is_defined(int fill)
+{
+    plant_t plant;
+    vcu_t vcu;
+
+    plant_init(&plant);
+    hal_sim_init(&plant);
+    memset(&vcu, fill, sizeof(vcu));
+    vcu_init(&vcu);
+
+    CHECK(!vcu.speed_valid);
+    CHECK_EQ(vcu.speed, 0);
+    CHECK(!vcu.inverter_valid);
+    CHECK_EQ(vcu.inverter_torque, 0);
+    CHECK_EQ(vcu.pedal_safe, 0);
+    CHECK(vcu.brake);           /* 켠 직후에는 밟은 것으로 본다 */
+    CHECK_EQ(vcu.gear, GEAR_N); /* 받아들인 기어가 아직 없다 */
+    CHECK_EQ(vcu.torque_req, 0);
+    CHECK_EQ(vcu.torque_allowed, 0);
+    CHECK_EQ(vcu.torque_out, 0);
+    CHECK(!vcu.enable);
+    CHECK_EQ(vcu.warning, 0);
+    /* 요소마다의 상태도 정해져 있다 (자세한 것은 TC-023이 본다) */
+    CHECK(!vcu.pedal_check.ready);
+    CHECK(!vcu.pedal_check.fault);
+    CHECK(vcu.brake_check.pressed);
+    CHECK_EQ(vcu.gear_check.direction, GEAR_N);
+    CHECK_EQ(vcu.app.prev, 0);
+    CHECK_EQ(vcu.output.last_out, 0);
+    CHECK_EQ(vcu.output.excess_cycles, 0);
+    CHECK_EQ(vcu.reaction.state, REACTION_NORMAL);
+    CHECK_EQ(vcu.inverter_check.pos, 0);
+    CHECK_EQ(vcu.inverter_check.out_cycles, 0);
+    CHECK_EQ(vcu.flow.count, 0);
+    CHECK(!vcu.speed_rx.ok);
+    CHECK(!vcu.speed_rx.synced);
+    CHECK(!vcu.inverter_rx.ok);
+    CHECK(!vcu.inverter_rx.synced);
+    CHECK_EQ(vcu.torque_tx.counter, 0);
+    /* 켤 때 구동 허용 신호를 끊는 쪽으로 쓴다 */
+    CHECK(!hal_sim_enable_wire());
+}
+
+static void tc_133(void)
+{
+    /* 0이 아닌 쓰레기 값과 0을 모두 넣어 본다 (TC-023의 설명) */
+    vcu_init_state_is_defined(0xA5);
+    vcu_init_state_is_defined(0x00);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1500,6 +1554,7 @@ int main(void)
         { "TC-130", "FI-30 페달 채널 1의 선이 끊김 (줄여 간다)", tc_130 },
         { "TC-131", "FI-31 줄여 가는 중에 남은 채널이 높은 값에 고착 (알아채지 못하지만 SG-01은 지킨다)", tc_131 },
         { "TC-132", "FI-32 줄여 가는 중에 남은 채널도 범위를 벗어남", tc_132 },
+        { "TC-133", "켠 직후의 VCU의 상태는 memory에 남아 있던 값과 상관없이 정해져 있다", tc_133 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

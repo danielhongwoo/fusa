@@ -6,11 +6,13 @@
 #   make intro     1장의 실행 예: 안전 장치가 없는 제어기와 예제의 제어기를 같은 고장에서 견준다
 #   make mutation  제품 코드에 결함을 하나씩 넣어 test가 잡는지 본다
 #   make proof-mutation  제품 코드에 결함을 하나씩 넣어 증명이 잡는지 본다
+#   make step-check  단계마다 알려진 결함을 넣어, 그 단계가 실패를 알리는지 본다
 #   make clean     build 폴더를 지운다
 #
-# 도구가 없으면 그 단계를 건너뛰고 "건너뜀"이라고 찍는다.
-# make check STRICT=1 로 돌리면 건너뛴 단계가 있을 때 실패한다.
-# 구현 예정 (status: planned)인 요구사항이 남아 있을 때도 실패한다.
+# 도구가 없으면 그 단계를 건너뛰고 "건너뜀"이라고 찍고, make check는 끝에서 실패한다.
+# 돌리지 못한 검사가 있는데 통과했다고 말하지 않으려는 것이다.
+#   make check SKIP_OK=1  건너뛴 단계가 있어도 지나간다 (도구를 갖추지 못한 컴퓨터에서 나머지만 볼 때)
+#   make check STRICT=1   구현 예정 (status: planned)인 요구사항이 남아 있을 때도 실패한다
 # 이 도구들은 어느 것도 qualification되지 않았다.
 
 CC      ?= cc
@@ -35,7 +37,7 @@ CPPCHECK   := $(shell command -v cppcheck 2>/dev/null)
 CLANG_TIDY := $(shell command -v clang-tidy 2>/dev/null || ls /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null)
 CBMC       := $(shell command -v cbmc 2>/dev/null)
 
-.PHONY: check test variants intro intro-figure trace static coverage prove mutation proof-mutation clean dirs skipped
+.PHONY: check test variants intro intro-figure trace static coverage prove mutation proof-mutation step-check clean dirs skipped
 
 check: test variants intro trace static coverage prove skipped
 	@echo "make check: 끝"
@@ -97,7 +99,7 @@ test: build/test_unit build/test_scenario build/test_fault_app build/test_no_mon
 # host의 compiler에 대해서만 말해 준다 (docs/tools.md)
 variants: test
 	@echo "== 같은 test를 다른 compile option으로 (최적화, sanitizer)"
-	@sh tools/variants.sh "$(CC)"
+	@sh tools/variants.sh "$(CC)" "$(GCC)"
 
 # ---- 1장의 실행 예 ----
 # 같은 시나리오를 안전 장치가 없는 제어기와 예제의 제어기로 돌린다.
@@ -140,10 +142,12 @@ else
 endif
 ifneq ($(CLANG_TIDY),)
 	@$(CLANG_TIDY) $(SRC) --quiet --checks='-*,bugprone-*,cert-*,clang-analyzer-*,-bugprone-easily-swappable-parameters' \
-		-- $(CFLAGS) $(INC) > build/reports/clang-tidy.txt 2>&1 || true
-	@n=$$(grep -c -E 'warning:|error:' build/reports/clang-tidy.txt); \
+		-- $(CFLAGS) $(INC) > build/reports/clang-tidy.txt 2>&1; status=$$?; \
+		n=$$(grep -c -E 'warning:|error:' build/reports/clang-tidy.txt); \
 		echo "clang-tidy: 경고 $$n 개 (보고서: build/reports/clang-tidy.txt)"; \
-		if [ "$$n" -ne 0 ]; then grep -E 'warning:|error:' build/reports/clang-tidy.txt | head -20; exit 1; fi
+		if [ "$$n" -ne 0 ] || [ "$$status" -ne 0 ]; then \
+			grep -E 'warning:|error:' build/reports/clang-tidy.txt | head -20; \
+			echo "clang-tidy: 실패 (종료 상태 $$status)"; exit 1; fi
 else
 	@echo "건너뜀: clang-tidy가 없다" | tee -a build/skipped
 endif
@@ -175,9 +179,14 @@ proof-mutation:
 mutation:
 	@python3 tools/mutation_check.py
 
+# 검사 단계가 실패를 알리는지 본다. 단계가 있다는 것과 실패를 알린다는 것은 다른 일이다
+step-check:
+	@python3 tools/step_check.py
+
 skipped:
 	@if [ -s build/skipped ]; then echo "건너뛴 단계가 있다:"; cat build/skipped; \
-		if [ "$(STRICT)" = "1" ]; then exit 1; fi; fi
+		if [ "$(SKIP_OK)" != "1" ] || [ "$(STRICT)" = "1" ]; then \
+			echo "make check: 실패. 도구가 없어 돌리지 못한 단계가 있다 (SKIP_OK=1을 주면 지나간다)"; exit 1; fi; fi
 
 clean:
 	rm -rf build
