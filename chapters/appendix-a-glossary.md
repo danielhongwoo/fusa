@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 여섯 개를 더했다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다.
 
 ## 읽는 법
 
@@ -132,7 +132,7 @@ hazard가 요구하는 엄격함의 등급이다. 운전 상황마다 severity, 
 
 ASIL을 정하는 표에서 A보다 낮게 나온 결과다. ASIL이 붙지 않는다.
 
-- 주의: 보고서는 약어만 풀고 뜻을 설명하지 않는다. "일반적인 품질 관리로 충분하다"는 풀이는 아직 받은 문서로 확인하지 못했다 `(확인 필요)`.
+- 주의: 보고서는 약어만 풀고 뜻을 설명하지 않는다. 그래서 이 책은 "ASIL이 붙지 않는 결과"라는 뜻으로만 쓴다. "일반적인 품질 관리로 충분하다"는 풀이는 받은 문서로 확인하지 못했다 `(확인 필요)`.
 - 근거: `nhtsa-etc-ev-fsa` 12쪽, 55쪽
 
 ### safety goal
@@ -151,11 +151,12 @@ hazard 분석에서 나온 차량 수준의 가장 위에 있는 안전 요구�
 
 ### FTTI (fault tolerant time interval)
 
-고장이 난 때부터 safe state에 도달해야 하는 때까지의 시간 한계다. 이 안에 고장을 알아채고 (fault detection time) 대응을 끝내야 (fault reaction time) 한다.
+고장이 난 뒤 위험한 상태가 되기 전까지의 시간이다. 이 안에 고장을 알아채고 (fault detection time) 대응을 끝내 (fault reaction time) safe state에 도달해야 한다. 재는 끝은 사고가 아니라 위험한 상태다.
 
 - 주의: AUTOSAR의 문서는 보통 FTTI를 알아채는 시간과 대응하는 시간의 합으로 본다고 적는다. 통신의 timeout과 debounce 횟수는 이 시간 예산에서 나온다.
-- 주의: 보고서에는 정의 문장이 없고, 값은 거의 모두 정해지지 않은 채로 남아 있다.
-- 근거: `nhtsa-etc-ev-fsa` 71-72쪽, 74쪽. `autosar-e2e-protocol` 244쪽 (ISO 26262:2018 기준)
+- 주의: 보고서에는 정의 문장이 없고, 값은 거의 모두 정해지지 않은 채로 남아 있다. NASA의 지침서는 고장이 난 때부터 위험한 상태에 이를 때까지의 시간을 time to criticality라고 부른다.
+- 주의: 이 책은 규격의 정의를 확인하지 못했다. 예제에서는 이 이름을 쓰지 않는다.
+- 근거: `nhtsa-etc-ev-fsa` 71-72쪽, 74쪽. `autosar-e2e-protocol` 244쪽 (ISO 26262:2018 기준). `nasa-gb-8719-13` 117쪽
 
 ### functional safety concept
 
@@ -163,9 +164,37 @@ safety goal에서 functional safety requirement를 이끌어 내고 시스템의
 
 - 근거: `nhtsa-etc-ev-fsa` 66-67쪽, 72-73쪽
 
+### functional, technical, software safety requirement
+
+safety goal에서 코드까지 요구사항을 내리는 세 단계다. functional safety requirement는 item이 무엇을 해야 하는지를, technical safety requirement는 그것을 어떤 구조와 값으로 하는지를, software safety requirement는 소프트웨어의 어느 부분이 무엇을 하는지를 적는다. 요구사항을 요소에 나눠 주는 것을 allocation이라고 한다.
+
+- 주의: 세 단계의 풀이는 이 책의 것이다. 받은 문서에서 functional safety requirement는 쓰임을 확인했고, 아래 두 단계는 이름만 확인했다 `(확인 필요)`.
+- 근거: `nhtsa-etc-ev-fsa` 66쪽, 72-73쪽
+
+### technical safety concept
+
+functional safety concept의 요구사항을 어떤 구조로 만들지를 정한 것이다. 구조, 한계값, 시간, 바깥 요소에 대한 가정을 담는다.
+
+- 주의: 풀이는 이 책의 것이다. AUTOSAR의 문서는 이 말을 설명 없이 쓴다 `(확인 필요)`.
+- 근거: `autosar-safety-measures` 8쪽, 47쪽
+
+### ASIL decomposition
+
+요구사항 하나를 서로 독립된 요소들이 나눠 맡을 때 각각의 등급을 낮추는 규칙이다. 미국 정부의 보고서는 구현 사이의 독립을 보일 수 있으면 다른 등급으로 구현할 수 있다고 적는다.
+
+- 주의: 이 책은 규칙의 조건을 원문으로 확인하지 못했다. 그래서 규칙을 설명하지 않고 예제에서도 쓰지 않는다 `(확인 필요)`.
+- 근거: `nhtsa-etc-ev-fsa` 73쪽, 80쪽
+
+### safety mechanism
+
+고장을 알아채고 대응해 safety goal이 깨지지 않게 하는 수단이다. 입력의 검사, 감시, 통신의 보호, watchdog이 그 예다.
+
+- 주의: 풀이는 이 책의 것이다. 받은 문서들은 이 말을 설명 없이 쓴다.
+- 근거: `autosar-safety-measures` 9쪽, `nhtsa-etc-ev-fsa` 82쪽
+
 ### freedom from interference
 
-ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지 않는 것이다. 방해의 원인은 메모리, timing, 실행, 정보 교환의 네 가지로 나눈다. 등급이 다른 소프트웨어를 함께 싣는다면 전체를 가장 높은 등급으로 개발하거나, 방해가 없음을 보여야 한다.
+ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지 않는 것이다. 방해의 원인은 메모리, timing, 실행, 정보 교환의 네 가지로 나눈다. AUTOSAR의 문서는 ISO 26262를 들어, 등급이 다른 소프트웨어를 함께 싣는다면 전체를 가장 높은 등급으로 개발하거나 방해가 없음을 보여야 한다고 적는다. 이 책은 이 내용을 이 문서 하나로만 확인했다.
 
 - 주의: 이 책은 함수나 thread를 나눈 것만으로 방해가 없다고 쓰지 않는다. PC 시뮬레이션은 메모리 보호와 실행 시간 감시를 보이지 못하기 때문이다.
 - 근거: `autosar-safety-measures` 9쪽 (ISO 26262:2018 기준)
@@ -185,6 +214,13 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 
 - 주의: 미국 정부의 보고서는 주기적인 검사로 줄여야 하는 것으로 이 말을 쓴다. 규격의 정의는 확인하지 못했다 `(확인 필요)`.
 - 근거: `nhtsa-etc-ev-fsa` 67쪽
+
+### dependent failure
+
+한 가지 원인이 여러 요소를 함께 틀리게 하거나, 한 요소의 고장이 다른 요소로 번지는 것이다. 기능과 감시가 같은 입력이나 같은 MCU에 기대면 여기에 해당한다. 이것을 따지는 분석을 dependent failure analysis라고 한다.
+
+- 주의: 풀이는 이 책의 것이다. 규격의 정의는 확인하지 못했다 `(확인 필요)`.
+- 근거: `autosar-safety-measures` 21쪽, 46쪽
 
 ### debounce
 
@@ -213,6 +249,13 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 
 - 주의: alive supervision은 실행되는 횟수만 본다. 순서가 옳은지는 logical supervision으로 본다 (`autosar-safety-measures` 22-23쪽).
 - 근거: `autosar-safety-measures` 26-27쪽
+
+### fault injection
+
+고장을 일부러 넣고 시스템이 정한 대로 알아채고 대응하는지를 보는 test다.
+
+- 주의: 이 책의 예제는 fault를 하드웨어 추상화 계층의 뒤에서 넣거나, 모듈 전체를 바꿔 끼워서 넣는다. 제품의 코드에는 test용 코드를 넣지 않는다.
+- 근거: `nasa-gb-8719-13` 179쪽, 192쪽
 
 ### statement coverage, decision coverage
 

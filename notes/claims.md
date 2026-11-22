@@ -61,7 +61,7 @@
 | C-07-001 | functional safety concept은 safety goal에서 요구사항을 끌어내어 요소에 나눠 준다 | nhtsa-etc-ev-fsa, 66쪽 | 2차 (ISO 26262 FDIS 2011) | 2026-11-22 |
 | C-07-002 | 요구사항을 끌어내는 틀: 막거나 알아챈다, 정해진 시간 안에 safe state로 간다, 운전자에게 알린다 | nhtsa-etc-ev-fsa, 71쪽 | 1차 | 2026-11-22 |
 | C-07-003 | 운전자 경고를 단계로 나눈 예 | nhtsa-etc-ev-fsa, 68쪽 | 1차 | 2026-11-22 |
-| C-07-004 | 주 연산과 그것을 검사하는 연산을 나누는 구조는 안전 시스템의 흔한 틀이다 | koopman-toyota-ua, 32쪽 | 1차 (전문가의 발표 자료) | 2026-11-22 |
+| C-07-004 | 주 CPU가 계산하고 다른 CPU가 검사하는 구조는 안전 시스템의 흔한 틀이다 | koopman-toyota-ua, 32쪽 | 1차 (전문가의 발표 자료) | 2026-11-22 |
 | C-07-005 | FTTI는 보통 고장을 알아채는 시간과 대응하는 시간의 합으로 본다 | autosar-e2e-protocol, 244쪽 | 2차 (ISO 26262:2018) | 2026-11-22 |
 | C-07-006 | 구현 사이의 독립을 보일 수 있으면 다른 등급으로 구현할 수 있다 | nhtsa-etc-ev-fsa, 73쪽, 80쪽 | 2차 (ISO 26262 FDIS 2011) | 2026-11-22 |
 | C-07-007 | 등급이 다른 소프트웨어를 함께 실으면 전체를 가장 높은 등급으로 개발하거나 freedom from interference를 보인다. 방해의 종류는 넷이다 | autosar-safety-measures, 9쪽, 72쪽 | 2차 (ISO 26262:2018) | 2026-11-22 |
@@ -85,7 +85,14 @@
 | C-19-001 | assurance case의 정의 | gsn-standard-v3, 10쪽 | 1차 | 2026-11-22 |
 | C-19-002 | GSN의 요소와 위에서 아래로 만드는 여섯 걸음 | gsn-standard-v3, 11-13쪽, 59-61쪽 | 1차 | 2026-11-22 |
 | C-19-003 | 흔한 잘못: 상자 속의 글, 모호함, 뭉뚱그림, 건너뛰기, 믿음의 도약 | gsn-standard-v3, 80-87쪽 | 1차 | 2026-11-22 |
-| C-19-004 | ISO 26262에서는 산출물을 모아 safety case를 이룬다. 이 쓰임은 확증 편향으로 이끌 수 있다. 등급에 따라 확인 검토를 요구한다 | nhtsa-safety-standards-assessment, 33-34쪽 | 2차 (ISO 26262:2011) | 2026-11-22 |
+| C-19-004 | ISO 26262에서는 산출물을 모아 safety case를 이루고 그것으로 규격을 따랐음을 보인다. 시스템이 안전하다는 것을 증명하려 하면 확증 편향에 빠질 수 있다 (Leveson의 지적을 옮긴 것). 등급에 따라 확인 검토를 요구한다. 설계에서 독립인 검토자는 설계를 잘 몰라 위험을 찾지 못할 수 있다 | nhtsa-safety-standards-assessment, 34쪽 | 2차 (ISO 26262:2011) | 2026-11-22 |
 | C-E-001 | 가속 페달 센서, 제어기, inverter의 제어부, gate drive, 전력 스위치, 모터가 하는 일 | nhtsa-etc-ev-fsa, 33-36쪽 | 1차 | 2026-11-22 |
 | C-E-002 | 전기차와 내연기관 차량의 차이: 방향, creep, 페달을 놓았을 때, 멈춤 | nhtsa-etc-ev-fsa, 30-31쪽, 34쪽 | 1차 | 2026-11-22 |
 | C-E-003 | AUTOSAR Classic의 층: 응용, RTE, basic software, OS, complex driver | autosar-safety-measures, 61쪽 (그림을 이미지로 확인) | 1차 | 2026-11-22 |
+| C-03-011 | IEC 61508과 기계 분야의 규격은 등급마다 위험한 고장의 확률의 목표를 둔다 | iec-61508-overview-slides, 17쪽. ifa-report-2-2017e, 15-16쪽 | 2차 (IEC 61508, ISO 13849-1:2015) | 2026-11-22 |
+| C-03-012 | QM은 quality management의 약어이고 등급 표에서 ASIL이 붙지 않는 결과다 | nhtsa-etc-ev-fsa, 12쪽, 55쪽 | 2차 (ISO 26262 FDIS 2011) | 2026-11-22 |
+| C-06-010 | 등급 표의 구조: S3, E4, C3일 때만 D이고, 어느 하나가 한 단계 좋아질 때마다 한 단계 내려간다 | nhtsa-etc-ev-fsa, 55쪽 | 2차 (ISO 26262 FDIS 2011) | 2026-11-22 |
+| C-06-011 | 보고서의 200 ms는 고장이 난 때부터 safe state로 갈 때까지의 시간이다 | nhtsa-etc-ev-fsa, 80-81쪽 | 1차 | 2026-11-22 |
+| C-07-008 | 예제의 처음 설계에서 허용 토크와 정상 동작의 틈이 SG-01의 한계를 넘었다 (1.1-2.4 m/s^2). 고친 뒤의 틈은 5 Nm다 | reviews/2026-11-22-stage1/round1-fusa.md의 F-01, example/drive-torque/docs/technical-safety-concept.md 3절 | 이 책의 측정 | 2026-11-22 |
+| C-12-006 | 브레이크 페달 신호의 검사를 요구사항으로 든다 | nhtsa-etc-ev-fsa, 81쪽 | 1차 | 2026-11-22 |
+| C-16-006 | 변이 10개는 모두 잡았으나 검토자가 21개를 더 넣자 4개를 놓쳤다. 처음의 FI-02는 감시가 없어도 통과했다 | reviews/2026-11-22-stage1/round1-embedded.md의 E-01, E-02 | 이 책의 측정 | 2026-11-22 |
