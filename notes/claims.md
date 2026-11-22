@@ -157,3 +157,25 @@
 | C-01-022 | 737 MAX: 가정은 업계 지침과 맞았고 센서 하나에 기댄 설계는 모든 인증 요건을 만족했다 (기여 요인 1, 2). AOA DISAGREE 경고의 소프트웨어가 인증받은 설계와 달랐고 개발과 인증 중에 발견되지 않았다 (기여 요인 5) | b737max-knkt-jt610, 180쪽, 217쪽 (직접 읽음) | 1차 | 2026-11-23 |
 | C-01-023 | 2014년의 형사 수사: 12억 달러의 벌금, 3년의 기소 유예, 사유는 두 문제를 감춘 것 | koopman-toyota-ua, 16쪽 (직접 읽음) | 1차 (원고 쪽 전문가의 자료에 실린 요약) | 2026-11-23 |
 | C-05-018 | validation의 뜻. HSE는 요구사항의 명세가 옳은지를 functional safety assessment에 넣는다 | hse-hsg238, 52쪽 (직접 읽음) | 1차 | 2026-11-23 |
+| C-08-001 | 연역과 귀납, 둘을 함께 써야 하는 까닭. fault tree는 모든 고장의 모델이 아니다. minimal cut set과 single failure. 같은 종류의 사건으로 된 cut set은 common cause의 신호 | nasa-fault-tree-handbook, 15-16쪽, 24-25쪽, 33-36쪽, 45쪽 | 1차 | 2026-11-23 |
+| C-08-002 | FMEA 여러 개를 이어 붙여 fault tree를 만들지 않는다. FMEA로 tree를 점검할 수 있다 | nasa-fault-tree-handbook, 67쪽 | 1차 | 2026-11-23 |
+| C-08-003 | common cause failure의 뜻과 네 가지 예. 독립이면 10^-9, 1%가 공통 원인이면 10^-5 (만 배) | nasa-fault-tree-handbook, 70-72쪽 (72쪽은 직접 읽음) | 1차 (숫자는 handbook의 예) | 2026-11-23 |
+| C-08-004 | 소프트웨어 기능의 고장 확률을 쓰지 않는다 (MIL-STD-882E), 소프트웨어의 오류는 하드웨어의 random한 고장처럼 수로 나타낼 수 없다 (DO-178C) | nhtsa-safety-standards-assessment, 29쪽 (직접 읽음) | 2차 (보고서가 두 규격을 인용) | 2026-11-23 |
+| C-08-005 | 소프트웨어 fault tree는 reliability에 관해 주장하지 않는다. 논리가 hazard를 만들지 않음을 보이는 것이고 위험한 상태가 적은 시스템에서 쓸 만하다 | nasa-gb-8719-13, 316-317쪽 | 1차 | 2026-11-23 |
+| C-08-006 | 소프트웨어 FMEA: data와 사건이 틀리는 방식, interface, 찾아 주는 것과 한계 (한 번에 고장 하나) | nasa-gb-8719-13, 322-324쪽, 328쪽, 336-337쪽 | 1차 | 2026-11-23 |
+| C-08-007 | HAZOP의 guide word: 규격은 열한 개를 제안, 보고서는 일곱 개를 씀. 분석의 순서 (hazard 분석 뒤에 safety analysis) | nhtsa-etc-ev-fsa, 21-22쪽 | 1차 (보고서가 한 일). ISO 26262에 관해서는 2차 | 2026-11-23 |
+| C-08-008 | STPA: 고장 없이도 위험할 수 있다는 가정, Mars Polar Lander, 네 단계, control structure와 process model, unsafe control action의 네 유형, 실제 상태로 적는다, 위험한 명령의 네 가지 까닭, 앞의 명령이 실행되었다고 가정하는 잘못 | stpa-handbook, 4쪽, 7-8쪽, 14쪽, 17쪽, 22-25쪽, 35-40쪽 (36쪽은 직접 읽음), 43-46쪽 | 1차 (handbook의 방법). 다른 기법보다 낫다는 것은 저자들의 주장 | 2026-11-23 |
+| C-08-009 | control structure는 물리적인 관계를 보통 담지 않는다 | stpa-handbook, 31쪽 | 1차 | 2026-11-23 |
+| C-08-010 | fault propagation의 뜻. 따로 만든 소프트웨어도 정말로 독립이기 어렵다. 같은 운영 체제를 돌리는 두 processor는 독립이 아니다 (규정의 인용). independence analysis: 안전에 관련된 요소에 영향을 주는 요소는 안전에 관련된 요소가 된다 | nasa-gb-8719-13, 141-144쪽 (143-144쪽은 직접 읽음), 157-159쪽 | 1차 | 2026-11-23 |
+| C-08-011 | 소프트웨어 요소 사이의 간섭 네 가지 (memory, 시간, 실행, 정보의 교환). dependent failure analysis라는 이름. AUTOSAR는 그 분석을 하지 않는다 | autosar-safety-measures, 9-10쪽, 21쪽, 46쪽 | 2차 (ISO 26262:2018을 설명) | 2026-11-23 |
+| C-08-012 | FMEA, FTA는 random한 하드웨어 고장이 주된 원인이던 때의 기법이고 소프트웨어에 그대로 맞지 않는다 | nhtsa-safety-standards-assessment, 23-24쪽 | 1차 (보고서 저자의 주장) | 2026-11-23 |
+| C-08-013 | NASA의 Toyota 조사: 원인을 늘어놓은 그림에는 조합의 논리가 없고 fault tree가 그것을 보인다 | nasa-toyota-ua-report, 71쪽 | 1차 | 2026-11-23 |
+| C-08-014 | 예제의 분석 결과: minimal cut set 여덟 (하나짜리 일곱), FMEA 22줄, unsafe control action 11개, 독립에 기대는 곳 넷. 두 신호의 단락을 250-351 mV에서 판정하지 않는다 | example/drive-torque/docs/의 fta.md, fmea.md, stpa.md, dfa.md. 단락은 scratchpad의 시험 코드로 잼 | 이 책의 분석과 측정 | 2026-11-23 |
+| C-09-001 | 컴퓨터 하나는 고장을 하나도 견디지 못한다. 위험의 원인이 processor의 고장이면 막는 것은 다른 processor에 있어야 한다 | nasa-gb-8719-13, 22쪽 (직접 읽음) | 1차 | 2026-11-23 |
+| C-09-002 | permanent와 transient fault, active와 dormant, 덮는 설계는 알아채는 수단과 함께 쓴다, 같은 설계의 channel은 독립의 가정에 기댄다 | avizienis-2004-taxonomy, 5쪽, 9쪽, 24-26쪽 (25쪽은 직접 읽음) | 1차 | 2026-11-23 |
+| C-09-003 | soft error: memory cell과 register의 bit 반전. Toyota 제어기의 보호 수단: memory의 검출과 정정 (1 bit 정정, 2 bit 검출), 뒤집은 사본, watchdog, 두 processor의 상호 점검, 전압 감시 | nasa-toyota-ua-report, 144-147쪽, 169-170쪽 | 1차 (NASA의 서술. 원고 쪽 전문가는 일부를 다툰다) | 2026-11-23 |
+| C-09-004 | 고장률과 평균 시간, FIT, 평균이지 보장된 수명이 아니다, 위험한 쪽을 모르면 절반. diagnostic coverage의 뜻과 네 값. 시험의 간격, 찾은 뒤의 safe state, 시험하는 쪽의 독립. common cause의 몫이 10%를 넘으면 중복의 이점이 사라진다. 논리적인 두 channel | ifa-report-2-2017e, 53쪽, 55-61쪽, 285-288쪽 (53, 57-58, 286-287쪽은 직접 읽음) | 2차 (EN ISO 13849-1:2015) | 2026-11-23 |
+| C-09-005 | 켤 때의 processor와 RAM 시험은 transient fault를 찾지 못한다. 자원을 혼자 써야 해서 켤 때로 몰린다. processor 안의 오류는 믿을 수 있게 보고되지 않는다. RAM 시험의 세 단계 (60, 90, 99%). memory 보호 장치는 그 core의 접근만 막는다 | autosar-safety-measures, 18쪽, 65-69쪽 (66-68쪽은 직접 읽음) | 1차 (AUTOSAR의 문서). ISO 26262에 관해서는 2차 | 2026-11-23 |
+| C-09-006 | 켤 때의 시험, 프로그램 memory의 검사, watchdog에 interrupt로 신호를 보내지 않는다, 사본과 CRC, 되읽기, 하드웨어 고장의 목록을 만든다. 소프트웨어의 방벽은 하드웨어의 고장으로 무너질 수 있다 | nasa-gb-8719-13, 93-98쪽, 118쪽, 144쪽 | 1차 | 2026-11-23 |
+| C-09-007 | 건강의 확인 (memory, ADC의 시험), 문제를 내고 답을 확인하는 방식, 주기적인 시험의 빈도, single-point fault와 latent fault의 지표 | nhtsa-etc-ev-fsa, 67쪽, 73-76쪽, 93쪽 | 2차 (ISO 26262 FDIS 2011). 보고서가 든 요구사항의 예 | 2026-11-23 |
+| C-09-008 | bit 하나가 task 하나를 죽일 수 있다 | koopman-toyota-ua, 29-31쪽 | 1차 (원고 쪽 전문가의 발표 자료) | 2026-11-23 |

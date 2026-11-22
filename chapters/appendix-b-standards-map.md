@@ -20,8 +20,8 @@
 | 5 | Safety lifecycle과 safety management | 2, 8 | 1 | | 초고 |
 | 6 | Hazard analysis and risk assessment | 3 | 5 | | 뼈대 |
 | 7 | Safety concept | 3, 4, 9 | 1, 2 | | 뼈대 |
-| 8 | Safety analysis 기법 | 9 | 7 | | 쓰기 전 |
-| 9 | 소프트웨어 엔지니어가 알아야 할 하드웨어 | 5, 11 | 2, 6 | | 쓰기 전 |
+| 8 | Safety analysis 기법 | 6, 9 | 7 | NASA의 handbook, STPA Handbook | 초고 |
+| 9 | 소프트웨어 엔지니어가 알아야 할 하드웨어 | 5, 11 | 2, 6 | ISO 13849-1 | 초고 |
 | 10 | Software safety requirements | 6, 8 | 3 | | 뼈대 |
 | 11 | Software architecture for safety | 6, 9 | 3 | | 뼈대 |
 | 12 | Software safety mechanism | 6 | 3, 7 | AUTOSAR의 공개 문서 | 뼈대 |

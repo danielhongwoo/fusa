@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다. 8장과 9장에서 일곱 개를 더했다.
 
 ## 읽는 법
 
@@ -222,6 +222,27 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 - 주의: 제어하는 소프트웨어와 따로 동작하는 hardware interlock은 소프트웨어가 틀렸을 때의 보호가 된다. (이 책의 풀이다.)
 - 근거: Leveson과 Turner (1993) 19-20쪽, 29쪽
 
+### permanent, transient, intermittent fault
+
+하드웨어의 fault를 얼마나 오래 있는가로 나눈 것이다. permanent fault는 한 번 생기면 계속 있고, transient fault는 잠깐 있다가 사라진다. intermittent fault는 나타났다 사라졌다 한다.
+
+- 주의: 방사선이나 잡음으로 bit가 뒤집히는 transient fault를 soft error라고도 한다. 켤 때의 시험은 permanent fault만 찾는다.
+- 근거: `avizienis-2004-taxonomy` 9쪽, 25쪽. `nasa-toyota-ua-report` 169쪽. `autosar-safety-measures` 66쪽
+
+### dormant fault
+
+있기는 하지만 지금 error를 일으키고 있지 않은 fault다. 쓰이지 않는 memory cell이나 한 번도 동작한 적이 없는 차단 회로의 고장이 그 예다. 일부러 써 보는 시험으로 찾는다.
+
+- 주의: latent fault와 가까운 말이다. 이 책은 분류의 말로는 dormant를, 안전 mechanism의 숨은 고장을 말할 때에는 latent를 쓴다.
+- 근거: `avizienis-2004-taxonomy` 5쪽, 24쪽
+
+### diagnostic coverage
+
+위험한 쪽의 고장 가운데 진단이 알아채는 것의 비율이다. 정확히 구하기 어려워 몇 단계의 값 (기계 분야에서는 0%, 60%, 90%, 99%)으로 쓴다.
+
+- 주의: 고장을 알아채도 safe state로 제때 가지 못하면 값은 0이다. 시험하는 쪽이 시험받는 쪽에서 독립이어야 한다.
+- 근거: `ifa-report-2-2017e` 57-58쪽, 285-288쪽 `(2차 자료)` (EN ISO 13849-1:2015 기준). `autosar-safety-measures` 68쪽 `(2차 자료)` (ISO 26262:2018을 설명)
+
 ### latent fault
 
 평소에는 드러나지 않다가 다른 fault와 겹칠 때에야 드러나는 fault다. 감시 기능의 고장이 흔한 예다. 이 풀이는 이 책의 것이다.
@@ -233,8 +254,8 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 
 한 가지 원인이 여러 요소를 함께 틀리게 하거나, 한 요소의 고장이 다른 요소로 번지는 것이다. 기능과 감시가 같은 입력이나 같은 MCU에 기대면 여기에 해당한다. 이것을 따지는 분석을 dependent failure analysis라고 한다.
 
-- 주의: 풀이는 이 책의 것이다. 규격의 정의는 확인하지 못했다 `(확인 필요)`.
-- 근거: `autosar-safety-measures` 21쪽, 46쪽
+- 주의: 풀이는 이 책의 것이다. 규격의 정의는 확인하지 못했다 `(확인 필요)`. 분석하는 방법은 8장에 있다.
+- 근거: `autosar-safety-measures` 21쪽, 46쪽. `nasa-gb-8719-13` 158쪽 (independence analysis)
 
 ### debounce
 
@@ -311,6 +332,33 @@ structural coverage의 기준 가운데 하나다. decision 안의 condition마�
 시스템을 제어 구조로 그리고, 제어 명령이 위험해지는 경우 (UCA, unsafe control action)를 찾는 분석이다. 부품의 고장만이 아니라 틀린 feedback, 모자란 요구사항, 설계의 오류도 원인으로 본다.
 
 - 근거: `stpa-handbook` 16-17쪽, `nhtsa-etc-ev-fsa` 24-25쪽
+
+### safety analysis
+
+설계의 어디가 어떻게 틀리면 safety goal이 깨지는지를 찾는 분석이다. hazard를 찾는 분석 (HARA)의 뒤에, 설계가 생긴 다음에 한다. FTA, FMEA, STPA가 여기에 쓰인다.
+
+- 근거: `nhtsa-etc-ev-fsa` 21쪽, `nhtsa-safety-standards-assessment` 23쪽 `(2차 자료)` (ISO 26262의 2011년 최종 초안 기준)
+
+### FTA (fault tree analysis), minimal cut set
+
+일어나면 안 되는 사건 하나 (top event)에서 시작해 그것을 만드는 원인을 거슬러 찾는 분석이다. 원인은 AND와 OR로 묶인다. minimal cut set은 함께 일어나면 top event를 일으키는 사건의 가장 작은 묶음이다. 사건이 하나인 cut set은 single point of failure다.
+
+- 주의: tree는 시스템의 모든 고장을 담지 않는다. 분석하는 사람이 떠올린 원인만 담긴다. 소프트웨어의 사건에는 확률을 붙이지 않는다.
+- 근거: `nasa-fault-tree-handbook` 15-16쪽, 45쪽. `nasa-gb-8719-13` 316쪽
+
+### common cause failure, cascading failure
+
+둘 이상의 요소가 함께 고장 나는 두 가지 길이다. common cause failure는 한 가지 원인이 여럿을 같은 때에 고장 내는 것이다. cascading failure는 한 요소의 고장이 다른 요소로 번지는 것이다. 둘을 묶어 dependent failure라고 한다.
+
+- 주의: 중복은 둘이 따로 고장 날 때에만 값을 한다. 같은 소프트웨어 두 벌은 늘 common cause를 가진다.
+- 근거: `nasa-fault-tree-handbook` 70-72쪽. `nasa-gb-8719-13` 141쪽 (fault propagation)
+
+### control structure, unsafe control action
+
+STPA의 말이다. control structure는 누가 무엇을 제어하고 무엇을 되돌려 받는지를 그린 그림이다. unsafe control action은 어떤 상황에서 hazard로 이어지는 명령이고, 네 가지로 묻는다: 내리지 않아서, 내려서, 때나 순서가 틀려서, 너무 길거나 짧아서.
+
+- 주의: 상황은 controller가 믿는 상태가 아니라 실제의 상태로 적는다. controller가 가진 믿음 (process model)이 틀린 것은 원인으로 따로 다룬다.
+- 근거: `stpa-handbook` 22-25쪽, 35-40쪽
 
 ### safety case
 
