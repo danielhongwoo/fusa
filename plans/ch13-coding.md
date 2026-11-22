@@ -49,3 +49,27 @@
 ISO 26262-6; IEC 61508-3, -7; MISRA 문서
 
 받은 문서: misra-compliance-2020, nasa-gb-8719-13
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `misra-compliance-2020` | 2 The software development process (2.4 Style guide, 2.6 Tool management) / 3 Fundamental elements of compliance (3.1-3.5 Decidability) | 10-19 | 지침 분류, 분석 범위, enforcement plan, 정적 분석 tool의 false positive와 undecidable 지침 |
+| `misra-compliance-2020` | 4 Deviations (4.1-4.4) / 5 Guideline re-categorization / 6 Adopted code | 20-27 | deviation record와 permit, 정당화 방법, adopted code 처리 |
+| `misra-compliance-2020` | 7 Claiming MISRA compliance (7.1-7.3) / Appendix A, B, C | 28-31, 33-39 | 준수 주장의 요건 (guideline compliance summary)과 준수한다는 주장 vs 일부 규칙 검사의 차이 |
+| `nasa-gb-8719-13` | 4.6 Good Programming Practices / 7.4.5 Language Restrictions and Coding Standards / 7.4.6 Defensive Programming / 7.4.8 Complexity | 93-98, 146-152 | safe subset과 coding standard 개념, 방어적 프로그래밍, 복잡도 관리 |
+| `nasa-gb-8719-13` | 11.1 Programming Languages (11.1.1 Safe Subsets, 11.1.2 Insecurities, 11.1.4 Languages, 11.1.6 Recommendations) | 208-233 | 언어별 안전 위험 (C, C++, Ada 등), 안전한 부분집합 (기준 시점은 2004년경, 최신 언어 아님) |
+| `nasa-gb-8719-13` | 8.4.1 Coding Checklists and Standards / 8.5.4 Unused Code Analysis / 8.5.5 Interrupt Analysis | 169-174 | coding 점검표, 인터럽트 분석, 사용하지 않는 코드 |
+| `koopman-toyota-ua` | slides 35-43 (MISRA C, Code Complexity, Global Variables, Concurrency, Recursion) | 35-43 | 전역 변수, race condition, 재귀, 복잡도에 대한 구체 사례 (원고 측 전문가 분석) |
+| `ariane-501-report` | 2.1 / 2.2 보호되지 않은 정수 변환 | 8-10 | 정수 변환 overflow가 operand error로 이어진 사례 (OCR본) |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- MISRA C:2025, MISRA C++:2023, CERT C의 규칙 - misra-compliance-2020은 준수 절차 문서이고 규칙 본문이 아니다
+- Ada/SPARK, Rust - nasa-gb 11.1 (2004년경)에 Ada 있음. Rust는 없다
+- build 설정(최적화, volatile, 경고 수준)의 영향 - 직접 서술 없음
+- interrupt와 공유 data의 깨지는 예 - nasa-gb p94-97 지침만, koopman 41-42 (race condition)로 간접

@@ -43,3 +43,25 @@
 ISO 26262-2; GSN Community Standard; UL 4600
 
 받은 문서: gsn-standard-v3
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `gsn-standard-v3` | Part 0: 0:2 Use of Arguments in Assurance Cases / 0:3 What is an Argument? / 0:4 GSN | 10-15 | assurance case, claim, argument, evidence의 정의와 GSN 개요 |
+| `gsn-standard-v3` | 1:2 Core GSN (1:2.1 Notation, 1:2.2 Interpretation) | 16-25 | goal, strategy, context, solution 요소와 SupportedBy/InContextOf |
+| `gsn-standard-v3` | 2:3 Developing Goal Structures Top-Down: The GSN Six-Step Method | 59-70 | goal 식별부터 solution까지 6단계 |
+| `gsn-standard-v3` | 2:5 Common Errors Language / 2:6 Common Errors Structural (Jumping Ahead, Leaps of Faith) | 80-87 | 형식만 갖춘 safety case의 문제 유형 |
+| `gsn-standard-v3` | 2:7 Evaluating Goal Structures: A Step-by-Step Approach (2:7.4 Staged Argument Review) | 88-95 | 평가자가 argument를 검토하는 단계 |
+| `nhtsa-safety-standards-assessment` | 3.11 Review, Audit, and Certification | 33-34 | ISO 26262가 work product로 safety case를 구성한다는 설명과 비판 (2011 판 기준) |
+| `b737max-jatr` | R6 / R7 (human factors) / R6.12 | 50-56 | 규정 준수 중심 증명이 안전 논증을 놓치는 사례 |
+| `nasa-gb-8719-13` | 6.4 Requirements Management (safety case 정의 한 문단) | 109 | 규제 기관에 낼 safety case 개념 한 문단 |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- UL 4600, ISO 26262-2 confirmation review/audit/assessment 요구 - 규격 원문 없음 (autosar p46의 부재 목록과 nhtsa-std 3.11이 간접)
+- 한 쪽짜리 safety case 예제 - GSN 표준에 insulin pump 예(p111-113)는 있으나 자동차 예제는 없다

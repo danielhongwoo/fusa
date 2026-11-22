@@ -41,3 +41,26 @@ software architecture (응용, 감시, HAL의 3층과 task table. 정적 view와
 ## 관련 규격과 자료
 
 ISO 26262-6 (Annex D 포함), -9; IEC 61508-3 (Annex F 포함); E-Gas monitoring concept
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `nasa-gb-8719-13` | 7.4.1 Designing for Safety / 7.4.2 Designing around Faults and Failures (7.4.2.1 N-Version, 7.4.2.2 Fault Containment Regions, 7.4.2.3 Redundant Architecture) | 138-146 | 단순함, 계층, 인터페이스 제한, 독립 병렬 redundancy와 직렬 inhibit의 독립 조건, fault propagation 방지, N-version 한계 |
+| `nasa-gb-8719-13` | 7.5.2 Design Safety Analysis / 7.5.3 Independence Analysis | 157-159 | 아키텍처에 safety analysis를 다시 적용, 안전 부품의 분리 확인 |
+| `autosar-safety-measures` | 2.1 Memory Partitioning (2.1.2.1-2.1.2.6, 2.1.3, 2.1.4) / 2.2 Timing Monitoring | 9-28 | freedom from interference의 memory와 timing 수단, 등급이 다른 SW-C 혼합 조건, 한계 |
+| `autosar-safety-measures` | 3.7.2 E-Gas Monitoring Related Features | 60-65 | E-Gas 3단계 감시 구조의 AUTOSAR 구현 설명 (2차 자료) |
+| `nasa-toyota-ua-report` | 6.5 System Fail-Safe Architecture (6.5.1 Redundancy, 6.5.3 Failure Mitigation) | 64-83 | main + monitor 구조, 다양성이 있는 safing 제어, 단계적 fail-safe 모드 |
+| `koopman-toyota-ua` | slides 7, 18, 31-34, 43, 47 (ETCS two CPUs, Fault Containment, Split Inputs, Recursion, Poor Isolation) | 7, 18, 31-34, 43, 47 | 2 CPU 감시 구조의 약점과 task 분리 부족 (원고 측 전문가 의견) |
+| `faa-ac-20-193` | 5.4 Interference channels and resource usage / 5.5 Software verification / 5.6 Error detection and handling, and safety nets | 8-12 | multicore의 interference channel과 robust partitioning 개념 (항공, FAA AC) |
+| `b737max-jatr` | R6.1-R6.3 (fail-safe design, fault tolerance, sensor voting) | 50-52 | 단일 센서 의존과 voting/health monitoring 부재 사례 |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- partitioning의 규격 조건(ISO 26262-6 Annex D), mixed criticality - autosar p9, 14의 인용 문장만. Annex 원문 없음
+- model-based development 2쪽 - nasa-gb 4.2.2.4 (p70)와 autosar p45 한 문단 수준
+- 21장 run-time assurance 구조 - 대상 문서에 없다

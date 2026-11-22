@@ -39,3 +39,24 @@ ISO 26262-9, ISO 26262-6 Annex E; IEC 61508-7; STPA Handbook
 받은 문서: stpa-handbook
 
 받은 문서 (추가): nhtsa-etc-ev-fsa (HAZOP, STPA, FMEA를 같은 시스템에 적용한 예)
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `stpa-handbook` | Ch.2 How to Do a Basic STPA Analysis (Step 2 control structure, Step 3 UCA, Step 4 loss scenarios) | 24-52 | STPA의 단계: 제어 구조 모델, unsafe control action 4가지 형태, loss scenario |
+| `stpa-handbook` | Ch.1 Introduction / Ch.3 Integrating STPA into the System Engineering Process | 4-13, 54-71 | FTA, FMEA, HAZOP과 대비한 STPA의 위치, 설계 단계별 적용 |
+| `nhtsa-etc-ev-fsa` | 2.2 Hazard and Safety Analysis Methods (HAZOP, Functional FMEA, STPA) / 7.1 Functional FMEA / 7.2 STPA Step 2 | 21-26, 59-65 | 같은 시스템(전기차 가속 제어)에 HAZOP, FMEA, STPA를 적용한 예와 결과 수 비교 |
+| `nasa-gb-8719-13` | 6.6.7 Software Fault Tree Analysis / Appendix C SFTA / Appendix D SFMEA (D.4 Process) | 131, 315-337 | 소프트웨어 FTA와 FMEA의 목적, 절차, 한계 |
+| `nasa-gb-8719-13` | 7.4.2 Designing around Faults and Failures (7.4.2.2 Fault Containment Regions) / 7.5.3 Independence Analysis | 141-145, 158-159 | 독립성 주장과 fault propagation 방지, 독립성 분석 |
+| `nasa-toyota-ua-report` | 6.5.2 System Failures (High Level Functional Fault Tree) | 68-80 | 실제 시스템에 대한 functional fault tree와 failure mitigation 대응 |
+| `koopman-toyota-ua` | slides 31-34 (Fault Containment Regions, Redundancy, Split Input Sources, VPA1/VPA2) | 31-34 | 단일 고장점과 독립적인 fault containment region의 필요 (dependent failure 논의 예) |
+| `b737max-jatr` | R6.8, R6.9 (single and multiple failure analysis) | 53-54 | 단일 최악 시나리오만 분석하면 안 됨, cascading effects 분석 요구 |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- HAZOP guide word의 일반 정의, dependent failure analysis (CCF, cascading)의 규격 정의 - nhtsa-etc의 HAZOP 적용 예와 koopman FCR 슬라이드가 간접 근거

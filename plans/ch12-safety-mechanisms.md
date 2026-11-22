@@ -46,3 +46,25 @@ safety mechanism 구현, mechanism마다 덮는 fault 목록
 ISO 26262-6; IEC 61508-7; AUTOSAR 공개 문서
 
 받은 문서: autosar-e2e-protocol, autosar-safety-measures
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `autosar-safety-measures` | 2.2 Timing Monitoring (Watchdog Manager, supervised entities) / 2.3 Logical Supervision | 22-32 | alive, deadline, logical supervision 기반 watchdog과 program flow monitoring |
+| `autosar-e2e-protocol` | 1 Introduction / 6.1-6.2 Overview of E2E / 6.3 Generalized Part (Counter, Data ID, CRC, Timeout; Table 6.1) | 13-15, 27-47 | E2E 보호의 fault model (반복, 손실, 지연, 삽입, masquerade)과 방어 수단 (counter, data ID, CRC, timeout) |
+| `autosar-e2e-protocol` | 6.5 Profile 1 / 6.6 Profile 2 (Header Layout, Creation, Evaluation) | 82-128 | CRC와 counter 기반 profile의 실제 구성과 수신측 평가 |
+| `autosar-safety-measures` | 2.4 End-2-End Protection / 2.1 Memory Partitioning / 4 Hardware Diagnostics / 3.7 Use of AUTOSAR features | 32-43, 9-21, 65-69, 47-65 | AUTOSAR 모듈과 mechanism 대응표의 재료 (각 mechanism의 fault model, 감지와 반응, 한계) |
+| `nasa-gb-8719-13` | 4.6 Good Programming Practices for Safety / 7.4.6 Defensive Programming | 93-98, 147-148 | watchdog, 메모리 검사, 입력 검사, 초기화 방어 기법 |
+| `nasa-toyota-ua-report` | 6.7.2 System Integrity and Fail Safe Modes (6.7.2.1 Power On - Reset .. 6.7.2.6 Software Data Checks) / 6.4.4 The Role of Diagnostic Trouble Codes | 62-63, 144-147 | 실제 ECU의 power-on reset, heartbeat, watchdog, data mirroring, DTC 설정의 역할 |
+| `nhtsa-etc-ev-fsa` | 8.1 Safety Strategies / 9.2.3 EV PCM Functional Safety Requirements | 66-67, 74-83 | 센서 타당성, main controller 감시(quizzer, seed-and-key), 통신 quality factor, periodic check 요구 문장 |
+| `autosar-e2e-protocol` | 6.20.4 FTTI and E2E Parameters | 244-245 | E2E 감지 시간(debounce 창)을 task/통신 주기와 FTTI에 잇는 방법 |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- NVM data 무결성(이중 저장, 전원 상실), 반복 reset 처리, DTC debounce 해제 조건 - 깊은 서술 없음 (nasa-gb p93 ROM 검사, nasa-toyota 6.4.4 DTC 개요만)
+- SecOC와 E2E의 차이 - 받은 문서에 SecOC가 없다

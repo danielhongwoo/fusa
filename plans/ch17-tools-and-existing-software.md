@@ -43,3 +43,26 @@
 ## 관련 규격과 자료
 
 ISO 26262-8, -10; IEC 61508-3; DO-330
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `faa-ac-20-115d` | 10. Tool Qualification (Table 2, 11-12 TQL correlation) | 10-12 | DO-330 기반 tool qualification level, DO-178B tool 분류와 TQL의 대응 (항공) |
+| `faa-ac-20-115d` | 9. Modifying and Re-using Software Approved using older versions (legacy software, Figure 1) | 5-10 | 기존 소프트웨어 재사용의 절차: 사용 이력, service difficulty 평가 |
+| `nasa-gb-8719-13` | 12.1 Off-the-Shelf Software (12.1.1-12.1.5 Special Problems with Reused Software) | 270-282 | OTS/COTS와 재사용 소프트웨어의 평가, 통합, 추천 분석과 테스트 |
+| `nasa-gb-8719-13` | 11.2 Compilers, Editors, Debuggers / 11.3 CASE tools and Automatic Code Generation | 233-240 | tool과 code generator의 위험, 선택 기준 |
+| `misra-compliance-2020` | 2.6 Tool management (2.6.1-2.6.6) | 12-15 | compiler와 정적 분석 tool의 선택, 검증, 설정 |
+| `nasa-mcdc-tutorial` | 4.1.2 Factors to Consider in Selecting or Qualifying a Tool | 56-59 | coverage tool의 qualification 요소 |
+| `ariane-501-report` | 2.2 (Ariane 4 소프트웨어의 재사용) | 9-11 | 검증 없는 재사용이 사고로 이어진 사례 (OCR본) |
+| `autosar-safety-measures` | 3.4 Functional Safety Measures not delivered by AUTOSAR | 46 | AUTOSAR가 SEooC, ASIL 식별, dependent failure analysis, safety case, confirmation measure를 제공하지 않는다는 목록 (SEooC의 정의 자체는 없음) |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- tool confidence level, ISO 26262의 tool 분류, IEC 61508 tool 분류, SEooC 정의, proven in use - 받은 문서에 없다 (TQL은 faa-ac-20-115d만, 항공)
+- compiler가 안전 코드를 바꾸는 사례, code generator의 TCL - 없음 (nasa-gb 11.3 일반 서술만)
+- open source 사용 - nasa-gb p245 RTEMS 한 줄뿐

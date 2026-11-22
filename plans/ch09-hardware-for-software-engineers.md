@@ -37,3 +37,23 @@
 ## 관련 규격과 자료
 
 ISO 26262-5, -11; IEC 61508-1, -2, -6
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `autosar-safety-measures` | 4 Hardware Diagnostics (4.1 Core Test, 4.2 RAM Test) | 65-69 | 소프트웨어가 수행하는 core test와 RAM test의 fault model, 감지와 반응, 한계 |
+| `nasa-gb-8719-13` | 4.6 Good Programming Practices for Safety (CPU/ROM/memory tests, watchdog, power-up checks) | 93-98 | startup 시 self test, ROM 검사, watchdog 사용 요령 |
+| `nasa-toyota-ua-report` | 6.7.2 System Integrity and Fail Safe Modes (Heartbeat, Watch Dog Timer, Hardware Data Checks, Software Data Checks) / 6.9 External Theories (single event effects 설명) | 144-147, 169-170 | 실제 ECU의 EDAC, data mirroring, watchdog, 두 processor의 상호 감시, single event effect 방어 |
+| `koopman-toyota-ua` | slides 29-30 (Random HW Faults, How Often Do Random Faults Happen?) | 29-30 | random hardware fault 빈도의 감각 (chip당 수만 시간에 한 번 등, 발표자의 추정치) |
+| `iec-61508-overview-slides` | slides 12-13 Failure Categories | 12-13 | random hardware failure와 systematic failure 구분 다시 보기 |
+| `avizienis-2004-taxonomy` | 3.2.1 A Taxonomy of Faults (permanent/transient), 5.2 Fault Tolerance | 8-10, 24-27 | fault의 지속성 분류와 error detection/recovery |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- SPFM, LFM, PMHF, HFT, SFF, PFD, PFH, lockstep, ECC, MCU safety manual - 받은 문서에 없다
+- 전압, clock 감시, ADC 기준 전압 self test - autosar 4(core test, RAM test)만 있다

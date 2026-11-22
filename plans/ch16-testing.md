@@ -50,3 +50,24 @@ test specification, coverage 보고서, fault injection test 3건 이상 (센서
 ISO 26262-6; IEC 61508-3; NASA MC/DC tutorial
 
 받은 문서: nasa-mcdc-tutorial, nasa-gb-8719-13
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `nasa-mcdc-tutorial` | 2 MC/DC Apologia (2.1 Verification Process, 2.2 Role of Coverage, 2.3 Types of Structural Coverage) | 9-17 | requirements-based와 structural coverage의 역할, statement, decision, condition, MC/DC 비교 |
+| `nasa-mcdc-tutorial` | 2.5 More Details about MC/DC / 3 MC/DC Approach / Appendix B | 16-54, 78-83 | unique-cause와 masking MC/DC의 차이 (p19, 38), 단락 평가와 비트 연산에서의 MC/DC (p48-53) |
+| `nasa-mcdc-tutorial` | 4 MC/DC Admonitions (4.1 Automation Problems, 4.2 Process Problems) / 5 Assessment Process | 55-68 | coverage tool의 한계와 qualification 요소, coverage 오용 |
+| `nasa-gb-8719-13` | 9.4 Testing Techniques (9.4.1, 9.4.2 Test Environment, 9.4.7 Safety Testing, 9.4.9 Computer Models) / 9.5.1 Test Coverage Analysis | 184-198 | 테스트 기법, 환경, 안전 테스트, 모델을 이용한 검증, coverage 해석 |
+| `nasa-gb-8719-13` | 8.5.6 Test Coverage Analysis / 9.4.3 Integration Testing | 175, 190 | unit, integration 수준 테스트, software fault injection (p179, 192, 281) |
+| `ariane-501-report` | 2.3 The testing and qualification procedures | 11-13 | system test에 실제 장비를 넣지 않은 결정과 그 결과 (OCR본) |
+| `koopman-toyota-ua` | slides 19-20 (Didn't Vehicle Testing Make It Safe?, Testing Is Not Enough) | 19-20 | 테스트만으로 안전을 보일 수 없다는 주장 (35백만 마일 테스트 등 수치, 원고 측 전문가 발표) |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- back-to-back test, HIL 구분, model/software/processor 수준 in-the-loop 정의 - 없음
+- safety validation - 없음

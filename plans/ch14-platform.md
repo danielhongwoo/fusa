@@ -43,3 +43,25 @@ task 설계와 timing 예산, 플랫폼 선택의 근거
 ISO 26262-6; AMC 20-193 (multicore); AUTOSAR 공개 문서
 
 받은 문서: faa-ac-20-193, autosar-safety-measures
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `autosar-safety-measures` | 2.2 Timing Monitoring (2.2.2.3 Timing Protection of the Operating System) / 2.1 Memory Partitioning | 22-28, 9-21 | OS의 실행 시간 budget 감시, 메모리 보호 (AUTOSAR Classic 기준) |
+| `autosar-safety-measures` | 3.7.1 Timing Related Features | 48-60 | 동기화된 시간 기반, 시간 결정적 구현, timing violation 방어 기능 |
+| `faa-ac-20-193` | 3 Background / 5.2-5.8 Multi-core processor guidance (objectives MCP_Planning, MCP_Resource_Usage, MCP_Software) | 3-13 | multicore의 간섭 채널과 robust resource partitioning 목표 (FAA AC 20-193이며 EASA AMC 20-193이 아님) |
+| `nasa-gb-8719-13` | 11.4 Operating Systems (11.4.2 Do I need an RTOS?, 11.4.3 What to look for in an RTOS) | 241-245 | RTOS의 안전 관련 선택 기준 (기준 시점은 2004년경) |
+| `koopman-toyota-ua` | slides 52-55 (Real Time Scheduling, RMA, Does ETCS Meet Deadlines?) | 52-55 | rate monotonic analysis와 deadline 분석 필요성 (원고 측 전문가 의견) |
+| `nasa-gb-8719-13` | 6.6.6 Timing, Throughput And Sizing Analysis | 130 | 타이밍, 메모리 크기 분석 |
+| `koopman-toyota-ua` | slide 43 (Toyota ETCS and Recursion) | 43 | 재귀와 stack 사용의 관계 |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- WCET 분석 - nasa-gb p368 한 줄. 측정/여유/감시 방법의 근거 없음
+- AUTOSAR Adaptive, 인증 RTOS와 hypervisor, Linux(ELISA), EASA AMC 20-193 - 없음 (faa-ac-20-193은 FAA 문서, hypervisor 언급 5회)
+- stack 사용량 측정(초기 패턴), map file - 없음

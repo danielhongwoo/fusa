@@ -50,3 +50,26 @@ item definition (E/E 구성도와 item의 경계 포함), HARA 표, safety goal�
 ISO 26262-3; IEC 61508-5
 
 받은 문서: nhtsa-etc-ev-fsa (전기차의 가속 제어 시스템에 대한 functional safety 평가. hazard 분석, ASIL 평가, safety goal)
+
+## 근거 위치 (2026-11-22)
+
+받은 문서에서 이 장을 뒷받침하는 곳이다. 쪽은 PDF 파일의 몇 번째 쪽인지다. 에이전트가 문서를 읽어 뽑은 것이므로, 원고에 쓰기 전에 그 쪽을 직접 읽어 확인한다 (RULES.md 5.2절).
+
+| 문서 | 절 | 쪽 | 뒷받침하는 내용 |
+|---|---|---|---|
+| `nhtsa-etc-ev-fsa` | 3.1 System Analysis Scope / 3.2 Analysis Assumptions / 3.5.4 Brake Throttle Override | 27-30, 34 | item의 경계와 가정, 전기차 가속 제어 시스템 범위, 브레이크가 가속을 이기는 기능 |
+| `nhtsa-etc-ev-fsa` | 4.1 Vehicle-Level Hazards / 4.2 HAZOP (4.2.1-4.2.3) | 37-42 | 7개 vehicle-level hazard (의도하지 않은 가속, 감속 부족, 잘못된 방향, 구동력 상실 등)와 HAZOP malfunction 도출 |
+| `nhtsa-etc-ev-fsa` | 5.1 ASIL Assessment Steps (5.1.1 Operational Situations, 5.1.2) / 5.2 ASIL per Hazard | 52-57 | 운전 상황 변수 표와 S/E/C 평가, hazard별 최고 ASIL 선택 (ISO 26262:2011 기준) |
+| `nhtsa-etc-ev-fsa` | 6 Vehicle-Level Safety Goals / 8.2 Example Safe States | 58, 67-68 | safety goal 표, safe state가 "완전 정지"가 아니라 정상, 성능 저하, 토크 0 중에서 고려됨 (끄면 안전하다는 오해) |
+| `nhtsa-etc-ev-fsa` | 10.1-10.3 Observations | 101-103 | 분석자마다 ASIL이 달라지는 사례, controllability 판단의 객관 자료 부족 (controllability 가정을 밝히는 근거) |
+| `nasa-gb-8719-13` | 2.3.1 Preliminary Hazard Analysis (PHA) / 6.5.4 Timing, Sizing and Throughput Considerations (Time to Criticality) | 27-28, 117 | fault에서 위험 상태까지 걸리는 시간(time to criticality)과 automatic safing 개념 (FTTI와 같은 시간 성질, 용어는 다름) |
+| `nhtsa-safety-standards-assessment` | 3.4.2 Hazard and Safety Analysis in ISO 26262 / 3.6 Risk Assessment Approach | 23-29 | item 수준 hazard analysis 방법 나열과 risk assessment 방식 비교 (2011 판 기준) |
+| `stpa-handbook` | Ch.2 Step 1 Defining the purpose of the analysis (losses, hazards, constraints) | 14-23 | loss, hazard, safety constraint 정의 방식 (HARA를 보완하는 다른 방법) |
+
+### 받은 문서에 근거가 없는 항목
+
+이 항목은 다른 공개 문서를 찾거나, `(2차 자료)`로 밝히거나, 쓰지 않는다.
+
+- ASIL 결정표와 S, E, C 등급의 정의 - ISO 26262-3 원문이 없다. nhtsa-etc 54-55쪽이 규격의 표를 옮겨 싣고 있으나 2011년 판이고, 책에 옮기지 않는다. 등급의 뜻은 그 보고서의 설명과 예로 소개한다
+- FTTI의 정의 원문 - nhtsa-etc에는 정의 문장이 없고 쓰임만 있다 (71-74쪽). autosar-e2e p244의 한 줄과 nasa-gb p117의 time to criticality로 설명한다
+- risk graph, risk matrix(IEC 61508-5) - 슬라이드에 없다. nasa-gb의 risk matrix(p38-39)와 mil-std 범주만 있다
