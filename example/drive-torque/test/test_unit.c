@@ -140,12 +140,17 @@ static void tc_003(void)
     CHECK(!st.fault);
 }
 
+/* 실패하는 입력의 종류. 창은 어느 쪽의 실패든 세어야 한다 */
+static bool fail_by_range; /* 참이면 채널 1이 전압 범위를 벗어난다. 거짓이면 두 채널이 어긋난다 */
+
 /* 정해진 주기에만 검사에 실패하는 입력을 넣고, 처음 페달 고장이 된 주기를 돌려준다. 없으면 -1.
- * is_bad(i)가 참인 주기에 두 채널이 어긋난다 */
+ * is_bad(i)가 참인 주기에 실패한다 */
 static int first_fault_cycle(pedal_check_t *st, int cycles, bool (*is_bad)(int))
 {
-    inputs_t good = inputs(apps1(300), apps2(300));
-    inputs_t bad = inputs(apps1(900), apps2(300));
+    /* 범위 실패는 페달을 끝까지 밟은 채 채널 1만 4800 mV로 둔다.
+     * 페달 위치로 바꾸면 두 채널이 같으므로 (둘 다 1000) 불일치는 아니고 범위만 벗어난다 */
+    inputs_t good = fail_by_range ? inputs(apps1(1000), apps2(1000)) : inputs(apps1(300), apps2(300));
+    inputs_t bad = fail_by_range ? inputs(4800, apps2(1000)) : inputs(apps1(900), apps2(300));
     int first = -1;
 
     for (int i = 0; i < cycles; i++) {
@@ -167,12 +172,18 @@ static bool every_2nd(int i) { return (i % 2) == 0; }
 /* 처음 20주기 안에 한 주기 걸러 10번 실패하고, 그 뒤 99번째 주기 (0부터 세어)에 한 번 더 */
 static bool ten_then_at_99(int i) { return ((i < 20) && ((i % 2) == 0)) || (i == 99); }
 static bool ten_then_at_100(int i) { return ((i < 20) && ((i % 2) == 0)) || (i == 100); }
+/* 76번째부터 96번째 주기까지 한 주기 걸러 11번 실패한다.
+ * make_ready가 기록의 앞 세 자리를 썼으므로 96번째 주기의 결과는 기록의 마지막 자리 (99)에 적힌다 */
+static bool eleven_ending_at_96(int i) { return (i >= 76) && (i <= 96) && ((i % 2) == 0); }
+static bool first_ten_even(int i) { return (i < 20) && ((i % 2) == 0); }
+static bool always(int i) { (void)i; return true; }
 
 /* TC-014: SWR-14 최근 100주기 가운데 검사 실패가 10번을 넘으면 페달 고장으로 고정한다 */
 static void tc_014(void)
 {
     pedal_check_t st;
 
+    fail_by_range = false;
     /* 8주기마다 한 번 실패한다 (FI-07, FI-08의 모양). 이어지는 횟수로는 판정되지 않는다.
      * 11번째 실패는 7 + 8 x 10 = 87번째 주기다. 그 주기에 고장이 된다 */
     make_ready(&st);
@@ -197,6 +208,19 @@ static void tc_014(void)
     make_ready(&st);
     CHECK_EQ(first_fault_cycle(&st, 300, ten_then_at_100), -1);
 
+    /* 기록의 마지막 자리 (99)도 적고 센다. 11번째 실패가 그 자리에 적히는 경우다 */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 300, eleven_ending_at_96), 96);
+
+    /* 실패의 종류를 가리지 않는다. 채널 하나가 전압 범위를 벗어나는 실패도 센다
+     * (위의 경우는 모두 두 채널이 어긋나는 실패였다) */
+    fail_by_range = true;
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 400, every_8th), 87);
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 2000, every_11th), -1);
+    fail_by_range = false;
+
     /* 켠 직후부터 한 주기 걸러 실패하면 검사를 3주기 이어서 통과하지 못한다.
      * 그동안에도 실패를 센다. 11번째 실패는 20번째 주기다 */
     pedal_check_init(&st);
@@ -210,6 +234,14 @@ static void tc_014(void)
     CHECK_EQ(st.window_pos, 1);
     st.window_pos = 255u;
     CHECK_EQ(first_fault_cycle(&st, 1, every_10th), -1);
+    CHECK_EQ(st.window_pos, 1);
+    /* 적을 자리가 범위를 하나 벗어난 채 실패가 들어오는 경우. 실패가 이미 10번 적혀 있다.
+     * 자리를 처음으로 돌려 거기에 적어야 한다: 11번이 되어 고장이고, 다음 자리는 1이다.
+     * 범위 검사가 하나 어긋나면 배열의 바로 뒤 (적을 자리를 담은 변수)를 덮어쓴다 */
+    make_ready(&st);
+    CHECK_EQ(first_fault_cycle(&st, 20, first_ten_even), -1);
+    st.window_pos = 100u;
+    CHECK_EQ(first_fault_cycle(&st, 1, always), 0);
     CHECK_EQ(st.window_pos, 1);
     /* 기록의 값이 틀려 실패가 11번 들어 있으면 다음 주기에 고장이 된다 (안전한 쪽) */
     make_ready(&st);

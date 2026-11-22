@@ -16,7 +16,7 @@ fail=0
 mkdir -p build/reports
 : > "$REPORT"
 
-PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped"
+PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded"
 count=0
 
 for prop in $PROPS; do

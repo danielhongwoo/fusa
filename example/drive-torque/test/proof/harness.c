@@ -6,6 +6,11 @@
  *
  * 증명이 말해 주는 것: 이 C 코드는 가능한 모든 입력에서 아래 assert를 지킨다.
  * 말해 주지 않는 것: compiler가 만든 기계어, 실행 시간, 하드웨어의 고장, 주기를 놓치는 경우.
+ *
+ * 성질 6과 7은 기능, 감시, 출력 단계를 이어서 돌린다. 잇는 순서는 제품 (src/vcu/vcu.c의
+ * task_monitor_output)의 네 줄을 여기에 옮겨 적은 것이다. 제품의 연결 자체는 증명의 밖이다.
+ * 제품의 연결이 바뀌어도 이 파일은 통과한다. 그것을 지키는 것은 시나리오 test (TC-205)와
+ * 변이 검사 (연결의 줄을 빼거나 바꾼 변이)다.
  */
 #include <assert.h>
 
@@ -229,4 +234,78 @@ void prove_normal_function_not_clamped(void)
     }
     /* 허용 토크는 토크 요구를 5 Nm 넘게 앞서지 않는다 */
     assert((allowed - ((req < 0) ? -req : req)) <= 50);
+}
+
+/* 방향 d (GEAR_D나 GEAR_R)로의 토크의 크기. 반대 방향이면 0 */
+static torque_t toward(torque_t v, gear_t d)
+{
+    if (d == GEAR_D) {
+        return (v > 0) ? v : 0;
+    }
+    return (v < 0) ? -v : 0;
+}
+
+/*
+ * 성질 7 (SWR-06, SWR-13): 기능이 어떻게 틀려도, 나가는 토크는 정상인 기능의 토크 요구를
+ * 5 Nm 넘게 앞서지 않는다. 입력이 어떻게 바뀌어도 그렇다.
+ *
+ * 두 궤적을 나란히 돌린다. 하나는 정상인 기능이 스스로 기억하는 지난 요구 (normal.prev)이고,
+ * 다른 하나는 틀린 기능의 요구가 감시와 출력 단계를 거쳐 실제로 나간 토크 (out.last_out)다.
+ * 둘은 같은 입력을 받는다.
+ *   묶인 상태: 전진 쪽으로도 후진 쪽으로도, 지난 출력의 크기가 정상인 기능의 지난 요구의 크기를
+ *              5 Nm 넘게 앞서지 않는다.
+ * 묶인 상태에서 시작하면, 입력과 틀린 기능의 요구가 무엇이든 한 주기 뒤에도 묶인 상태다.
+ * 켠 직후 (둘 다 0)는 묶인 상태다. 둘을 이으면 몇 주기를 돌아도 성립한다.
+ *
+ * 전제 (증명이 말해 주지 않는 것)
+ *   - 감시와 출력 단계가 주기마다 이 순서로 실행되고, 감시가 받는 입력은 정상인 기능이 받았을 입력과 같다.
+ *   - 출력 단계가 기억하는 지난 출력을 다른 코드가 바꾸지 않는다 (memory의 고장이 없다).
+ *   - 정상인 기능은 src/app/app.c 그대로다. 견주는 대상이 이 코드이므로, 이 코드의 요구사항이 틀렸으면
+ *     증명도 틀린 것을 기준으로 삼는다.
+ * 재는 것은 VCU가 보낸 토크 요구다. inverter가 낸 토크가 아니다.
+ */
+void prove_faulty_function_bounded(void)
+{
+    app_t normal;
+    output_stage_t out;
+    permille_t pedal = nondet_int32();
+    bool brake = nondet_bool();
+    gear_t gear = (gear_t)nondet_int32();
+    torque_t faulty_req = nondet_int32(); /* 틀린 기능은 무엇이든 요구할 수 있다 */
+    torque_t normal_req;
+    torque_t allowed;
+    torque_t sent;
+
+    /* 켠 직후의 상태는 묶인 상태다 */
+    app_init(&normal);
+    output_stage_init(&out);
+    assert(toward(out.last_out, GEAR_D) <= (toward(normal.prev, GEAR_D) + 50));
+    assert(toward(out.last_out, GEAR_R) <= (toward(normal.prev, GEAR_R) + 50));
+
+    /* 묶인 상태 가운데 아무것이나. 출력 단계의 나머지 상태는 어떤 값이든 된다 */
+    normal.prev = nondet_int32();
+    out.last_out = nondet_int32();
+    out.excess_cycles = nondet_uint8();
+    out.clamp_count = nondet_uint32();
+    out.latched = nondet_bool();
+    __CPROVER_assume((normal.prev >= -2500) && (normal.prev <= 2500));
+    __CPROVER_assume((out.last_out >= -2500) && (out.last_out <= 2500));
+    __CPROVER_assume(out.excess_cycles <= 5);
+    __CPROVER_assume(toward(out.last_out, GEAR_D) <= (toward(normal.prev, GEAR_D) + 50));
+    __CPROVER_assume(toward(out.last_out, GEAR_R) <= (toward(normal.prev, GEAR_R) + 50));
+
+    /* 한 주기: 정상인 기능은 견주려고 나란히 돌릴 뿐이고, 출력으로 가는 것은 틀린 기능의 요구다 */
+    normal_req = app_step(&normal, pedal, brake, gear);
+    allowed = monitor_allowed_torque(pedal, brake, gear);
+    allowed = monitor_limit_rise(allowed, out.last_out, gear);
+    sent = output_stage_step(&out, faulty_req, allowed, gear);
+
+    /* 나간 토크는 정상인 기능의 토크 요구를 5 Nm 넘게 앞서지 않는다 */
+    assert(toward(sent, GEAR_D) <= (toward(normal_req, GEAR_D) + 50));
+    assert(toward(sent, GEAR_R) <= (toward(normal_req, GEAR_R) + 50));
+    /* 한 주기 뒤에도 묶인 상태다 */
+    assert(out.last_out == sent);
+    assert(normal.prev == normal_req);
+    assert((out.last_out >= -2500) && (out.last_out <= 2500));
+    assert((normal.prev >= -2500) && (normal.prev <= 2500));
 }

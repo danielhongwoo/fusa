@@ -53,8 +53,9 @@ static void task_monitor_output(vcu_t *vcu)
     /* SWR-11: 페달 고장이나 기능의 고장을 알아채면 경고를 요청한다 */
     vcu->warning = (vcu->pedal_check.fault || vcu->output.latched) ? WARNING_RED : WARNING_NONE;
 
-    hal_can_tx_torque(vcu->torque_out);
+    /* 구동 허용 신호를 먼저 쓴다. 끊어야 하는 주기에 CAN의 송신이 늦어져도 끊는 일이 밀리지 않는다 */
     hal_enable_write(vcu->enable);
+    hal_can_tx_torque(vcu->torque_out);
     hal_can_tx_warning(vcu->warning);
 
     hal_diag_t diag;

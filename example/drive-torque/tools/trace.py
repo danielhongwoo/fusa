@@ -15,6 +15,7 @@
     7. 구현 예정 (status: planned)인 요구사항은 3과 4를 보지 않는다. 그 수와 ID를 늘 찍는다.
        구현 예정이라고 적었는데 코드나 test가 이미 있으면 문제다 (표시를 지우지 않은 것이다).
        위 단계의 요구사항이 구현 예정인데 그 아래가 모두 구현되어 있어도 문제다.
+       거꾸로, 위 단계가 구현한 것으로 적혀 있는데 그 아래가 모두 구현 예정이어도 문제다.
        --strict에서는 구현 예정이 0이어야 한다
 
 요구사항 파일은 YAML의 작은 부분만 쓴다. 바깥의 library를 받지 않으려고 직접 읽는다.
@@ -152,6 +153,13 @@ def main():
         children = [c for c, r in by_id.items() if rid in r.get("parents", [])]
         if children and not any(c in planned for c in children):
             problem("%s: 구현 예정이라고 적었는데 그 아래의 요구사항 (%s)이 모두 구현되어 있다"
+                    % (rid, ", ".join(sorted(children))))
+    for rid in sorted(by_id):
+        if rid.startswith("SWR-") or rid in planned:
+            continue
+        children = [c for c, r in by_id.items() if rid in r.get("parents", [])]
+        if children and all(c in planned for c in children):
+            problem("%s: 구현한 것으로 적혀 있는데 그 아래의 요구사항 (%s)이 모두 구현 예정이다"
                     % (rid, ", ".join(sorted(children))))
     if strict and planned:
         problem("구현 예정인 요구사항이 %d개 있다 (--strict)" % len(planned))
