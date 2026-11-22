@@ -94,6 +94,11 @@ static void tc_201(void)
                 && ((s->torque_out != 0) || s->enable || (s->warning != 2u))) {
                 after_latch_bad++;
             }
+            /* 그다음 주기부터는 허용 토크도 0이다 (상태가 정한 상한).
+             * 고정한 주기의 허용 토크는 사건을 알리기 전에 계산한 값이다 */
+            if ((t_latch >= 0) && ((int)s->t_ms >= (t_latch + 10)) && (s->diag.torque_allowed != 0)) {
+                after_latch_bad++;
+            }
             /* 차량 수준: 고장이 없을 때와 견준 가속의 차이 */
             double excess = s->accel_mps2 - log_ref[i].accel_mps2;
             if (excess > max_excess) {

@@ -8,6 +8,7 @@
 #include "app.h"
 #include "input.h"
 #include "monitor.h"
+#include "reaction.h"
 
 typedef struct {
     inputs_t in;
@@ -17,9 +18,10 @@ typedef struct {
     torque_t torque_req;     /* 기능이 낸 토크 요구 (깎기 전) */
     torque_t torque_allowed; /* 감시가 계산한 허용 토크 */
     output_stage_t output;
+    reaction_t reaction;     /* 고장 대응의 상태 */
     torque_t torque_out;     /* inverter로 보낸 토크 */
     bool enable;             /* 구동 허용 신호 */
-    uint8_t warning;         /* 경고 요청: 0 없음, 2 경고 */
+    uint8_t warning;         /* 경고 요청: 0 없음, 1 주의, 2 경고 */
 } vcu_t;
 
 typedef struct {

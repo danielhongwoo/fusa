@@ -8,15 +8,15 @@
 # 반복문은 101번까지 펼친다 (가장 긴 반복이 100번이다). 그보다 길게 도는 반복이 있으면 실패한다.
 # CBMC는 qualification되지 않았다.
 
-INC="-Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor"
-SRC="src/input/pedal_check.c src/monitor/monitor.c src/app/app.c test/proof/harness.c"
+INC="-Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reaction"
+SRC="src/input/pedal_check.c src/monitor/monitor.c src/reaction/reaction.c src/app/app.c test/proof/harness.c"
 REPORT=build/reports/cbmc.txt
 fail=0
 
 mkdir -p build/reports
 : > "$REPORT"
 
-PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded"
+PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction"
 count=0
 
 for prop in $PROPS; do

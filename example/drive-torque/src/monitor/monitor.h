@@ -2,7 +2,7 @@
  * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 감시와 출력 단계.
  * 감시는 기능을 다시 계산하지 않는다. 운전자의 입력에서 토크의 상한만 따로 계산한다.
- * 출력 단계는 토크 요구를 그 상한으로 깎고, 기능이 계속 틀리면 구동을 막는다.
+ * 출력 단계는 토크 요구를 그 상한으로 깎고, 기능이 계속 틀리면 그 사건을 고장 대응의 상태 기계에 알린다.
  *
  * 주의: 감시가 기능과 다른 함수에 있다고 해서 독립적인 것은 아니다.
  * 같은 MCU, 같은 메모리, 같은 입력을 쓴다 (docs/technical-safety-concept.md).
@@ -10,6 +10,7 @@
 #ifndef MONITOR_H
 #define MONITOR_H
 
+#include "reaction.h"
 #include "types.h"
 
 #define TORQUE_TOLERANCE    ((torque_t)50)  /* 허용 오차: 5 Nm */
@@ -24,7 +25,6 @@
 typedef struct {
     uint8_t excess_cycles; /* 토크 요구가 허용 범위를 벗어난 주기가 몇 번 이어졌는가 */
     uint32_t clamp_count;  /* 깎은 횟수 (진단용) */
-    bool latched;          /* 기능의 고장으로 고정했는가. 다시 켤 때까지 유지한다 */
     torque_t last_out;     /* 지난 주기에 inverter로 보낸 토크 */
 } output_stage_t;
 
@@ -40,9 +40,22 @@ torque_t output_clamp(torque_t torque_req, torque_t allowed, gear_t gear);
 void output_stage_init(output_stage_t *st);
 
 /*
- * 한 주기의 출력을 정한다: 깎고, 초과가 이어지는지 세고, 고정 여부를 정한다.
- * 돌려주는 값은 inverter로 보낼 토크다. 고정된 뒤에는 0이다.
+ * 감시와 출력 단계의 한 주기: 허용 토크를 구하고 (페달에서 나온 상한, 오르는 속도의 상한, 상태가 정한 상한),
+ * 토크 요구를 그 안으로 깎고, 보낸 값을 기억한다.
+ * 제품 (src/vcu/vcu.c), unit test, 증명이 모두 이 함수 하나를 부른다. 잇는 순서를 따로 옮겨 적지 않으려는 것이다.
+ * allowed에 그 주기의 허용 토크를 적고, inverter로 보낼 토크를 돌려준다.
  */
-torque_t output_stage_step(output_stage_t *st, torque_t torque_req, torque_t allowed, gear_t gear);
+torque_t monitor_output_cycle(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
+                              permille_t pedal_safe, bool brake, gear_t gear, torque_t *allowed);
+
+/* 고장 대응의 상태가 정한 상한을 허용 토크에 건다 */
+torque_t monitor_apply_cap(torque_t allowed, reaction_state_t state);
+
+/*
+ * 한 주기의 출력을 정한다: 깎고, 초과가 이어지는지 세고, 이어지면 기능의 고장이라는 사건을 알린다.
+ * 돌려주는 값은 inverter로 보낼 토크다. 고장 대응의 상태가 토크 0이나 구동 허용 차단이면 0이다.
+ */
+torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
+                           torque_t allowed, gear_t gear);
 
 #endif

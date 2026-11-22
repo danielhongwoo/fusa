@@ -6,14 +6,12 @@
 
 #include "hal.h"
 
-#define WARNING_NONE ((uint8_t)0)
-#define WARNING_RED  ((uint8_t)2)
-
 void vcu_init(vcu_t *vcu)
 {
     pedal_check_init(&vcu->pedal_check);
     app_init(&vcu->app);
     output_stage_init(&vcu->output);
+    reaction_init(&vcu->reaction);
     vcu->pedal_safe = 0;
     vcu->torque_req = 0;
     vcu->torque_allowed = 0;
@@ -30,6 +28,10 @@ static void task_input(vcu_t *vcu)
 {
     input_read(&vcu->in);
     vcu->pedal_safe = pedal_check_step(&vcu->pedal_check, &vcu->in);
+    /* SWR-11: 페달 고장은 토크 0의 사건이다 */
+    if (vcu->pedal_check.fault) {
+        reaction_raise(&vcu->reaction, REACTION_ZERO);
+    }
 }
 
 /* 기능: 토크 요구를 만든다 */
@@ -41,17 +43,19 @@ static void task_app(vcu_t *vcu)
 /* 감시와 출력 단계 */
 static void task_monitor_output(vcu_t *vcu)
 {
-    vcu->torque_allowed = monitor_allowed_torque(vcu->pedal_safe, vcu->in.brake, vcu->in.gear);
-    vcu->torque_allowed = monitor_limit_rise(vcu->torque_allowed, vcu->output.last_out, vcu->in.gear);
-    vcu->torque_out = output_stage_step(&vcu->output, vcu->torque_req, vcu->torque_allowed,
-                                        vcu->in.gear);
+    vcu->torque_out = monitor_output_cycle(&vcu->output, &vcu->reaction, vcu->torque_req,
+                                           vcu->pedal_safe, vcu->in.brake, vcu->in.gear,
+                                           &vcu->torque_allowed);
 
-    /* SWR-10: 기능의 고장으로 고정되면 구동 허용 신호를 끊는다.
+    /* 여기부터는 이 주기의 사건이 모두 반영된 상태를 쓴다 */
+    reaction_state_t state = reaction_state(&vcu->reaction);
+
+    /* SWR-10: 구동 허용 차단 상태이면 구동 허용 신호를 끊는다.
      * SWR-12: 켠 뒤 입력 검사를 충분히 통과하기 전에는 구동을 허용하지 않는다 */
-    vcu->enable = vcu->pedal_check.ready && !vcu->output.latched;
+    vcu->enable = vcu->pedal_check.ready && reaction_enable(state);
 
-    /* SWR-11: 페달 고장이나 기능의 고장을 알아채면 경고를 요청한다 */
-    vcu->warning = (vcu->pedal_check.fault || vcu->output.latched) ? WARNING_RED : WARNING_NONE;
+    /* SWR-11: 경고 요청은 상태에서 나온다 */
+    vcu->warning = reaction_warning(state);
 
     /* 구동 허용 신호를 먼저 쓴다. 끊어야 하는 주기에 CAN의 송신이 늦어져도 끊는 일이 밀리지 않는다 */
     hal_enable_write(vcu->enable);
@@ -63,7 +67,7 @@ static void task_monitor_output(vcu_t *vcu)
     diag.pedal_fault = vcu->pedal_check.fault;
     diag.torque_req = vcu->torque_req;
     diag.torque_allowed = vcu->torque_allowed;
-    diag.latched = vcu->output.latched;
+    diag.latched = (state == REACTION_CUT);
     diag.clamp_count = vcu->output.clamp_count;
     hal_can_tx_diag(&diag);
 }

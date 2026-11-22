@@ -9,6 +9,7 @@
 #include "app.h"
 #include "input.h"
 #include "monitor.h"
+#include "reaction.h"
 #include "test.h"
 
 /* 센서가 정상일 때의 전압 */
@@ -38,15 +39,15 @@ typedef struct {
     gear_t gear;
 } drive_t;
 
-/* 감시와 출력 단계를 제품 (src/vcu/vcu.c의 task_monitor_output)과 같은 순서로 한 주기 돌린다.
+/* 감시와 출력 단계를 한 주기 돌린다. 제품 (src/vcu/vcu.c의 task_monitor_output)이 부르는 것과 같은 함수다.
  * 그 주기의 허용 토크를 allowed에 적고, inverter로 보낼 토크를 돌려준다 */
-static torque_t chain_step(output_stage_t *out, torque_t req, const drive_t *d, torque_t *allowed)
+static torque_t chain_step(output_stage_t *out, reaction_t *reaction, torque_t req, const drive_t *d,
+                           torque_t *allowed)
 {
-    torque_t a = monitor_allowed_torque(d->pedal, d->brake, d->gear);
-    a = monitor_limit_rise(a, out->last_out, d->gear);
-    *allowed = a;
-    return output_stage_step(out, req, a, d->gear);
+    return monitor_output_cycle(out, reaction, req, d->pedal, d->brake, d->gear, allowed);
 }
+
+static bool is_cut(const reaction_t *reaction) { return reaction_state(reaction) == REACTION_CUT; }
 
 static torque_t magnitude(torque_t v) { return (v < 0) ? -v : v; }
 
@@ -363,6 +364,7 @@ static void tc_007(void)
     {
         app_t app;
         output_stage_t out;
+        reaction_t reaction;
         uint32_t seed = 12345u;
         drive_t d = { 0, false, GEAR_D };
         int over_target = 0;
@@ -372,6 +374,7 @@ static void tc_007(void)
         max_gap = 0;
         app_init(&app);
         output_stage_init(&out);
+        reaction_init(&reaction);
         for (int i = 0; i < 100000; i++) {
             torque_t allowed;
             seed = (seed * 1664525u) + 1013904223u;
@@ -385,7 +388,7 @@ static void tc_007(void)
                 d.gear = gears[(seed >> 28) % 4u];
             }
             torque_t req = app_step(&app, d.pedal, d.brake, d.gear);
-            torque_t sent = chain_step(&out, req, &d, &allowed);
+            torque_t sent = chain_step(&out, &reaction, req, &d, &allowed);
             torque_t target = (d.pedal * 2500) / 1000;
             if (d.gear == GEAR_R) {
                 target = (target * 40) / 100;
@@ -402,7 +405,7 @@ static void tc_007(void)
             prev_req = req;
         }
         CHECK_EQ((int)out.clamp_count, 0);
-        CHECK(!out.latched);
+        CHECK(!is_cut(&reaction));
         CHECK_EQ(over_target, 0);
         CHECK_EQ(max_gap, 50);
         CHECK(rising > 1000); /* 제한에 걸린 주기가 충분히 있어야 이 test가 뜻이 있다 */
@@ -447,6 +450,7 @@ static void tc_011(void)
         const drive_t *after = &cases[c].after;
         app_t app;
         output_stage_t out;
+        reaction_t reaction;
         int static_wide_cycles = 0;
         torque_t max_gap = 0;
         torque_t gap = 0;
@@ -454,14 +458,15 @@ static void tc_011(void)
 
         app_init(&app);
         output_stage_init(&out);
+        reaction_init(&reaction);
         for (int i = 0; i < 40; i++) {
             torque_t req = app_step(&app, before->pedal, before->brake, before->gear);
-            (void)chain_step(&out, req, before, &allowed);
+            (void)chain_step(&out, &reaction, req, before, &allowed);
         }
         for (int i = 0; i < 100; i++) {
             torque_t req = app_step(&app, after->pedal, after->brake, after->gear);
             torque_t ceiling = monitor_allowed_torque(after->pedal, after->brake, after->gear);
-            torque_t sent = chain_step(&out, req, after, &allowed);
+            torque_t sent = chain_step(&out, &reaction, req, after, &allowed);
             CHECK_EQ(sent, req);
             gap = allowed - magnitude(req);
             if (gap > max_gap) {
@@ -520,19 +525,130 @@ static void tc_012(void)
     /* 출력 단계는 보낸 토크를 기억한다. 고정된 뒤에는 0을 기억한다 */
     {
         output_stage_t out;
+        reaction_t reaction;
         output_stage_init(&out);
+        reaction_init(&reaction);
         CHECK_EQ(out.last_out, 0);
-        CHECK_EQ(output_stage_step(&out, 700, 1000, GEAR_D), 700);
+        CHECK_EQ(output_stage_step(&out, &reaction, 700, 1000, GEAR_D), 700);
         CHECK_EQ(out.last_out, 700);
-        CHECK_EQ(output_stage_step(&out, 1500, 1000, GEAR_D), 1000); /* 깎인 값을 기억한다 */
+        CHECK_EQ(output_stage_step(&out, &reaction, 1500, 1000, GEAR_D), 1000); /* 깎인 값을 기억한다 */
         CHECK_EQ(out.last_out, 1000);
-        CHECK_EQ(output_stage_step(&out, -300, 1000, GEAR_R), -300);
+        CHECK_EQ(output_stage_step(&out, &reaction, -300, 1000, GEAR_R), -300);
         CHECK_EQ(out.last_out, -300);
         for (int i = 0; i < 5; i++) {
-            (void)output_stage_step(&out, 2000, 1000, GEAR_D);
+            (void)output_stage_step(&out, &reaction, 2000, 1000, GEAR_D);
         }
-        CHECK(out.latched);
+        CHECK(is_cut(&reaction));
         CHECK_EQ(out.last_out, 0);
+    }
+}
+
+/* TC-015: SWR-25 고장 대응의 상태는 안전한 쪽으로만 바뀌고, 출력은 상태에서 나온다 */
+static void tc_015(void)
+{
+    reaction_t r;
+
+    /* 켠 직후는 정상이다 */
+    reaction_init(&r);
+    CHECK_EQ(reaction_state(&r), REACTION_NORMAL);
+    /* 안전한 쪽으로만 간다. 덜 안전한 쪽을 알려도 그대로다 */
+    reaction_raise(&r, REACTION_LIMP);
+    CHECK_EQ(reaction_state(&r), REACTION_LIMP);
+    reaction_raise(&r, REACTION_NORMAL);
+    CHECK_EQ(reaction_state(&r), REACTION_LIMP);
+    reaction_raise(&r, REACTION_ZERO);
+    CHECK_EQ(reaction_state(&r), REACTION_ZERO);
+    reaction_raise(&r, REACTION_LIMP);
+    CHECK_EQ(reaction_state(&r), REACTION_ZERO);
+    reaction_raise(&r, REACTION_ZERO);
+    CHECK_EQ(reaction_state(&r), REACTION_ZERO);
+    reaction_raise(&r, REACTION_CUT);
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+    reaction_raise(&r, REACTION_NORMAL);
+    reaction_raise(&r, REACTION_LIMP);
+    reaction_raise(&r, REACTION_ZERO);
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+    /* 단계를 건너뛸 수 있다 */
+    reaction_init(&r);
+    reaction_raise(&r, REACTION_CUT);
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+
+    /* 상태에서 나오는 출력: 토크의 상한, 구동 허용, 경고 */
+    CHECK_EQ(reaction_torque_cap(REACTION_NORMAL), 2500);
+    CHECK_EQ(reaction_torque_cap(REACTION_LIMP), 400);
+    CHECK_EQ(reaction_torque_cap(REACTION_ZERO), 0);
+    CHECK_EQ(reaction_torque_cap(REACTION_CUT), 0);
+    CHECK(reaction_enable(REACTION_NORMAL));
+    CHECK(reaction_enable(REACTION_LIMP));
+    CHECK(reaction_enable(REACTION_ZERO));
+    CHECK(!reaction_enable(REACTION_CUT));
+    CHECK_EQ(reaction_warning(REACTION_NORMAL), 0);
+    CHECK_EQ(reaction_warning(REACTION_LIMP), 1);
+    CHECK_EQ(reaction_warning(REACTION_ZERO), 2);
+    CHECK_EQ(reaction_warning(REACTION_CUT), 2);
+
+    /* 상태를 담은 변수가 알 수 없는 값이면 (memory의 값이 틀리면) 구동 허용 차단으로 읽힌다 */
+    reaction_init(&r);
+    r.state = (reaction_state_t)7;
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+    r.state = (reaction_state_t)-1;
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+    /* 그 상태에서 사건을 알려도 풀리지 않는다 */
+    reaction_raise(&r, REACTION_LIMP);
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+    /* 알 수 없는 값을 사건으로 알리면 구동 허용 차단이 된다 */
+    reaction_init(&r);
+    reaction_raise(&r, (reaction_state_t)4);
+    CHECK_EQ(reaction_state(&r), REACTION_CUT);
+    /* 알 수 없는 값은 어느 출력에서도 "허용"이 되지 않는다 */
+    CHECK_EQ(reaction_torque_cap((reaction_state_t)9), 0);
+    CHECK(!reaction_enable((reaction_state_t)9));
+    CHECK_EQ(reaction_warning((reaction_state_t)9), 2);
+
+    /* 허용 토크에 상태의 상한이 걸린다 */
+    CHECK_EQ(monitor_apply_cap(2500, REACTION_NORMAL), 2500);
+    CHECK_EQ(monitor_apply_cap(2500, REACTION_LIMP), 400);
+    CHECK_EQ(monitor_apply_cap(401, REACTION_LIMP), 400);
+    CHECK_EQ(monitor_apply_cap(300, REACTION_LIMP), 300);
+    CHECK_EQ(monitor_apply_cap(2500, REACTION_ZERO), 0);
+    CHECK_EQ(monitor_apply_cap(2500, REACTION_CUT), 0);
+
+    /* 줄여 감 상태에서 사슬을 돌린다: 페달을 끝까지 밟아도 40 Nm까지만 나간다.
+     * 40 Nm를 넘게 요구하는 기능은 깎이고, 5주기 이어지면 구동 허용 차단이 된다 */
+    {
+        output_stage_t out;
+        reaction_t reaction;
+        drive_t d = { 1000, false, GEAR_D };
+        torque_t allowed;
+
+        output_stage_init(&out);
+        reaction_init(&reaction);
+        reaction_raise(&reaction, REACTION_LIMP);
+        CHECK_EQ(chain_step(&out, &reaction, 250, &d, &allowed), 250);
+        CHECK_EQ(chain_step(&out, &reaction, 350, &d, &allowed), 350);
+        CHECK_EQ(allowed, 400);
+        CHECK_EQ(chain_step(&out, &reaction, 350, &d, &allowed), 350);
+        CHECK_EQ(reaction_state(&reaction), REACTION_LIMP);
+        CHECK_EQ((int)out.clamp_count, 0);
+        for (int i = 0; i < 4; i++) {
+            CHECK_EQ(chain_step(&out, &reaction, 500, &d, &allowed), 400);
+        }
+        CHECK_EQ(reaction_state(&reaction), REACTION_LIMP);
+        CHECK_EQ(chain_step(&out, &reaction, 500, &d, &allowed), 0);
+        CHECK_EQ(reaction_state(&reaction), REACTION_CUT);
+    }
+
+    /* 토크 0 상태 (예: 페달 고장)에서는 허용 범위 안의 요구도 나가지 않는다 */
+    {
+        output_stage_t out;
+        reaction_t reaction;
+
+        output_stage_init(&out);
+        reaction_init(&reaction);
+        reaction_raise(&reaction, REACTION_ZERO);
+        CHECK_EQ(output_stage_step(&out, &reaction, 500, 1000, GEAR_D), 0);
+        CHECK_EQ(out.last_out, 0);
+        CHECK_EQ(reaction_state(&reaction), REACTION_ZERO);
     }
 }
 
@@ -569,12 +685,14 @@ static void tc_013(void)
         {
             app_t ref;
             output_stage_t out;
+            reaction_t reaction;
             int wide = 0;
             int static_wide = 0;
             torque_t max_ahead = 0;
 
             app_init(&ref);
             output_stage_init(&out);
+            reaction_init(&reaction);
             for (int i = 0; i < 400; i++) {
                 drive_t d = bouncing_input(shape, i);
                 torque_t allowed;
@@ -582,7 +700,7 @@ static void tc_013(void)
                 torque_t ceiling = monitor_allowed_torque(d.pedal, d.brake, d.gear);
                 torque_t sign = (d.gear == GEAR_R) ? -1 : 1;
                 torque_t limit = monitor_limit_rise(ceiling, out.last_out, d.gear);
-                torque_t sent = chain_step(&out, sign * limit, &d, &allowed);
+                torque_t sent = chain_step(&out, &reaction, sign * limit, &d, &allowed);
                 torque_t ahead = magnitude(sent) - magnitude(normal);
 
                 CHECK_EQ(sent, sign * limit);
@@ -596,7 +714,7 @@ static void tc_013(void)
                     static_wide++;
                 }
             }
-            CHECK(!out.latched);
+            CHECK(!is_cut(&reaction));
             CHECK_EQ((int)out.clamp_count, 0);
             CHECK_EQ(wide, 0);
             CHECK(max_ahead <= 50);
@@ -609,11 +727,13 @@ static void tc_013(void)
         {
             app_t ref;
             output_stage_t out;
+            reaction_t reaction;
             int latched_at = -1;
             torque_t max_ahead = 0;
 
             app_init(&ref);
             output_stage_init(&out);
+            reaction_init(&reaction);
             for (int i = 0; i < 400; i++) {
                 drive_t d = bouncing_input(shape, i);
                 torque_t allowed;
@@ -627,11 +747,11 @@ static void tc_013(void)
                 if (d.gear == GEAR_R) {
                     target = -((target * 40) / 100);
                 }
-                sent = chain_step(&out, target, &d, &allowed);
+                sent = chain_step(&out, &reaction, target, &d, &allowed);
                 if ((magnitude(sent) - magnitude(normal)) > max_ahead) {
                     max_ahead = magnitude(sent) - magnitude(normal);
                 }
-                if (out.latched && (latched_at < 0)) {
+                if (is_cut(&reaction) && (latched_at < 0)) {
                     latched_at = i;
                 }
             }
@@ -666,21 +786,24 @@ static void tc_008(void)
 static void tc_009(void)
 {
     output_stage_t st;
+    reaction_t reaction;
 
     output_stage_init(&st);
+
+    reaction_init(&reaction);
     /* 4번 깎이고 한 번 정상이면 다시 센다 */
     for (int i = 0; i < 4; i++) {
-        CHECK_EQ(output_stage_step(&st, 2000, 1000, GEAR_D), 1000);
+        CHECK_EQ(output_stage_step(&st, &reaction, 2000, 1000, GEAR_D), 1000);
     }
-    CHECK(!st.latched);
-    CHECK_EQ(output_stage_step(&st, 900, 1000, GEAR_D), 900);
+    CHECK(!is_cut(&reaction));
+    CHECK_EQ(output_stage_step(&st, &reaction, 900, 1000, GEAR_D), 900);
     for (int i = 0; i < 4; i++) {
-        (void)output_stage_step(&st, 2000, 1000, GEAR_D);
+        (void)output_stage_step(&st, &reaction, 2000, 1000, GEAR_D);
     }
-    CHECK(!st.latched);
+    CHECK(!is_cut(&reaction));
     /* 5번째로 이어서 깎인 주기에 고정한다 */
-    (void)output_stage_step(&st, 2000, 1000, GEAR_D);
-    CHECK(st.latched);
+    (void)output_stage_step(&st, &reaction, 2000, 1000, GEAR_D);
+    CHECK(is_cut(&reaction));
     CHECK_EQ(st.clamp_count, 9);
 }
 
@@ -688,18 +811,21 @@ static void tc_009(void)
 static void tc_010(void)
 {
     output_stage_t st;
+    reaction_t reaction;
 
     output_stage_init(&st);
+
+    reaction_init(&reaction);
     for (int i = 0; i < 4; i++) {
-        (void)output_stage_step(&st, 2000, 1000, GEAR_D);
+        (void)output_stage_step(&st, &reaction, 2000, 1000, GEAR_D);
     }
     /* 고정되는 바로 그 주기부터 0이다 */
-    CHECK_EQ(output_stage_step(&st, 2000, 1000, GEAR_D), 0);
+    CHECK_EQ(output_stage_step(&st, &reaction, 2000, 1000, GEAR_D), 0);
     /* 그 뒤에 요구가 정상이어도 0이고, 고정은 풀리지 않는다 */
     for (int i = 0; i < 10; i++) {
-        CHECK_EQ(output_stage_step(&st, 500, 1000, GEAR_D), 0);
+        CHECK_EQ(output_stage_step(&st, &reaction, 500, 1000, GEAR_D), 0);
     }
-    CHECK(st.latched);
+    CHECK(is_cut(&reaction));
 }
 
 /* 기능을 같은 입력으로 여러 주기 돌린 뒤의 토크 요구 */
@@ -794,6 +920,7 @@ int main(void)
         { "TC-012", "허용 토크는 지난 출력에서 25 Nm까지만 오른다", tc_012 },
         { "TC-013", "입력이 거듭 바뀌어도 틀린 기능의 토크는 55 Nm 넘게 앞서지 않는다", tc_013 },
         { "TC-014", "최근 100주기 가운데 실패가 10번을 넘으면 페달 고장이다", tc_014 },
+        { "TC-015", "고장 대응의 상태는 안전한 쪽으로만 바뀐다", tc_015 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

@@ -7,16 +7,18 @@
  * 증명이 말해 주는 것: 이 C 코드는 가능한 모든 입력에서 아래 assert를 지킨다.
  * 말해 주지 않는 것: compiler가 만든 기계어, 실행 시간, 하드웨어의 고장, 주기를 놓치는 경우.
  *
- * 성질 6과 7은 기능, 감시, 출력 단계를 이어서 돌린다. 잇는 순서는 제품 (src/vcu/vcu.c의
- * task_monitor_output)의 네 줄을 여기에 옮겨 적은 것이다. 제품의 연결 자체는 증명의 밖이다.
- * 제품의 연결이 바뀌어도 이 파일은 통과한다. 그것을 지키는 것은 시나리오 test (TC-205)와
- * 변이 검사 (연결의 줄을 빼거나 바꾼 변이)다.
+ * 성질 6과 7은 기능, 감시, 출력 단계를 이어서 돌린다. 감시와 출력 단계를 잇는 것은 제품
+ * (src/vcu/vcu.c의 task_monitor_output)이 부르는 것과 같은 함수 (monitor_output_cycle)다.
+ * 처음에는 그 순서를 여기에 옮겨 적었고, 검토에서 지적을 받아 함수 하나로 묶었다.
+ * 증명의 밖에 남는 것은 제품이 그 함수에 무엇을 넘기는가다 (기능의 토크 요구, 안전한 페달 값,
+ * 브레이크, 기어). 그것은 시나리오 test와 변이 검사가 지킨다.
  */
 #include <assert.h>
 
 #include "app.h"
 #include "input.h"
 #include "monitor.h"
+#include "reaction.h"
 
 int32_t nondet_int32(void);
 uint32_t nondet_uint32(void);
@@ -63,33 +65,43 @@ void prove_output_clamp(void)
     }
 }
 
-/* 성질 3 (SWR-08, SWR-09): 어떤 상태에서 시작해도 출력은 허용 토크 안에 있고, 고정은 풀리지 않으며, 고정되면 0이다 */
+/* 성질 3 (SWR-08, SWR-09): 어떤 상태에서 시작해도 출력은 허용 토크 안에 있다.
+ * 고장 대응의 상태가 토크 0이나 구동 허용 차단이면 출력은 0이고, 그 상태는 이 걸음으로 풀리지 않는다.
+ * 깎인 주기가 5번째로 이어진 주기에는 구동 허용 차단이 된다 */
 void prove_output_stage(void)
 {
     output_stage_t st;
+    reaction_t reaction;
     torque_t req = nondet_int32();
     torque_t allowed = nondet_int32();
     gear_t gear = (gear_t)nondet_int32();
-    bool was_latched;
+    reaction_state_t before;
+    reaction_state_t after;
+    uint8_t excess_before;
     torque_t out;
 
     st.excess_cycles = nondet_uint8();
     st.clamp_count = nondet_uint32();
-    st.latched = nondet_bool();
+    st.last_out = nondet_int32();
+    reaction.state = (reaction_state_t)nondet_int32(); /* 망가진 값도 포함한다 */
     __CPROVER_assume(st.excess_cycles <= 5);
     __CPROVER_assume((allowed >= 0) && (allowed <= 2500));
-    was_latched = st.latched;
+    before = reaction_state(&reaction);
+    excess_before = st.excess_cycles;
 
-    out = output_stage_step(&st, req, allowed, gear);
+    out = output_stage_step(&st, &reaction, req, allowed, gear);
+    after = reaction_state(&reaction);
 
     assert(out <= allowed);
     assert(out >= -allowed);
-    if (was_latched) {
-        assert(st.latched);
-    }
-    if (st.latched) {
+    assert(after >= before);
+    if ((after == REACTION_ZERO) || (after == REACTION_CUT)) {
         assert(out == 0);
     }
+    if ((excess_before == 4) && (output_clamp(req, allowed, gear) != req)) {
+        assert(after == REACTION_CUT);
+    }
+    assert(st.last_out == out);
 }
 
 /* 성질 4 (SWR-01, SWR-03, SWR-04, SWR-14): 안전한 페달 값은 0-1000이고, 고장은 풀리지 않으며, 고장이면 0이다.
@@ -172,7 +184,7 @@ void prove_limit_rise(void)
  * 한 주기의 걸음을 증명한다. 아래의 "맞물린 상태"에서 시작하면, 입력이 무엇이든
  * 한 주기 뒤에도 맞물린 상태이고 그 주기의 토크 요구는 그대로 나간다.
  *   맞물린 상태: 기능이 기억하는 지난 토크 요구와 출력 단계가 기억하는 지난 출력이 같고,
- *                고정되지 않았고, 이어서 깎인 주기가 없다.
+ *                고장 대응의 상태가 정상이고, 이어서 깎인 주기가 없다.
  * 켠 직후의 상태가 맞물린 상태라는 것도 함께 증명한다. 둘을 이으면 몇 주기를 돌아도 성립한다.
  *
  * 전제 (증명이 말해 주지 않는 것)
@@ -185,6 +197,7 @@ void prove_normal_function_not_clamped(void)
 {
     app_t app;
     output_stage_t out;
+    reaction_t reaction;
     permille_t pedal = nondet_int32();
     bool brake = nondet_bool();
     gear_t gear = (gear_t)nondet_int32();
@@ -197,32 +210,31 @@ void prove_normal_function_not_clamped(void)
     /* 켠 직후의 상태는 맞물린 상태다 */
     app_init(&app);
     output_stage_init(&out);
+    reaction_init(&reaction);
     assert(app.prev == out.last_out);
-    assert(!out.latched);
+    assert(reaction_state(&reaction) == REACTION_NORMAL);
     assert(out.excess_cycles == 0);
 
     /* 맞물린 상태 가운데 아무것이나 */
     app.prev = nondet_int32();
     __CPROVER_assume((app.prev >= -2500) && (app.prev <= 2500));
     out.last_out = app.prev;
-    out.latched = false;
+    reaction.state = REACTION_NORMAL;
     out.excess_cycles = 0;
     out.clamp_count = nondet_uint32();
     prev = app.prev;
     clamp_count = out.clamp_count;
 
-    /* 한 주기: 제품 (src/vcu/vcu.c)과 같은 순서 */
+    /* 한 주기: 제품 (src/vcu/vcu.c)이 부르는 것과 같은 함수 */
     req = app_step(&app, pedal, brake, gear);
-    allowed = monitor_allowed_torque(pedal, brake, gear);
-    allowed = monitor_limit_rise(allowed, out.last_out, gear);
-    sent = output_stage_step(&out, req, allowed, gear);
+    sent = monitor_output_cycle(&out, &reaction, req, pedal, brake, gear, &allowed);
 
     /* 그 주기의 토크 요구는 그대로 나간다 */
     assert(sent == req);
     assert(out.clamp_count == clamp_count);
     /* 한 주기 뒤에도 맞물린 상태다 */
     assert(app.prev == out.last_out);
-    assert(!out.latched);
+    assert(reaction_state(&reaction) == REACTION_NORMAL);
     assert(out.excess_cycles == 0);
     assert((app.prev >= -2500) && (app.prev <= 2500));
     /* 기능의 토크 요구는 지난 요구에서 25 Nm 넘게 오르지 않는다. 방향이 바뀌면 0에서 센다 */
@@ -234,6 +246,55 @@ void prove_normal_function_not_clamped(void)
     }
     /* 허용 토크는 토크 요구를 5 Nm 넘게 앞서지 않는다 */
     assert((allowed - ((req < 0) ? -req : req)) <= 50);
+}
+
+/* 성질 8 (SWR-25): 고장 대응의 상태는 안전한 쪽으로만 바뀐다.
+ * 상태를 담은 변수와 알린 값이 어떤 값이든 (망가진 값이든) 성립한다.
+ * 알 수 없는 값은 구동 허용 차단으로 읽힌다 */
+void prove_reaction(void)
+{
+    reaction_t reaction;
+    reaction_state_t wanted = (reaction_state_t)nondet_int32();
+    reaction_state_t before;
+    reaction_state_t after;
+
+    reaction.state = (reaction_state_t)nondet_int32();
+    before = reaction_state(&reaction);
+    assert((before == REACTION_NORMAL) || (before == REACTION_LIMP) || (before == REACTION_ZERO)
+           || (before == REACTION_CUT));
+    if ((reaction.state != REACTION_NORMAL) && (reaction.state != REACTION_LIMP)
+        && (reaction.state != REACTION_ZERO)) {
+        assert(before == REACTION_CUT);
+    }
+
+    reaction_raise(&reaction, wanted);
+    after = reaction_state(&reaction);
+
+    assert(after >= before);
+    if ((wanted == REACTION_LIMP) || (wanted == REACTION_ZERO) || (wanted == REACTION_CUT)) {
+        assert(after >= wanted);
+    }
+    if ((wanted != REACTION_NORMAL) && (wanted != REACTION_LIMP) && (wanted != REACTION_ZERO)) {
+        assert(after == REACTION_CUT);
+    }
+    if (wanted == REACTION_NORMAL) {
+        assert(after == before); /* "정상"을 알려서는 아무것도 풀리지 않는다 */
+    }
+
+    /* 상태에서 나오는 출력 */
+    assert(reaction_torque_cap(after) >= 0);
+    assert(reaction_torque_cap(after) <= 2500);
+    if (after == REACTION_LIMP) {
+        assert(reaction_torque_cap(after) == 400);
+    }
+    if ((after == REACTION_ZERO) || (after == REACTION_CUT)) {
+        assert(reaction_torque_cap(after) == 0);
+        assert(reaction_warning(after) == 2);
+    }
+    assert(reaction_enable(after) == (after != REACTION_CUT));
+    if (after == REACTION_NORMAL) {
+        assert(reaction_warning(after) == 0);
+    }
 }
 
 /* 방향 d (GEAR_D나 GEAR_R)로의 토크의 크기. 반대 방향이면 0 */
@@ -258,19 +319,21 @@ static torque_t toward(torque_t v, gear_t d)
  * 켠 직후 (둘 다 0)는 묶인 상태다. 둘을 이으면 몇 주기를 돌아도 성립한다.
  *
  * 전제 (증명이 말해 주지 않는 것)
- *   - 감시와 출력 단계가 주기마다 이 순서로 실행되고, 감시가 받는 입력은 정상인 기능이 받았을 입력과 같다.
+ *   - 감시와 출력 단계가 주기마다 실행되고, 감시가 받는 입력은 정상인 기능이 받았을 입력과 같다.
  *   - 출력 단계가 기억하는 지난 출력을 다른 코드가 바꾸지 않는다 (memory의 고장이 없다).
  *   - 정상인 기능은 src/app/app.c 그대로다. 견주는 대상이 이 코드이므로, 이 코드의 요구사항이 틀렸으면
  *     증명도 틀린 것을 기준으로 삼는다.
  *   - 입력이 옳다는 것은 이 증명이 말하지 않는다. 견주는 기준이 같은 입력을 받은 정상인 기능이므로,
  *     입력 검사가 틀려 안전한 페달 값이 실제보다 크면 기준도 함께 틀린다.
- * 고장 대응의 상태 기계와 줄여 감의 상한을 넣으면 이 성질을 그 상태와 함께 다시 증명해야 한다.
+ * 고장 대응의 상태는 어떤 값이든 된다. 줄여 감의 상한이 걸려도, 토크 0이나 구동 허용 차단이어도 성립한다.
+ * 줄여 감에 들어가는 길 (SWR-24)을 넣으면 기능이 그 상태를 받는 것과 함께 다시 본다.
  * 재는 것은 VCU가 보낸 토크 요구다. inverter가 낸 토크가 아니다.
  */
 void prove_faulty_function_bounded(void)
 {
     app_t normal;
     output_stage_t out;
+    reaction_t reaction;
     permille_t pedal = nondet_int32();
     bool brake = nondet_bool();
     gear_t gear = (gear_t)nondet_int32();
@@ -282,6 +345,7 @@ void prove_faulty_function_bounded(void)
     /* 켠 직후의 상태는 묶인 상태다 */
     app_init(&normal);
     output_stage_init(&out);
+    reaction_init(&reaction);
     assert(toward(out.last_out, GEAR_D) <= (toward(normal.prev, GEAR_D) + 50));
     assert(toward(out.last_out, GEAR_R) <= (toward(normal.prev, GEAR_R) + 50));
 
@@ -290,7 +354,7 @@ void prove_faulty_function_bounded(void)
     out.last_out = nondet_int32();
     out.excess_cycles = nondet_uint8();
     out.clamp_count = nondet_uint32();
-    out.latched = nondet_bool();
+    reaction.state = (reaction_state_t)nondet_int32(); /* 고장 대응의 상태도 어떤 값이든 된다 */
     __CPROVER_assume((normal.prev >= -2500) && (normal.prev <= 2500));
     __CPROVER_assume((out.last_out >= -2500) && (out.last_out <= 2500));
     __CPROVER_assume(out.excess_cycles <= 5);
@@ -299,9 +363,7 @@ void prove_faulty_function_bounded(void)
 
     /* 한 주기: 정상인 기능은 견주려고 나란히 돌릴 뿐이고, 출력으로 가는 것은 틀린 기능의 요구다 */
     normal_req = app_step(&normal, pedal, brake, gear);
-    allowed = monitor_allowed_torque(pedal, brake, gear);
-    allowed = monitor_limit_rise(allowed, out.last_out, gear);
-    sent = output_stage_step(&out, faulty_req, allowed, gear);
+    sent = monitor_output_cycle(&out, &reaction, faulty_req, pedal, brake, gear, &allowed);
 
     /* 나간 토크는 정상인 기능의 토크 요구를 5 Nm 넘게 앞서지 않는다 */
     assert(toward(sent, GEAR_D) <= (toward(normal_req, GEAR_D) + 50));

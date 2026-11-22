@@ -13,11 +13,11 @@
 
 CC      ?= cc
 CFLAGS  := -std=c11 -Wall -Wextra -Werror -pedantic -O0 -g
-INC     := -Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/vcu -Isim -Itest -Itest/faulty
+INC     := -Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reaction -Isrc/vcu -Isim -Itest -Itest/faulty
 
 # 제품 코드 (item의 소프트웨어)
 # 하드웨어를 부르지 않는 부분과 부르는 부분을 나눈다. unit test는 앞의 것만 link한다
-SRC_LOGIC  := src/input/pedal_check.c src/monitor/monitor.c
+SRC_LOGIC  := src/input/pedal_check.c src/monitor/monitor.c src/reaction/reaction.c
 SRC_IO     := src/input/input.c src/vcu/vcu.c
 SRC_SAFETY := $(SRC_LOGIC) $(SRC_IO)
 SRC_APP    := src/app/app.c
@@ -59,7 +59,7 @@ build/test_fault_app: $(SRC_SAFETY) build/app_good.o test/faulty/app_fault.c $(S
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
 # 대조: 감시와 출력 단계를 아무것도 하지 않는 모듈로 바꿔 끼운다
-build/test_no_monitor: src/input/pedal_check.c src/input/input.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
+build/test_no_monitor: src/input/pedal_check.c src/input/input.c src/reaction/reaction.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
 test: build/test_unit build/test_scenario build/test_fault_app build/test_no_monitor

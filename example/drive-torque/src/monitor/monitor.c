@@ -60,6 +60,14 @@ torque_t monitor_limit_rise(torque_t allowed, torque_t last_out, gear_t gear)
     return (allowed < limit) ? allowed : limit;
 }
 
+torque_t monitor_apply_cap(torque_t allowed, reaction_state_t state)
+{
+    torque_t cap = reaction_torque_cap(state);
+
+    /* SWR-25: 줄여 감 상태에서는 40 Nm까지, 토크 0과 구동 허용 차단에서는 0이다 */
+    return (allowed < cap) ? allowed : cap;
+}
+
 torque_t output_clamp(torque_t torque_req, torque_t allowed, gear_t gear)
 {
     torque_t lo = 0;
@@ -88,31 +96,44 @@ void output_stage_init(output_stage_t *st)
 {
     st->excess_cycles = 0u;
     st->clamp_count = 0u;
-    st->latched = false;
     st->last_out = 0;
 }
 
-torque_t output_stage_step(output_stage_t *st, torque_t torque_req, torque_t allowed, gear_t gear)
+torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
+                           torque_t allowed, gear_t gear)
 {
     torque_t out = output_clamp(torque_req, allowed, gear);
 
-    /* SWR-08: 토크 요구가 허용 범위를 벗어난 주기가 이어지면 기능의 고장으로 고정한다 */
+    /* SWR-08: 토크 요구가 허용 범위를 벗어난 주기가 이어지면 기능의 고장이다.
+     * 이 모듈은 사건을 알릴 뿐이고, 구동을 끊는 것은 고장 대응의 상태 기계다 */
     if (out != torque_req) {
         st->clamp_count++;
         if (st->excess_cycles < EXCESS_LATCH_CYCLES) {
             st->excess_cycles++;
         }
         if (st->excess_cycles >= EXCESS_LATCH_CYCLES) {
-            st->latched = true;
+            reaction_raise(reaction, REACTION_CUT);
         }
     } else {
         st->excess_cycles = 0u;
     }
 
-    /* SWR-09: 고정된 뒤에는 토크 0을 보낸다 */
-    if (st->latched) {
+    /* SWR-09: 상태가 토크 0이나 구동 허용 차단이면 토크 0을 보낸다.
+     * 이 주기에 알린 사건도 이 주기의 출력에 반영된다 */
+    if (reaction_torque_cap(reaction_state(reaction)) == 0) {
         out = 0;
     }
     st->last_out = out;
     return out;
+}
+
+torque_t monitor_output_cycle(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
+                              permille_t pedal_safe, bool brake, gear_t gear, torque_t *allowed)
+{
+    torque_t a = monitor_allowed_torque(pedal_safe, brake, gear);
+
+    a = monitor_limit_rise(a, st->last_out, gear);
+    a = monitor_apply_cap(a, reaction_state(reaction));
+    *allowed = a;
+    return output_stage_step(st, reaction, torque_req, a, gear);
 }

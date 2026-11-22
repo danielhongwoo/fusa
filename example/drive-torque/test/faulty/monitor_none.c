@@ -22,6 +22,12 @@ torque_t monitor_limit_rise(torque_t allowed, torque_t last_out, gear_t gear)
     return allowed;
 }
 
+torque_t monitor_apply_cap(torque_t allowed, reaction_state_t state)
+{
+    (void)state;
+    return allowed;
+}
+
 torque_t output_clamp(torque_t torque_req, torque_t allowed, gear_t gear)
 {
     (void)allowed;
@@ -29,17 +35,30 @@ torque_t output_clamp(torque_t torque_req, torque_t allowed, gear_t gear)
     return torque_req;
 }
 
+torque_t monitor_output_cycle(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
+                              permille_t pedal_safe, bool brake, gear_t gear, torque_t *allowed)
+{
+    (void)st;
+    (void)reaction;
+    (void)brake;
+    (void)gear;
+    /* 감시가 없으므로 허용 토크는 뜻이 없다. 진단 메시지에는 페달 값에 비례하는 값을 적는다 */
+    *allowed = (pedal_safe * TORQUE_MAX) / PEDAL_FULL;
+    return torque_req;
+}
+
 void output_stage_init(output_stage_t *st)
 {
     st->excess_cycles = 0u;
     st->clamp_count = 0u;
-    st->latched = false;
     st->last_out = 0;
 }
 
-torque_t output_stage_step(output_stage_t *st, torque_t torque_req, torque_t allowed, gear_t gear)
+torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t torque_req,
+                           torque_t allowed, gear_t gear)
 {
     (void)st;
+    (void)reaction;
     (void)allowed;
     (void)gear;
     return torque_req;
