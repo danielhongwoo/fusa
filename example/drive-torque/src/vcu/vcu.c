@@ -9,10 +9,12 @@
 void vcu_init(vcu_t *vcu)
 {
     pedal_check_init(&vcu->pedal_check);
+    brake_check_init(&vcu->brake_check);
     app_init(&vcu->app);
     output_stage_init(&vcu->output);
     reaction_init(&vcu->reaction);
     vcu->pedal_safe = 0;
+    vcu->brake = true;
     vcu->torque_req = 0;
     vcu->torque_allowed = 0;
     vcu->torque_out = 0;
@@ -32,19 +34,25 @@ static void task_input(vcu_t *vcu)
     if (vcu->pedal_check.fault) {
         reaction_raise(&vcu->reaction, REACTION_ZERO);
     }
+    /* SWR-15: 브레이크는 여기 한 곳에서 판정해 기능과 감시에 같은 값을 준다.
+     * 브레이크 신호의 고장도 토크 0의 사건이다 */
+    vcu->brake = brake_check_step(&vcu->brake_check, &vcu->in);
+    if (vcu->brake_check.fault) {
+        reaction_raise(&vcu->reaction, REACTION_ZERO);
+    }
 }
 
 /* 기능: 토크 요구를 만든다 */
 static void task_app(vcu_t *vcu)
 {
-    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->in.brake, vcu->in.gear);
+    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->brake, vcu->in.gear);
 }
 
 /* 감시와 출력 단계 */
 static void task_monitor_output(vcu_t *vcu)
 {
     vcu->torque_out = monitor_output_cycle(&vcu->output, &vcu->reaction, vcu->torque_req,
-                                           vcu->pedal_safe, vcu->in.brake, vcu->in.gear,
+                                           vcu->pedal_safe, vcu->brake, vcu->in.gear,
                                            &vcu->torque_allowed);
 
     /* 여기부터는 이 주기의 사건이 모두 반영된 상태를 쓴다 */
@@ -69,6 +77,8 @@ static void task_monitor_output(vcu_t *vcu)
     diag.torque_allowed = vcu->torque_allowed;
     diag.latched = (state == REACTION_CUT);
     diag.clamp_count = vcu->output.clamp_count;
+    diag.brake = vcu->brake;
+    diag.brake_fault = vcu->brake_check.fault;
     hal_can_tx_diag(&diag);
 }
 

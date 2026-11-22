@@ -123,7 +123,8 @@ void prove_pedal_check(void)
     __CPROVER_assume(st.good_cycles <= 3);
     in.apps1_mv = nondet_int32(); /* HAL이 어떤 값을 주더라도 */
     in.apps2_mv = nondet_int32();
-    in.brake = nondet_bool();
+    in.brake1 = nondet_bool();
+    in.brake2 = nondet_bool();
     in.gear = GEAR_D;
     was_fault = st.fault;
 
@@ -373,4 +374,43 @@ void prove_faulty_function_bounded(void)
     assert(normal.prev == normal_req);
     assert((out.last_out >= -2500) && (out.last_out <= 2500));
     assert((normal.prev >= -2500) && (normal.prev <= 2500));
+}
+
+/* 성질 9 (SWR-15): 브레이크의 판정. 어느 접점이든 밟음을 가리키면 판정은 밟음이다.
+ * 판정이 놓음이면 두 접점이 모두 놓음을 가리키고 있다. 고장은 풀리지 않고, 고장이면 밟음이다.
+ * 세는 값이 어떤 값에서 시작해도 (memory의 값이 틀려도) 성립한다 */
+void prove_brake_check(void)
+{
+    brake_check_t st;
+    inputs_t in;
+    bool was_fault;
+    bool pressed;
+
+    st.release_cycles = nondet_uint8();
+    st.mismatch_cycles = nondet_uint8();
+    st.pressed = nondet_bool();
+    st.fault = nondet_bool();
+    in.apps1_mv = 0;
+    in.apps2_mv = 0;
+    in.brake1 = nondet_bool();
+    in.brake2 = nondet_bool();
+    in.gear = GEAR_D;
+    was_fault = st.fault;
+
+    pressed = brake_check_step(&st, &in);
+
+    assert(pressed == st.pressed);
+    if (in.brake1 || in.brake2) {
+        assert(pressed);
+    }
+    if (!pressed) {
+        assert(!in.brake1 && !in.brake2);
+        assert(!st.fault);
+    }
+    if (was_fault) {
+        assert(st.fault);
+    }
+    if (st.fault) {
+        assert(pressed);
+    }
 }

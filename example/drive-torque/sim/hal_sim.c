@@ -105,7 +105,7 @@ void hal_sim_init(plant_t *plant)
     sim.torque_out = 0;
     sim.enable_out = true; /* 켠 직후의 출력은 알 수 없다고 보고 나쁜 쪽으로 둔다 */
     sim.warning_out = 0u;
-    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u };
+    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false };
     sim.enable_written_this_tick = false;
     sim.order_violations = 0u;
     update_sensors();
@@ -154,8 +154,19 @@ millivolt_t hal_adc_read_mv(hal_adc_ch_t ch)
     return sim.adc_mv[ch];
 }
 
-bool hal_brake_pressed(void)
+bool hal_brake1_pressed(void)
 {
+    if (sim.fault_on[FAULT_BRAKE1_STUCK]) {
+        return sim.fault_param[FAULT_BRAKE1_STUCK] != 0;
+    }
+    return sim.plant->brake;
+}
+
+bool hal_brake2_pressed(void)
+{
+    if (sim.fault_on[FAULT_BRAKE2_STUCK]) {
+        return sim.fault_param[FAULT_BRAKE2_STUCK] != 0;
+    }
     return sim.plant->brake;
 }
 

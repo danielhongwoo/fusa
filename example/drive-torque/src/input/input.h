@@ -12,7 +12,8 @@
 typedef struct {
     millivolt_t apps1_mv;
     millivolt_t apps2_mv;
-    bool brake;
+    bool brake1; /* 브레이크 접점 1 (밟으면 열린다)이 밟음을 가리키는가 */
+    bool brake2; /* 브레이크 접점 2 (밟으면 닫힌다)가 밟음을 가리키는가 */
     gear_t gear;
 } inputs_t;
 
@@ -34,7 +35,27 @@ typedef struct {
     uint8_t window_pos;  /* 다음 결과를 적을 자리 */
 } pedal_check_t;
 
+/* 브레이크 검사: 놓음은 두 접점이 맞고 3주기 이어진 뒤에, 어긋난 채 20주기 (200 ms) 이어지면 고장. 두 값은 임시다 */
+#define BRAKE_RELEASE_CYCLES  ((uint8_t)3)
+#define BRAKE_MISMATCH_CYCLES ((uint8_t)20)
+
+/* 브레이크 검사의 상태 */
+typedef struct {
+    uint8_t release_cycles;  /* 두 접점이 모두 놓음을 가리킨 주기가 몇 번 이어졌는가 */
+    uint8_t mismatch_cycles; /* 두 접점이 어긋난 주기가 몇 번 이어졌는가 */
+    bool pressed;            /* 판정한 브레이크 상태. 기능과 감시가 이 값 하나를 같이 쓴다 */
+    bool fault;              /* 브레이크 신호의 고장으로 판정했는가 */
+} brake_check_t;
+
 void input_read(inputs_t *in);
+
+void brake_check_init(brake_check_t *st);
+
+/*
+ * 두 접점에서 브레이크를 밟았는지를 정해 돌려준다.
+ * 어느 하나라도 밟음이면 밟음이다. 고장으로 판정한 뒤에는 늘 밟음이다.
+ */
+bool brake_check_step(brake_check_t *st, const inputs_t *in);
 
 void pedal_check_init(pedal_check_t *st);
 

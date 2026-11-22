@@ -18,7 +18,7 @@ static millivolt_t apps2(permille_t pedal) { return 250 + (2 * pedal); }
 
 static inputs_t inputs(millivolt_t a1, millivolt_t a2)
 {
-    inputs_t in = { a1, a2, false, GEAR_D };
+    inputs_t in = { a1, a2, false, false, GEAR_D };
     return in;
 }
 
@@ -652,6 +652,83 @@ static void tc_015(void)
     }
 }
 
+/* 브레이크의 두 접점만 다른 입력을 만든다 */
+static inputs_t contacts(bool brake1, bool brake2)
+{
+    inputs_t in = { 500, 250, brake1, brake2, GEAR_D };
+    return in;
+}
+
+static bool brake_run(brake_check_t *st, bool brake1, bool brake2, int cycles)
+{
+    inputs_t in = contacts(brake1, brake2);
+    bool pressed = st->pressed;
+
+    for (int i = 0; i < cycles; i++) {
+        pressed = brake_check_step(st, &in);
+    }
+    return pressed;
+}
+
+/* TC-016: SWR-15 브레이크는 두 접점 가운데 하나라도 밟음이면 밟음이고, 놓음은 3주기 뒤에 받아들인다.
+ * 두 접점이 어긋난 채 20주기 이어지면 고장이다 */
+static void tc_016(void)
+{
+    brake_check_t st;
+
+    /* 켠 직후에는 밟은 것으로 본다. 두 접점이 놓음을 3주기 가리킨 뒤에 놓음이 된다 */
+    brake_check_init(&st);
+    CHECK(st.pressed);
+    CHECK(brake_run(&st, false, false, 1));
+    CHECK(brake_run(&st, false, false, 1));
+    CHECK(!brake_run(&st, false, false, 1));
+    CHECK(!st.fault);
+
+    /* 밟음은 그 주기에 받아들인다. 두 접점이 함께여도, 어느 하나만이어도 */
+    CHECK(brake_run(&st, true, true, 1));
+    CHECK(!brake_run(&st, false, false, 3));
+    CHECK(brake_run(&st, true, false, 1));
+    CHECK(!brake_run(&st, false, false, 3));
+    CHECK(brake_run(&st, false, true, 1));
+
+    /* 놓음을 세는 중에 한 주기라도 밟음이 오면 다시 센다 */
+    CHECK(brake_run(&st, false, false, 2));
+    CHECK(brake_run(&st, false, true, 1));
+    CHECK(brake_run(&st, false, false, 2));
+    CHECK(!brake_run(&st, false, false, 1));
+
+    /* 어긋난 채 19주기까지는 고장이 아니다. 그동안 밟음이다. 20번째 주기에 고장이 된다 */
+    brake_check_init(&st);
+    (void)brake_run(&st, false, false, 3);
+    CHECK(brake_run(&st, true, false, 19));
+    CHECK(!st.fault);
+    CHECK(brake_run(&st, true, false, 1));
+    CHECK(st.fault);
+    /* 접점 2 쪽이 밟음인 어긋남도 같다 */
+    brake_check_init(&st);
+    (void)brake_run(&st, false, false, 3);
+    CHECK(brake_run(&st, false, true, 19));
+    CHECK(!st.fault);
+    CHECK(brake_run(&st, false, true, 1));
+    CHECK(st.fault);
+
+    /* 어긋남이 이어지지 않으면 다시 센다. 페달을 밟는 동안 두 접점이 잠깐 어긋나는 것은 고장이 아니다 */
+    brake_check_init(&st);
+    (void)brake_run(&st, false, false, 3);
+    for (int i = 0; i < 10; i++) {
+        (void)brake_run(&st, true, false, 19);
+        (void)brake_run(&st, true, true, 1);
+    }
+    CHECK(!st.fault);
+
+    /* 고장으로 판정한 뒤에는 두 접점이 놓음을 가리켜도 밟음으로 둔다. 고장은 풀리지 않는다 */
+    brake_check_init(&st);
+    (void)brake_run(&st, true, false, 20);
+    CHECK(st.fault);
+    CHECK(brake_run(&st, false, false, 50));
+    CHECK(st.fault);
+}
+
 /* 입력이 거듭 바뀌는 네 모양. 페달은 끝까지 밟고 있고, 80-90 ms마다 입력 하나가 잠깐 바뀐다.
  * 페달 한 채널이 가끔 끊기거나 브레이크와 기어의 신호가 튀면 이렇게 된다.
  * 정상인 기능은 토크를 다 올리기 전에 다시 0에서 시작한다 */
@@ -921,6 +998,7 @@ int main(void)
         { "TC-013", "입력이 거듭 바뀌어도 틀린 기능의 토크는 55 Nm 넘게 앞서지 않는다", tc_013 },
         { "TC-014", "최근 100주기 가운데 실패가 10번을 넘으면 페달 고장이다", tc_014 },
         { "TC-015", "고장 대응의 상태는 안전한 쪽으로만 바뀐다", tc_015 },
+        { "TC-016", "브레이크는 두 접점으로 판정한다", tc_016 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

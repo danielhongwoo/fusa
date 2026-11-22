@@ -30,8 +30,10 @@ time_ms_t hal_time_ms(void);
 /* ADC 입력을 mV로 읽는다 (0 - 5000) */
 millivolt_t hal_adc_read_mv(hal_adc_ch_t ch);
 
-/* 브레이크 페달을 밟았는가 */
-bool hal_brake_pressed(void);
+/* 브레이크 페달의 접점 둘. 참이면 그 접점이 "밟음"을 가리킨다.
+ * 접점 1은 밟으면 열리고 접점 2는 밟으면 닫힌다. 선이 끊기면 접점 1은 참, 접점 2는 거짓으로 읽힌다 */
+bool hal_brake1_pressed(void);
+bool hal_brake2_pressed(void);
 
 /* 운전자가 고른 기어 */
 gear_t hal_gear_read(void);
@@ -62,6 +64,8 @@ typedef struct {
     torque_t torque_allowed; /* 감시가 계산한 허용 토크 */
     bool latched;            /* 기능의 고장으로 고정했는가 */
     uint32_t clamp_count;    /* 출력 단계가 토크 요구를 깎은 횟수 */
+    bool brake;              /* 판정한 브레이크 상태 */
+    bool brake_fault;        /* 브레이크 신호의 고장으로 판정했는가 */
 } hal_diag_t;
 
 void hal_can_tx_diag(const hal_diag_t *diag);

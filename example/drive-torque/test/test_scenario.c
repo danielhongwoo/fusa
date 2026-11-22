@@ -321,6 +321,83 @@ static void tc_109(void)
     printf("  측정 FI-08: 처음 끊긴 때부터 페달 고장의 판정까지 %d ms\n", t_fault - t_first_blip);
 }
 
+static int is_brake_fault(const sample_t *s) { return s->diag.brake_fault; }
+
+/*
+ * TC-110: SWR-15, SWR-25 fault injection FI-10
+ * 브레이크 접점 1이 "놓음"에 고착되어 있다 (접점이 붙었다). 접점이 하나뿐이면 제동 우선이 듣지 않는 고장이다.
+ * 운전자가 가속 페달을 밟은 채 브레이크를 밟는다. 접점 2가 밟음을 알리므로 토크는 그 주기에 0이 된다.
+ * 두 접점이 어긋난 채 200 ms가 지나면 브레이크 신호의 고장으로 판정하고 경고한다.
+ * 이 고장은 브레이크를 밟기 전까지는 드러나지 않는다 (숨은 고장).
+ */
+static void tc_110(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+        { 2000u, 0.3, true, GEAR_D },
+    };
+    fault_event_t fault = { 1000u, FAULT_BRAKE1_STUCK, 0 };
+    scenario_t sc = { "fi-10", 3000u, driver, 3, &fault, 1, NULL };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int t_fault = first_time(log_buf, n, 0u, is_brake_fault);
+    int bad = 0;
+
+    /* 고착된 뒤에도 브레이크를 밟기 전까지는 아무것도 달라지지 않는다 */
+    CHECK_EQ(log_buf[1999].torque_out, 750);
+    CHECK_EQ(log_buf[1999].warning, 0);
+    CHECK(!log_buf[1999].diag.brake_fault);
+    /* 밟은 주기에 토크가 0이 된다 */
+    CHECK_EQ(log_buf[2000].torque_out, 0);
+    CHECK(log_buf[2000].diag.brake);
+    /* 20번째로 어긋난 주기 (190 ms 뒤)에 고장으로 판정한다 */
+    CHECK_EQ(t_fault, 2190);
+    for (int i = 2000; i < n; i++) {
+        const sample_t *s = &log_buf[i];
+        uint8_t want_warning = ((int)s->t_ms >= t_fault) ? 2u : 0u;
+        /* 토크는 나가지 않는다. 구동 허용 신호는 끊지 않는다 (VCU의 계산은 믿을 수 있다) */
+        if ((s->torque_out != 0) || !s->enable || (s->warning != want_warning) || s->diag.latched) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+    (void)scenario_write_csv("build/out/fi-10.csv", log_buf, n);
+}
+
+/*
+ * TC-111: SWR-15, SWR-25 fault injection FI-11
+ * 달리는 중에 브레이크 접점 1의 선이 끊긴다. 접점 1은 "밟음"으로 읽힌다.
+ * 운전자는 브레이크를 밟지 않았는데 토크가 그 주기에 0이 된다 (구동력을 잃는다. SG-02 쪽의 대가).
+ * 200 ms 동안은 경고가 없다. 그 뒤에 고장으로 판정하고 경고한다.
+ */
+static void tc_111(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    fault_event_t fault = { T_FAULT, FAULT_BRAKE1_STUCK, 1 };
+    scenario_t sc = { "fi-11", 3000u, driver, 2, &fault, 1, NULL };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int t_fault = first_time(log_buf, n, 0u, is_brake_fault);
+    int bad = 0;
+
+    CHECK_EQ(log_buf[T_FAULT - 1u].torque_out, 750);
+    CHECK_EQ(log_buf[T_FAULT].torque_out, 0);
+    CHECK_EQ(t_fault, (int)T_FAULT + 190);
+    for (int i = (int)T_FAULT; i < n; i++) {
+        const sample_t *s = &log_buf[i];
+        uint8_t want_warning = ((int)s->t_ms >= t_fault) ? 2u : 0u;
+        if ((s->torque_out != 0) || !s->enable || (s->warning != want_warning)) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+    /* 운전자는 브레이크를 밟지 않았다. 차는 타력으로 간다 */
+    CHECK(log_buf[n - 1].speed_mps > 1.0);
+    printf("  측정 FI-11: 구동력을 잃은 때부터 경고까지 %d ms\n", t_fault - (int)T_FAULT);
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -333,6 +410,8 @@ int main(void)
         { "TC-107", "기어가 P, N, 알 수 없는 값이면 토크 0", tc_107 },
         { "TC-108", "켤 때 구동 허용 신호는 끊겨 있다", tc_108 },
         { "TC-109", "FI-08 페달 채널 1이 가끔 끊김 (간헐 고장)", tc_109 },
+        { "TC-110", "FI-10 브레이크 접점 1이 놓음에 고착 (숨은 고장)", tc_110 },
+        { "TC-111", "FI-11 브레이크 접점 1의 선이 끊김 (구동력을 잃는다)", tc_111 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

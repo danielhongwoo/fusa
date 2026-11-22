@@ -355,6 +355,46 @@ static void tc_206(void)
     (void)scenario_write_csv("build/out/fi-09.csv", log_fault, n);
 }
 
+/* 브레이크 접점 1을 "놓음"에 고착시키고, 정해진 시각에 기능의 결함을 켠다 */
+static void stick_brake1_and_fault(time_ms_t t_ms)
+{
+    if (t_ms == 500u) {
+        hal_sim_set_fault(FAULT_BRAKE1_STUCK, 0);
+    }
+    switch_fault_on(t_ms);
+}
+
+/*
+ * TC-207: SWR-15, SWR-05 fault injection FI-12
+ * 브레이크 접점 1이 "놓음"에 고착되어 있다. 운전자가 두 페달을 함께 밟고, 그 중에 기능이 최대 토크를 요구한다.
+ * 접점이 하나뿐이었다면 감시는 브레이크를 놓은 것으로 알고 페달 값만큼을 허용한다.
+ * 접점 2가 밟음을 알리므로 감시의 허용 토크는 0이고, 토크는 나가지 않는다.
+ * 기능과 감시가 판정한 브레이크 값 하나를 같이 쓰는지를 본다.
+ */
+static void tc_207(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.5, false, GEAR_D },
+        { 1000u, 0.5, true, GEAR_D },
+    };
+    scenario_t sc = { "fi-12", 2000u, driver, 3, NULL, 0, stick_brake1_and_fault };
+    /* 브레이크 신호의 고장은 1190 ms에 판정된다. 그 전에 기능의 결함을 켠다 */
+    int n = run(&sc, log_fault, APP_FAULT_FULL, 0, 1050u);
+    int nonzero = 0;
+
+    CHECK_EQ(log_fault[999].torque_out, 1250);
+    for (int i = 1000; i < n; i++) {
+        if ((log_fault[i].torque_out != 0) || ((i >= 1010) && (log_fault[i].diag.torque_allowed != 0))) {
+            nonzero++;
+        }
+    }
+    CHECK_EQ(nonzero, 0);
+    CHECK(!log_fault[1100].diag.brake_fault); /* 기능의 결함이 켜진 때에는 아직 판정 전이다 */
+    CHECK(log_fault[n - 1].diag.brake_fault);
+    CHECK(!log_fault[n - 1].enable);          /* 기능의 고장으로 구동 허용 차단까지 간다 */
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -364,6 +404,7 @@ int main(void)
         { "TC-204", "FI-06 후진에서 기능이 최대 토크를 요구", tc_204 },
         { "TC-205", "FI-07 입력이 거듭 튀는 동안 기능이 최대 토크를 요구", tc_205 },
         { "TC-206", "FI-09 브레이크를 밟고 있는데 기능이 최대 토크를 요구", tc_206 },
+        { "TC-207", "FI-12 브레이크 접점 하나가 고착된 채 기능이 최대 토크를 요구", tc_207 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

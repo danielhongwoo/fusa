@@ -16,6 +16,8 @@ typedef enum {
     FAULT_APPS_SUPPLY_SCALE, /* 공통 원인: 센서 전원이 param %로 바뀌어 두 채널이 같은 비율로 변함 */
     FAULT_SPEED_MSG_LOSS,    /* 차량 속도 메시지가 오지 않음 */
     FAULT_SPEED_MSG_FREEZE,  /* 차량 속도 메시지는 오지만 값이 멈춤 */
+    FAULT_BRAKE1_STUCK,      /* 브레이크 접점 1이 고착: param이 1이면 "밟음" (선이 끊김), 0이면 "놓음" (접점이 붙음) */
+    FAULT_BRAKE2_STUCK,      /* 브레이크 접점 2가 고착: param이 1이면 "밟음" (접점이 붙음), 0이면 "놓음" (선이 끊김) */
     FAULT_COUNT
 } fault_id_t;
 
