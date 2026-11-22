@@ -114,9 +114,14 @@ void prove_pedal_check(void)
     pedal_check_t st;
     inputs_t in;
     bool was_fault;
+    uint8_t was_excluded;
+    bool range1;
+    bool range2;
     permille_t pedal;
     int bad_in_window = 0;
 
+    st.suspect = nondet_uint8();
+    st.excluded = nondet_uint8();
     st.bad_cycles = nondet_uint8();
     st.good_cycles = nondet_uint8();
     st.ready = nondet_bool();
@@ -129,6 +134,9 @@ void prove_pedal_check(void)
     in.brake2 = nondet_bool();
     in.gear = GEAR_D;
     was_fault = st.fault;
+    was_excluded = st.excluded;
+    range1 = (in.apps1_mv < 250) || (in.apps1_mv > 4750);
+    range2 = (in.apps2_mv < 125) || (in.apps2_mv > 2375);
 
     pedal = pedal_check_step(&st, &in);
 
@@ -136,6 +144,14 @@ void prove_pedal_check(void)
     assert(pedal <= 1000);
     if (was_fault) {
         assert(st.fault);
+    }
+    /* SWR-24: 뺀 채널은 다시 넣지 않고, 다른 채널로 바꾸지도 않는다 */
+    if ((was_excluded == 1) || (was_excluded == 2)) {
+        assert(st.excluded == was_excluded);
+    }
+    /* SWR-24: 채널을 새로 빼는 것은 그 채널만 범위를 벗어난 주기에만 한다 */
+    if (st.excluded != was_excluded) {
+        assert(((st.excluded == 1) && range1 && !range2) || ((st.excluded == 2) && range2 && !range1));
     }
     if (st.fault || !st.ready) {
         assert(pedal == 0);
@@ -150,6 +166,11 @@ void prove_pedal_check(void)
     }
     if (bad_in_window > 10) {
         assert(st.fault);
+    }
+    /* SWR-24: 채널을 빼는 주기에 페달 고장도 함께 난다면, 그것은 기록에 쌓인 실패 (SWR-14) 때문이다.
+     * 처음에는 "그 주기에 페달 고장으로 가지 않는다"고 적었고, 증명이 반례를 냈다 */
+    if ((st.excluded != was_excluded) && st.fault && !was_fault) {
+        assert(bad_in_window > 10);
     }
 }
 
@@ -209,6 +230,7 @@ void prove_normal_function_not_clamped(void)
     torque_t req;
     torque_t allowed;
     torque_t sent;
+    bool limp = nondet_bool();
 
     /* 켠 직후의 상태는 맞물린 상태다 */
     app_init(&app);
@@ -222,14 +244,15 @@ void prove_normal_function_not_clamped(void)
     app.prev = nondet_int32();
     __CPROVER_assume((app.prev >= -2500) && (app.prev <= 2500));
     out.last_out = app.prev;
-    reaction.state = REACTION_NORMAL;
+    /* 고장 대응의 상태는 정상이거나 줄여 감이다. 줄여 감에서는 기능에 주는 페달 값이 잘린다 */
+    reaction.state = limp ? REACTION_LIMP : REACTION_NORMAL;
     out.excess_cycles = 0;
     out.clamp_count = nondet_uint32();
     prev = app.prev;
     clamp_count = out.clamp_count;
 
     /* 한 주기: 제품 (src/vcu/vcu.c)이 부르는 것과 같은 함수 */
-    req = app_step(&app, pedal, brake, gear);
+    req = app_step(&app, pedal, brake, gear, reaction_app_limit(reaction_state(&reaction)));
     sent = monitor_output_cycle(&out, &reaction, req, pedal, brake, gear, &allowed);
 
     /* 그 주기의 토크 요구는 그대로 나간다 */
@@ -237,9 +260,13 @@ void prove_normal_function_not_clamped(void)
     assert(out.clamp_count == clamp_count);
     /* 한 주기 뒤에도 맞물린 상태다 */
     assert(app.prev == out.last_out);
-    assert(reaction_state(&reaction) == REACTION_NORMAL);
+    assert(reaction_state(&reaction) == (limp ? REACTION_LIMP : REACTION_NORMAL));
     assert(out.excess_cycles == 0);
     assert((app.prev >= -2500) && (app.prev <= 2500));
+    /* 줄여 감에서 나가는 토크는 35 Nm를 넘지 않는다 */
+    if (limp) {
+        assert((sent <= 350) && (sent >= -350));
+    }
     /* 기능의 토크 요구는 지난 요구에서 25 Nm 넘게 오르지 않는다. 방향이 바뀌면 0에서 센다 */
     if (req > 0) {
         assert(req <= (((prev > 0) ? prev : 0) + 250));
@@ -298,6 +325,9 @@ void prove_reaction(void)
     if (after == REACTION_NORMAL) {
         assert(reaction_warning(after) == 0);
     }
+    /* SWR-24: 기능이 요구할 수 있는 크기의 상한은 줄여 감에서 35 Nm, 그 밖에는 최대 토크다 */
+    assert(reaction_app_limit(REACTION_LIMP) == 350);
+    assert(reaction_app_limit(wanted) == ((wanted == REACTION_LIMP) ? 350 : 2500));
 }
 
 /* 방향 d (GEAR_D나 GEAR_R)로의 토크의 크기. 반대 방향이면 0 */
@@ -365,7 +395,7 @@ void prove_faulty_function_bounded(void)
     __CPROVER_assume(toward(out.last_out, GEAR_R) <= (toward(normal.prev, GEAR_R) + 50));
 
     /* 한 주기: 정상인 기능은 견주려고 나란히 돌릴 뿐이고, 출력으로 가는 것은 틀린 기능의 요구다 */
-    normal_req = app_step(&normal, pedal, brake, gear);
+    normal_req = app_step(&normal, pedal, brake, gear, 2500);
     sent = monitor_output_cycle(&out, &reaction, faulty_req, pedal, brake, gear, &allowed);
 
     /* 나간 토크는 정상인 기능의 토크 요구를 5 Nm 넘게 앞서지 않는다 */

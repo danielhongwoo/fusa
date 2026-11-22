@@ -9,7 +9,7 @@
 #include "app.h"
 
 void app_good_init(app_t *st);
-torque_t app_good_step(app_t *st, permille_t pedal, bool brake, gear_t gear);
+torque_t app_good_step(app_t *st, permille_t pedal, bool brake, gear_t gear, torque_t limit);
 
 static app_fault_mode_t fault_mode = APP_FAULT_NONE;
 static torque_t fault_offset = 0;
@@ -25,9 +25,9 @@ void app_init(app_t *st)
     app_good_init(st);
 }
 
-torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear)
+torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear, torque_t limit)
 {
-    torque_t good = app_good_step(st, pedal, brake, gear);
+    torque_t good = app_good_step(st, pedal, brake, gear, limit);
 
     if (fault_mode == APP_FAULT_OFFSET) {
         return good + fault_offset;

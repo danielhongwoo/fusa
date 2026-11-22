@@ -18,7 +18,7 @@ void app_init(app_t *st)
     st->prev = 0;
 }
 
-torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear)
+torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear, torque_t limit)
 {
     permille_t p = pedal;
     torque_t target;
@@ -41,6 +41,14 @@ torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear)
         if (gear == GEAR_R) {
             target = -((target * REVERSE_PERCENT) / 100);
         }
+    }
+
+    /* 요구할 수 있는 크기의 상한. 평소에는 최대 토크이고, 줄여 가는 동안에는 낮다 */
+    if (target > limit) {
+        target = limit;
+    }
+    if (target < -limit) {
+        target = -limit;
     }
 
     /* 토크는 천천히 올리고, 내릴 때는 바로 내린다.

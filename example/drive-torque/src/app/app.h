@@ -22,6 +22,6 @@ typedef struct {
 void app_init(app_t *st);
 
 /* 한 주기의 토크 요구를 계산한다. pedal은 입력 검사를 거친 안전한 페달 값이다 */
-torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear);
+torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear, torque_t limit);
 
 #endif

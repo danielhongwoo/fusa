@@ -73,7 +73,8 @@ static void tc_001(void)
     CHECK_EQ(pedal_check_step(&st, &in), 1000);
 }
 
-/* 같은 입력을 3번 넣은 뒤에 페달 고장인지 돌려준다 */
+/* 같은 입력을 3번 넣은 뒤에 검사가 실패로 판정했는지 돌려준다.
+ * 판정은 둘 가운데 하나다: 페달 고장으로 고정하거나, 채널 하나를 검사에서 뺀다 (TC-022가 가려서 본다) */
 static bool faults_after_cycles(millivolt_t a1, millivolt_t a2)
 {
     pedal_check_t st;
@@ -83,7 +84,7 @@ static bool faults_after_cycles(millivolt_t a1, millivolt_t a2)
     for (int i = 0; i < 3; i++) {
         (void)pedal_check_step(&st, &in);
     }
-    return st.fault;
+    return st.fault || (st.excluded != 0u);
 }
 
 /* TC-002: SWR-02 채널마다 범위를 보고, 두 채널을 서로 견준다 */
@@ -343,7 +344,7 @@ static void tc_007(void)
             /* 페달을 올렸다가 내린다. 기능에는 지난 주기의 상태가 있다 */
             for (permille_t p = 0; p <= 2000; p += 7) {
                 permille_t pedal = (p <= 1000) ? p : (2000 - p);
-                torque_t req = app_step(&app, pedal, brake != 0, gears[g]);
+                torque_t req = app_step(&app, pedal, brake != 0, gears[g], 2500);
                 torque_t allowed = monitor_allowed_torque(pedal, brake != 0, gears[g]);
                 torque_t mag = (req < 0) ? -req : req;
                 if (output_clamp(req, allowed, gears[g]) != req) {
@@ -389,7 +390,7 @@ static void tc_007(void)
             if (((seed >> 24) % 13u) == 0u) {
                 d.gear = gears[(seed >> 28) % 4u];
             }
-            torque_t req = app_step(&app, d.pedal, d.brake, d.gear);
+            torque_t req = app_step(&app, d.pedal, d.brake, d.gear, 2500);
             torque_t sent = chain_step(&out, &reaction, req, &d, &allowed);
             torque_t target = (d.pedal * 2500) / 1000;
             if (d.gear == GEAR_R) {
@@ -462,11 +463,11 @@ static void tc_011(void)
         output_stage_init(&out);
         reaction_init(&reaction);
         for (int i = 0; i < 40; i++) {
-            torque_t req = app_step(&app, before->pedal, before->brake, before->gear);
+            torque_t req = app_step(&app, before->pedal, before->brake, before->gear, 2500);
             (void)chain_step(&out, &reaction, req, before, &allowed);
         }
         for (int i = 0; i < 100; i++) {
-            torque_t req = app_step(&app, after->pedal, after->brake, after->gear);
+            torque_t req = app_step(&app, after->pedal, after->brake, after->gear, 2500);
             torque_t ceiling = monitor_allowed_torque(after->pedal, after->brake, after->gear);
             torque_t sent = chain_step(&out, &reaction, req, after, &allowed);
             CHECK_EQ(sent, req);
@@ -775,7 +776,7 @@ static void tc_013(void)
             for (int i = 0; i < 400; i++) {
                 drive_t d = bouncing_input(shape, i);
                 torque_t allowed;
-                torque_t normal = app_step(&ref, d.pedal, d.brake, d.gear);
+                torque_t normal = app_step(&ref, d.pedal, d.brake, d.gear, 2500);
                 torque_t ceiling = monitor_allowed_torque(d.pedal, d.brake, d.gear);
                 torque_t sign = (d.gear == GEAR_R) ? -1 : 1;
                 torque_t limit = monitor_limit_rise(ceiling, out.last_out, d.gear);
@@ -816,7 +817,7 @@ static void tc_013(void)
             for (int i = 0; i < 400; i++) {
                 drive_t d = bouncing_input(shape, i);
                 torque_t allowed;
-                torque_t normal = app_step(&ref, d.pedal, d.brake, d.gear);
+                torque_t normal = app_step(&ref, d.pedal, d.brake, d.gear, 2500);
                 torque_t target = (d.pedal * 2500) / 1000;
                 torque_t sent;
 
@@ -912,7 +913,7 @@ static torque_t app_settle(app_t *app, permille_t pedal, bool brake, gear_t gear
 {
     torque_t req = 0;
     for (int i = 0; i < 40; i++) {
-        req = app_step(app, pedal, brake, gear);
+        req = app_step(app, pedal, brake, gear, 2500);
     }
     return req;
 }
@@ -948,19 +949,19 @@ static void ft_002(void)
     app_t app;
 
     app_init(&app);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_D), 250);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_D), 500);
-    CHECK_EQ(app_step(&app, 40, false, GEAR_D), 100);
-    CHECK_EQ(app_step(&app, 0, false, GEAR_D), 0);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -250);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -500);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_N), 0);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 2500), 250);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 2500), 500);
+    CHECK_EQ(app_step(&app, 40, false, GEAR_D, 2500), 100);
+    CHECK_EQ(app_step(&app, 0, false, GEAR_D, 2500), 0);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_R, 2500), -250);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_R, 2500), -500);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_N, 2500), 0);
 
     /* 알려진 단순화: 전진 토크를 내다가 기어가 R로 바뀌면 다음 주기에 바로 음수가 된다 */
     app_init(&app);
-    (void)app_step(&app, 1000, false, GEAR_D);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_D), 500);
-    CHECK_EQ(app_step(&app, 1000, false, GEAR_R), -250);
+    (void)app_step(&app, 1000, false, GEAR_D, 2500);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 2500), 500);
+    CHECK_EQ(app_step(&app, 1000, false, GEAR_R, 2500), -250);
 }
 
 /* FT-003: 제동 우선은 브레이크를 밟는 동안 듣는다. 걸린 상태를 기억하지 않는다 */
@@ -970,16 +971,16 @@ static void ft_003(void)
 
     app_init(&app);
     CHECK_EQ(app_settle(&app, 500, false, GEAR_D), 1250);
-    CHECK_EQ(app_step(&app, 500, true, GEAR_D), 0);    /* 두 페달을 함께 밟음 */
-    CHECK_EQ(app_step(&app, 500, true, GEAR_D), 0);
-    CHECK_EQ(app_step(&app, 500, false, GEAR_D), 250); /* 브레이크를 놓음: 다시 올린다 */
+    CHECK_EQ(app_step(&app, 500, true, GEAR_D, 2500), 0);    /* 두 페달을 함께 밟음 */
+    CHECK_EQ(app_step(&app, 500, true, GEAR_D, 2500), 0);
+    CHECK_EQ(app_step(&app, 500, false, GEAR_D, 2500), 250); /* 브레이크를 놓음: 다시 올린다 */
     CHECK_EQ(app_settle(&app, 500, false, GEAR_D), 1250);
     /* 가속 페달을 놓은 채 브레이크만 밟았다 놓아도 같다 */
-    CHECK_EQ(app_step(&app, 0, true, GEAR_D), 0);
-    CHECK_EQ(app_step(&app, 500, false, GEAR_D), 250);
+    CHECK_EQ(app_step(&app, 0, true, GEAR_D, 2500), 0);
+    CHECK_EQ(app_step(&app, 500, false, GEAR_D, 2500), 250);
     /* 후진에서도 같다 */
-    CHECK_EQ(app_step(&app, 500, true, GEAR_R), 0);
-    CHECK_EQ(app_step(&app, 500, false, GEAR_R), -250);
+    CHECK_EQ(app_step(&app, 500, true, GEAR_R, 2500), 0);
+    CHECK_EQ(app_step(&app, 500, false, GEAR_R, 2500), -250);
 }
 
 /* 보내는 쪽의 counter가 주어진 값일 때 만든 메시지.
@@ -1175,6 +1176,150 @@ static void tc_019(void)
     st.direction = (gear_t)7;
     CHECK_EQ(gear_check_step(&st, GEAR_D, true, 3000), GEAR_N);
     CHECK_EQ(gear_check_step(&st, GEAR_D, true, 0), GEAR_D);
+}
+
+/* 같은 입력을 n번 넣고 마지막 주기의 안전한 페달 값을 돌려준다 */
+static permille_t feed(pedal_check_t *st, millivolt_t a1, millivolt_t a2, int n)
+{
+    inputs_t in = inputs(a1, a2);
+    permille_t pedal = 0;
+
+    for (int i = 0; i < n; i++) {
+        pedal = pedal_check_step(st, &in);
+    }
+    return pedal;
+}
+
+/* TC-022: SWR-24 채널 하나만 범위를 벗어나면 그 채널을 빼고 남은 채널로 간다 */
+static void tc_022(void)
+{
+    pedal_check_t st;
+
+    /* 채널 1이 범위 위로 벗어난다 (4900 mV). 채널 2는 30%다.
+     * 판정 전의 두 주기에는 작은 쪽 (채널 2)을 따른다. 3번째 주기에 채널 1을 빼고, 페달 고장은 아니다 */
+    make_ready(&st);
+    CHECK_EQ(feed(&st, 4900, apps2(300), 2), 300);
+    CHECK_EQ(st.excluded, 0);
+    CHECK_EQ(feed(&st, 4900, apps2(300), 1), 300);
+    CHECK_EQ(st.excluded, 1);
+    CHECK(!st.fault);
+    /* 그 뒤로는 채널 2의 값이다. 채널 1이 무엇이든 보지 않는다 (범위 안으로 돌아와도 다시 넣지 않는다) */
+    CHECK_EQ(feed(&st, 4900, apps2(500), 1), 500);
+    CHECK_EQ(feed(&st, 0, apps2(500), 50), 500);
+    CHECK_EQ(feed(&st, apps1(100), apps2(500), 50), 500);
+    CHECK_EQ(st.excluded, 1);
+    CHECK(!st.fault);
+
+    /* 채널 1이 범위 아래로 벗어난다 (선이 끊김, 0 mV). 판정 전의 두 주기에는 작은 쪽이 0이다 */
+    make_ready(&st);
+    CHECK_EQ(feed(&st, 0, apps2(300), 2), 0);
+    CHECK_EQ(feed(&st, 0, apps2(300), 1), 300);
+    CHECK_EQ(st.excluded, 1);
+    /* 채널 2가 벗어나면 채널 2를 빼고 채널 1로 간다 */
+    make_ready(&st);
+    CHECK_EQ(feed(&st, apps1(300), 0, 3), 300);
+    CHECK_EQ(st.excluded, 2);
+    CHECK(!st.fault);
+    CHECK_EQ(feed(&st, apps1(700), 2400, 10), 700);
+
+    /* 두 채널이 모두 범위를 벗어나면 어느 쪽도 믿을 수 없다. 페달 고장이다 */
+    make_ready(&st);
+    CHECK_EQ(feed(&st, 0, 0, 3), 0);
+    CHECK(st.fault);
+    CHECK_EQ(st.excluded, 0);
+    /* 두 채널이 범위 안에서 어긋나면 어느 채널이 틀렸는지 모른다. 페달 고장이다 */
+    make_ready(&st);
+    CHECK_EQ(feed(&st, apps1(900), apps2(300), 3), 0);
+    CHECK(st.fault);
+    CHECK_EQ(st.excluded, 0);
+    /* 세 주기가 모두 같은 채널의 범위 실패여야 한다. 가운데 주기가 불일치이면 페달 고장이다 */
+    make_ready(&st);
+    (void)feed(&st, 4900, apps2(300), 1);
+    (void)feed(&st, apps1(900), apps2(300), 1);
+    (void)feed(&st, 4900, apps2(300), 1);
+    CHECK(st.fault);
+    CHECK_EQ(st.excluded, 0);
+    /* 첫 주기가 불일치여도 같다 */
+    make_ready(&st);
+    (void)feed(&st, apps1(900), apps2(300), 1);
+    (void)feed(&st, 4900, apps2(300), 2);
+    CHECK(st.fault);
+    CHECK_EQ(st.excluded, 0);
+    /* 벗어난 채널이 주기마다 다르면 페달 고장이다 */
+    make_ready(&st);
+    (void)feed(&st, 4900, apps2(300), 1);
+    (void)feed(&st, apps1(300), 0, 1);
+    (void)feed(&st, 4900, apps2(300), 1);
+    CHECK(st.fault);
+    CHECK_EQ(st.excluded, 0);
+    /* 통과한 주기가 끼면 다시 센다. 그 뒤의 세 주기로 판정한다 */
+    make_ready(&st);
+    (void)feed(&st, apps1(900), apps2(300), 2);
+    (void)feed(&st, apps1(300), apps2(300), 1);
+    (void)feed(&st, 4900, apps2(300), 3);
+    CHECK_EQ(st.excluded, 1);
+    CHECK(!st.fault);
+
+    /* 채널 1을 뺀 뒤 남은 채널 2가 범위를 벗어난다. 2번까지는 판정하지 않고, 3번 이어지면 페달 고장이다 */
+    make_ready(&st);
+    (void)feed(&st, 4900, apps2(300), 3);
+    (void)feed(&st, 4900, 2400, 2);
+    CHECK(!st.fault);
+    CHECK_EQ(feed(&st, 4900, apps2(300), 1), 300);
+    CHECK_EQ(feed(&st, 4900, 2400, 3), 0);
+    CHECK(st.fault);
+    /* 채널 2를 뺀 뒤에는 채널 1의 범위를 본다 */
+    make_ready(&st);
+    (void)feed(&st, apps1(300), 0, 3);
+    CHECK_EQ(feed(&st, 100, 0, 3), 0);
+    CHECK(st.fault);
+    /* 채널을 뺀 뒤에는 뺀 채널의 실패를 기록하지 않는다. 오래 달려도 간헐 고장으로 판정하지 않는다 */
+    make_ready(&st);
+    (void)feed(&st, 4900, apps2(300), 3);
+    CHECK_EQ(feed(&st, 4900, apps2(300), 300), 300);
+    CHECK(!st.fault);
+    /* 남은 채널이 가끔 범위를 벗어나면 (8주기마다 한 번, 11번째에) 페달 고장이다 */
+    for (int i = 0; i < 10; i++) {
+        (void)feed(&st, 4900, 2400, 1);
+        (void)feed(&st, 4900, apps2(300), 7);
+    }
+    CHECK(!st.fault);
+    (void)feed(&st, 4900, 2400, 1);
+    CHECK(st.fault);
+
+    /* 기억한 값이 알 수 없는 값이 되어도 (memory의 값이 틀려도) 그 값의 채널을 빼지 않는다 */
+    make_ready(&st);
+    (void)feed(&st, 4900, apps2(300), 2);
+    st.suspect = 7u;
+    (void)feed(&st, 4900, apps2(300), 1);
+    CHECK(st.fault);
+    CHECK_EQ(st.excluded, 0);
+
+    /* 줄여 감 상태에서 기능이 요구할 수 있는 토크는 35 Nm까지다. 다른 상태에서는 최대 토크다 */
+    CHECK_EQ(reaction_app_limit(REACTION_LIMP), 350);
+    CHECK_EQ(reaction_app_limit(REACTION_NORMAL), 2500);
+    CHECK_EQ(reaction_app_limit(REACTION_ZERO), 2500);
+    /* 기능은 받은 상한 안에서만 요구한다. 전진과 후진이 같다. 상한보다 작은 요구는 그대로다 */
+    {
+        app_t app;
+
+        app_init(&app);
+        CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 350), 250);
+        CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 350), 350);
+        CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 350), 350);
+        CHECK_EQ(app_step(&app, 100, false, GEAR_D, 350), 250);
+        app_init(&app);
+        CHECK_EQ(app_step(&app, 1000, false, GEAR_R, 350), -250);
+        CHECK_EQ(app_step(&app, 1000, false, GEAR_R, 350), -350);
+        CHECK_EQ(app_step(&app, 500, false, GEAR_R, 350), -350);
+        CHECK_EQ(app_step(&app, 300, false, GEAR_R, 350), -300);
+        /* 달리다가 상한이 낮아지면 그 주기에 내린다 */
+        app_init(&app);
+        for (int i = 0; i < 10; i++) {
+            (void)app_step(&app, 1000, false, GEAR_D, 2500);
+        }
+        CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 350), 350);
+    }
 }
 
 /* 보낸 토크의 기록을 같은 값 다섯으로 채운다 */
@@ -1417,6 +1562,7 @@ int main(void)
         { "TC-019", "방향의 바뀜은 속도가 유효하고 낮을 때만 받아들인다", tc_019 },
         { "TC-020", "inverter가 알린 토크를 최근에 보낸 토크의 범위와 견준다", tc_020 },
         { "TC-021", "task가 순서대로 한 번씩 실행되었을 때에만 옳은 답이 나온다", tc_021 },
+        { "TC-022", "채널 하나만 범위를 벗어나면 그 채널을 빼고 남은 채널로 간다", tc_022 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },

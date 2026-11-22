@@ -60,6 +60,8 @@ void pedal_check_init(pedal_check_t *st)
         st->window[i] = false;
     }
     st->window_pos = 0u;
+    st->suspect = PEDAL_CH_NONE;
+    st->excluded = PEDAL_CH_NONE;
 }
 
 permille_t pedal_check_step(pedal_check_t *st, const inputs_t *in)
@@ -69,20 +71,51 @@ permille_t pedal_check_step(pedal_check_t *st, const inputs_t *in)
     permille_t p2 = to_permille(in->apps2_mv, APPS2_MIN_MV, APPS2_SPAN_MV);
     permille_t diff = (p1 > p2) ? (p1 - p2) : (p2 - p1);
 
-    /* SWR-02: 채널마다 범위를 보고, 두 채널을 서로 견준다 */
-    bool bad = out_of_range(in->apps1_mv, APPS1_LOW_MV, APPS1_HIGH_MV)
-               || out_of_range(in->apps2_mv, APPS2_LOW_MV, APPS2_HIGH_MV)
-               || (diff > PEDAL_MISMATCH_MAX);
+    bool range1 = out_of_range(in->apps1_mv, APPS1_LOW_MV, APPS1_HIGH_MV);
+    bool range2 = out_of_range(in->apps2_mv, APPS2_LOW_MV, APPS2_HIGH_MV);
+    uint8_t single = PEDAL_CH_NONE; /* 이 주기의 실패가 한 채널만의 범위 실패이면 그 채널 */
+    bool bad;
 
-    /* SWR-03: 검사 실패가 정해진 주기만큼 이어지면 페달 고장으로 고정한다.
-     * 한 주기라도 통과하면 다시 센다 */
+    if (st->excluded == PEDAL_CH1) {
+        /* SWR-24: 채널 하나를 뺀 뒤로는 남은 채널의 범위만 본다 */
+        bad = range2;
+    } else if (st->excluded == PEDAL_CH2) {
+        bad = range1;
+    } else {
+        /* SWR-02: 채널마다 범위를 보고, 두 채널을 서로 견준다 */
+        bad = range1 || range2 || (diff > PEDAL_MISMATCH_MAX);
+        if (range1 && !range2) {
+            single = PEDAL_CH1;
+        }
+        if (range2 && !range1) {
+            single = PEDAL_CH2;
+        }
+    }
+
+    /* SWR-03: 검사 실패가 정해진 주기만큼 이어지면 판정한다. 한 주기라도 통과하면 다시 센다 */
     if (bad) {
         st->good_cycles = 0u;
+        /* SWR-24: 이어지는 실패가 모두 같은 채널 하나의 범위 실패인지를 따라간다 */
+        if (st->bad_cycles == 0u) {
+            st->suspect = single;
+        } else if (st->suspect != single) {
+            st->suspect = PEDAL_CH_NONE;
+        } else {
+            /* 지난 실패와 같은 채널이다 */
+        }
         if (st->bad_cycles < PEDAL_FAULT_CYCLES) {
             st->bad_cycles++;
         }
         if (st->bad_cycles >= PEDAL_FAULT_CYCLES) {
-            st->fault = true;
+            if (st->suspect != PEDAL_CH_NONE) {
+                /* SWR-24: 어느 채널이 틀렸는지 안다. 그 채널을 검사에서 빼고 남은 채널로 간다 (줄여 감).
+                 * 여기에 오는 값은 이 주기의 single과 같으므로 채널 1이나 2다 */
+                st->excluded = st->suspect;
+                st->bad_cycles = 0u;
+            } else {
+                /* 어느 채널이 틀렸는지 모른다. 페달 고장으로 고정한다 */
+                st->fault = true;
+            }
         }
     } else {
         st->bad_cycles = 0u;
@@ -110,6 +143,13 @@ permille_t pedal_check_step(pedal_check_t *st, const inputs_t *in)
      * 페달 고장이거나 켠 뒤 검사를 충분히 통과하기 전이면 0이다 */
     if (st->fault || !st->ready) {
         return 0;
+    }
+    /* SWR-24: 채널 하나를 뺐으면 남은 채널의 값이다 */
+    if (st->excluded == PEDAL_CH1) {
+        return p2;
+    }
+    if (st->excluded == PEDAL_CH2) {
+        return p1;
     }
     return (p1 < p2) ? p1 : p2;
 }

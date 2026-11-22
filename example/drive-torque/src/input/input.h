@@ -25,6 +25,11 @@ typedef struct {
 #define PEDAL_WINDOW_CYCLES  ((uint8_t)100)
 #define PEDAL_WINDOW_MAX_BAD ((uint8_t)10)
 
+/* 페달의 채널을 가리키는 값 */
+#define PEDAL_CH_NONE ((uint8_t)0)
+#define PEDAL_CH1     ((uint8_t)1)
+#define PEDAL_CH2     ((uint8_t)2)
+
 /* 페달 검사의 상태 */
 typedef struct {
     uint8_t bad_cycles;  /* 검사에 실패한 주기가 몇 번 이어졌는가 */
@@ -33,6 +38,8 @@ typedef struct {
     bool fault;          /* 페달 고장으로 판정했는가. 다시 켤 때까지 유지한다 */
     bool window[PEDAL_WINDOW_CYCLES]; /* 최근 주기들의 검사 결과. true가 실패다 */
     uint8_t window_pos;  /* 다음 결과를 적을 자리 */
+    uint8_t suspect;     /* 이어지고 있는 실패가 모두 한 채널만의 범위 실패이면 그 채널. 아니면 없음 */
+    uint8_t excluded;    /* 검사에서 뺀 채널. 없음이 아니면 줄여 감이다. 다시 켤 때까지 유지한다 */
 } pedal_check_t;
 
 /* 브레이크 검사: 놓음은 두 접점이 맞고 3주기 이어진 뒤에, 어긋난 채 20주기 (200 ms) 이어지면 고장. 두 값은 임시다 */
@@ -82,7 +89,7 @@ void pedal_check_init(pedal_check_t *st);
 
 /*
  * 두 채널을 검사하고 안전한 페달 값을 돌려준다.
- * 안전한 페달 값은 두 채널 가운데 작은 값이다.
+ * 안전한 페달 값은 두 채널 가운데 작은 값이다. 채널 하나를 검사에서 뺐으면 남은 채널의 값이다.
  * 페달 고장이거나, 켠 뒤 검사를 아직 충분히 통과하지 못했으면 0이다.
  */
 permille_t pedal_check_step(pedal_check_t *st, const inputs_t *in);

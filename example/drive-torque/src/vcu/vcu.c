@@ -56,6 +56,10 @@ static void task_input(vcu_t *vcu)
                                     rx.age_ms);
     vcu->inverter_torque = vcu->inverter_valid ? rx.frame.value : 0;
     vcu->pedal_safe = pedal_check_step(&vcu->pedal_check, &vcu->in);
+    /* SWR-24: 페달 채널 하나를 검사에서 뺐으면 줄여 감의 사건이다 */
+    if (vcu->pedal_check.excluded != PEDAL_CH_NONE) {
+        reaction_raise(&vcu->reaction, REACTION_LIMP);
+    }
     /* SWR-11: 페달 고장은 토크 0의 사건이다 */
     if (vcu->pedal_check.fault) {
         reaction_raise(&vcu->reaction, REACTION_ZERO);
@@ -74,7 +78,9 @@ static void task_input(vcu_t *vcu)
 /* 기능: 토크 요구를 만든다 */
 static void task_app(vcu_t *vcu)
 {
-    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->brake, vcu->gear);
+    /* SWR-24: 기능은 이 주기의 상태가 정한 상한을 받는다 */
+    vcu->torque_req = app_step(&vcu->app, vcu->pedal_safe, vcu->brake, vcu->gear,
+                               reaction_app_limit(reaction_state(&vcu->reaction)));
     flow_mark(&vcu->flow, FLOW_MARK_APP);
 }
 

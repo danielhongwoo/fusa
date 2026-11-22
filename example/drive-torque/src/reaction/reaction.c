@@ -59,3 +59,9 @@ uint8_t reaction_warning(reaction_state_t state)
     }
     return WARNING_RED;
 }
+
+torque_t reaction_app_limit(reaction_state_t state)
+{
+    /* SWR-24: 줄여 감 상태에서 기능은 35 Nm를 넘게 요구하지 않는다 */
+    return (state == REACTION_LIMP) ? LIMP_APP_TORQUE : TORQUE_MAX;
+}

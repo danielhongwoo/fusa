@@ -838,7 +838,7 @@ static void tc_118(void)
 
 /*
  * TC-119: SWR-16, SWR-11 주의와 경고가 겹치면 경고가 나간다
- * 방향의 바뀜을 받아들이지 못해 주의가 나가 있는 중에 페달 채널 1이 높은 값에 고착된다.
+ * 방향의 바뀜을 받아들이지 못해 주의가 나가 있는 중에 페달 채널 1이 범위 안의 다른 값에 고착된다.
  */
 static void tc_119(void)
 {
@@ -847,7 +847,7 @@ static void tc_119(void)
         { T_PEDAL_ON, 1.0, false, GEAR_D },
         { 3000u, 1.0, false, GEAR_R },
     };
-    fault_event_t fault = { 3700u, FAULT_APPS1_FIXED_MV, 4900 };
+    fault_event_t fault = { 3700u, FAULT_APPS1_FIXED_MV, 2000 }; /* 범위 안의 값이다. 채널 2 (100%)와 어긋난다 */
     scenario_t sc = { "caution-and-warning", 4500u, driver, 3, &fault, 1, NULL };
     int n = scenario_run(&sc, log_buf, LOG_CAP);
 
@@ -1131,6 +1131,149 @@ static void tc_123(void)
 
 static int is_watchdog_tripped(const sample_t *s) { return s->watchdog_tripped; }
 
+static int is_limp(const sample_t *s) { return s->warning == 1u; }
+
+/*
+ * TC-130: SWR-24 fault injection FI-30
+ * 달리는 중에 페달 채널 1의 선이 끊긴다 (0 V). 채널 2는 범위 안이다.
+ * 판정 전의 두 주기에는 안전한 페달 값이 0이어서 토크가 끊긴다. 3번째 주기에 채널 1을 빼고 채널 2로 간다.
+ * 그 뒤로는 줄여 간다: 주의를 요청하고, 기능은 35 Nm까지, 감시의 허용 토크는 40 Nm까지다.
+ * 토크 0이나 구동 허용 차단으로 가지 않는다. fault를 넣는 시각을 주기 안에서 0-9 ms로 바꿔 가며 본다.
+ */
+static void tc_130(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.5, false, GEAR_D },
+    };
+    int worst_limp_ms = 0;
+
+    for (time_ms_t phase = 0u; phase < 10u; phase++) {
+        fault_event_t fault = { T_FAULT + phase, FAULT_APPS1_FIXED_MV, 0 };
+        scenario_t sc = { "fi-30", 3000u, driver, 2, &fault, 1, NULL };
+        int n = scenario_run(&sc, log_buf, LOG_CAP);
+        int t_limp = first_time(log_buf, n, 0u, is_limp);
+        int bad = 0;
+
+        CHECK_EQ(log_buf[T_FAULT - 1u].torque_out, 1250);
+        CHECK(t_limp >= (int)fault.t_ms);
+        for (int i = t_limp; i < n; i++) {
+            const sample_t *s = &log_buf[i];
+            /* 줄여 감: 주의, 구동 허용은 유지, 페달 고장도 고정도 아니다. 토크는 35 Nm를 넘지 않는다 */
+            if ((s->warning != 1u) || !s->enable || s->diag.pedal_fault || s->diag.latched
+                || (s->torque_out > 350) || (s->diag.torque_allowed > 400) || (s->diag.clamp_count != 0u)) {
+                bad++;
+            }
+        }
+        CHECK_EQ(bad, 0);
+        /* 채널 2가 가리키는 50%는 14%에서 잘려 35 Nm가 된다. 감시의 허용 토크는 40 Nm다 */
+        CHECK_EQ(log_buf[n - 1].torque_out, 350);
+        CHECK_EQ(log_buf[n - 1].diag.torque_allowed, 400);
+        CHECK_EQ(log_buf[n - 1].diag.pedal_safe, 500);
+        CHECK(log_buf[n - 1].torque_act_nm > 34.0);
+        if ((t_limp - (int)fault.t_ms) > worst_limp_ms) {
+            worst_limp_ms = t_limp - (int)fault.t_ms;
+        }
+        if (phase == 5u) {
+            (void)scenario_write_csv("build/out/fi-30.csv", log_buf, n);
+        }
+    }
+    CHECK(worst_limp_ms <= 30);
+    printf("  측정 FI-30: fault부터 줄여 감까지 가장 나쁜 경우 %d ms (그동안 토크 요구는 0이다)\n", worst_limp_ms);
+}
+
+/* TC-131이 쓰는 시간표: 채널 1의 선이 끊기고, 1초 뒤에 남은 채널 2가 100%의 값에 고착된다 */
+static bool second_fault_on;
+static void open_ch1_then_stick_ch2(time_ms_t t_ms)
+{
+    if (t_ms == 1000u) {
+        hal_sim_set_fault(FAULT_APPS1_FIXED_MV, 0);
+    }
+    if (second_fault_on && (t_ms == T_FAULT)) {
+        hal_sim_set_fault(FAULT_APPS2_FIXED_MV, 2250);
+    }
+}
+
+/*
+ * TC-131: SWR-24 fault injection FI-31
+ * 줄여 가는 중에 남은 채널 2가 범위 안의 높은 값 (100%)에 고착된다 (fault 둘). 견줄 채널이 없어 알아챌 수 없다.
+ * 100 ms 뒤에 운전자가 페달을 놓지만 VCU는 100%로 읽는다.
+ * 토크는 줄여 감의 상한을 넘지 못하므로, 넘는 토크는 35 Nm이고 SG-01의 한계 (55 Nm, 1.0 m/s^2) 아래다.
+ * 줄여 감의 상한을 그 크기로 정한 까닭이 이 경우다.
+ */
+static void tc_131(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.5, false, GEAR_D },
+        { T_FAULT + 100u, 0.0, false, GEAR_D },
+    };
+    scenario_t sc = { "fi-31", 4000u, driver, 3, NULL, 0, open_ch1_then_stick_ch2 };
+    int n_ref;
+    int n;
+    int over_ms = 0;
+    double max_excess;
+
+    second_fault_on = false;
+    n_ref = scenario_run(&sc, log_ref, LOG_CAP);
+    second_fault_on = true;
+    n = scenario_run(&sc, log_buf, LOG_CAP);
+    second_fault_on = false;
+    max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+
+    CHECK_EQ(n, n_ref);
+    /* 기준 실행에서는 페달을 놓으면 토크가 0이 된다. 고착된 실행에서는 35 Nm가 남는다 */
+    CHECK_EQ(log_ref[n_ref - 1].torque_out, 0);
+    CHECK_EQ(log_buf[n - 1].torque_out, 350);
+    CHECK_EQ(log_buf[n - 1].warning, 1);
+    CHECK(!log_buf[n - 1].diag.pedal_fault);
+    /* 알아채지 못하지만 SG-01은 지켜진다 */
+    CHECK(max_excess > 0.5);
+    CHECK(max_excess < 1.0);
+    CHECK_EQ(over_ms, 0);
+    printf("  측정 FI-31: 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n", max_excess, over_ms);
+}
+
+/* TC-132가 쓰는 시간표: 채널 1의 선이 끊기고, 1초 뒤에 남은 채널 2의 선도 끊긴다 */
+static void open_ch1_then_open_ch2(time_ms_t t_ms)
+{
+    if (t_ms == 1000u) {
+        hal_sim_set_fault(FAULT_APPS1_FIXED_MV, 0);
+    }
+    if (t_ms == T_FAULT) {
+        hal_sim_set_fault(FAULT_APPS2_FIXED_MV, 0);
+    }
+}
+
+/*
+ * TC-132: SWR-24 fault injection FI-32
+ * 줄여 가는 중에 남은 채널 2도 범위를 벗어난다 (fault 둘). 3주기 뒤에 페달 고장으로 판정하고 토크 0, 경고.
+ */
+static void tc_132(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.5, false, GEAR_D },
+    };
+    scenario_t sc = { "fi-32", 3000u, driver, 2, NULL, 0, open_ch1_then_open_ch2 };
+    int n = scenario_run(&sc, log_buf, LOG_CAP);
+    int t_zero = first_time(log_buf, n, T_FAULT, is_pedal_fault_and_zero);
+    int bad = 0;
+
+    CHECK_EQ(log_buf[T_FAULT - 1u].warning, 1);
+    CHECK_EQ(log_buf[T_FAULT - 1u].torque_out, 350);
+    /* 남은 채널이 0 V이면 안전한 페달 값이 그 주기부터 0이다. 판정은 3번째 주기다 */
+    CHECK_EQ(log_buf[T_FAULT].torque_out, 0);
+    CHECK_EQ(t_zero, (int)T_FAULT + 20);
+    for (int i = t_zero; i < n; i++) {
+        const sample_t *s = &log_buf[i];
+        if ((s->torque_out != 0) || (s->warning != 2u) || !s->enable || s->diag.latched) {
+            bad++;
+        }
+    }
+    CHECK_EQ(bad, 0);
+}
+
 /*
  * TC-128: SWR-21 fault injection FI-27
  * 켜기 전부터 구동 허용 신호의 선이 허용 쪽에 고착되어 있다 (전원에 닿았다). 달리는 동안에는 드러나지 않는 고장이다.
@@ -1339,6 +1482,9 @@ int main(void)
         { "TC-126", "FI-25 task의 주기가 두 배로 늘어남", tc_126 },
         { "TC-128", "FI-27 켜기 전부터 구동 허용 신호의 선이 허용에 고착", tc_128 },
         { "TC-129", "FI-28 달리는 중에 구동 허용 신호의 선이 끊김", tc_129 },
+        { "TC-130", "FI-30 페달 채널 1의 선이 끊김 (줄여 간다)", tc_130 },
+        { "TC-131", "FI-31 줄여 가는 중에 남은 채널이 높은 값에 고착 (알아채지 못하지만 SG-01은 지킨다)", tc_131 },
+        { "TC-132", "FI-32 줄여 가는 중에 남은 채널도 범위를 벗어남", tc_132 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

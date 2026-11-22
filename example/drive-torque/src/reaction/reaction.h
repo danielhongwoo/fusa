@@ -26,6 +26,9 @@ typedef enum {
  * 남은 페달 채널이 틀려도 넘는 토크가 이 값과 inverter의 오차 (10 Nm)의 합이고,
  * SG-01의 한계 (55 Nm)보다 작다 (docs/technical-safety-concept.md 9.3절) */
 #define LIMP_TORQUE_CAP ((torque_t)400)
+/* 줄여 감 상태에서 기능이 요구할 수 있는 토크의 크기: 35 Nm.
+ * 감시의 상한 (40 Nm)보다 5 Nm 낮다. 정상인 기능이 깎이지 않게 하려는 틈이다 */
+#define LIMP_APP_TORQUE ((torque_t)350)
 
 #define WARNING_NONE  ((uint8_t)0)
 #define WARNING_AMBER ((uint8_t)1) /* 주의 */
@@ -47,5 +50,8 @@ reaction_state_t reaction_state(const reaction_t *r);
 torque_t reaction_torque_cap(reaction_state_t state); /* 허용 토크의 상한 */
 bool reaction_enable(reaction_state_t state);         /* 구동을 허용하는가 */
 uint8_t reaction_warning(reaction_state_t state);     /* 경고 요청 */
+
+/* 기능이 요구할 수 있는 토크의 크기의 상한. 줄여 감이 아니면 최대 토크다 */
+torque_t reaction_app_limit(reaction_state_t state);
 
 #endif
