@@ -32,7 +32,7 @@
 | software | 검증: test, 정적 분석, coverage, 증명, 변이 검사 | [test-report.md](test-report.md), [tools.md](tools.md) | 했다. PC 시뮬레이션에서만. 도구는 qualification하지 않았다 |
 | concept | fault, error, failure, hazard의 정리 | [fault-table.md](fault-table.md) | 했다 |
 | 전체 | safety case | [safety-case.md](safety-case.md) | 닫히지 않았다. 맨 위 주장 둘 (G1, H1)이 성립하지 않는다 (그 문서 1절) |
-| 전체 | 형상과 변경의 관리 | git의 이력 | 절차를 따로 적지 않았다 |
+| 전체 | 형상과 변경의 관리 | git의 이력, [change-impact.md](change-impact.md) | 절차를 따로 적지 않았다. 변경 요청 하나 (CR-001)를 영향 분석과 함께 기록했다. baseline은 git의 commit이고, 도구의 판은 고정하지 않았다 ([tools.md](tools.md) 1절) |
 
 ## 3. 역할
 
@@ -54,6 +54,7 @@
 | 예제의 산출물과 코드, 장의 원고 | 단계가 끝날 때 | 두 검토자 | 위와 같다 | `reviews/2026-11-22-stage1/` |
 | 예제의 단계 2 설계 | mechanism을 구현하기 전 | 두 검토자 (토론) | 위와 같다 | `reviews/2026-11-23-example-stage2/` |
 | 단계 2의 산출물과 코드, 장의 원고 | 묶음마다 (넷) | 두 검토자 | 위와 같다 | `reviews/2026-11-22-stage2-part1/`, `reviews/2026-11-23-stage2-part2/`, `reviews/2026-11-23-stage2-part3/`, `reviews/2026-11-23-stage2-part4/` |
+| 변경의 영향 분석 (CR-001) | 변경한 뒤 | 두 검토자 | 위와 같다. 분석을 쓴 쪽이 변경을 한 쪽이다 | `reviews/2026-11-23-stage2-part5/` |
 | 코드가 요구사항대로인가 | 바꿀 때마다 | 도구 (`make check`) | 사람이 아니다 | `build/reports/` |
 | 검사 단계가 실패를 알리는가 | 도구를 고칠 때 | 도구 (`make step-check`) | 사람이 아니다 | - |
 | 과정을 계획대로 했는가 (audit) | - | - | - | 하지 않았다 |
