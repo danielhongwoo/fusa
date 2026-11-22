@@ -16,8 +16,26 @@ fail=0
 mkdir -p build/reports
 : > "$REPORT"
 
-PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction prove_brake_check prove_message_rules prove_message_change_detected prove_gear_check prove_inverter_check prove_flow"
+DEFAULT_PROPS="prove_allowed_torque prove_output_clamp prove_output_stage prove_pedal_check prove_limit_rise prove_normal_function_not_clamped prove_faulty_function_bounded prove_reaction prove_brake_check prove_message_rules prove_message_change_detected prove_gear_check prove_inverter_check prove_flow"
+# PROPS를 주면 그 성질만 돌린다 (tools/proof_mutation.py가 쓴다)
+PROPS="${PROPS:-$DEFAULT_PROPS}"
 count=0
+
+# 도구의 확인: 배열 경계 검사가 듣는가. 구조체의 끝에 있는 배열을 한 칸 넘는 쓰기는 잡아야 한다.
+# 배열 뒤에 다른 필드가 있으면 이 도구는 잡지 못한다 (알려진 한계). 제품의 구조체는 그래서 배열을 끝에 둔다
+tool_last=$(cbmc test/proof/tool_check.c --function canary_array_last --bounds-check --pointer-check 2>&1)
+tool_inside=$(cbmc test/proof/tool_check.c --function canary_array_inside --bounds-check --pointer-check 2>&1)
+if echo "$tool_last" | grep -q "VERIFICATION FAILED"; then
+    echo "도구 확인: 구조체의 끝에 있는 배열을 한 칸 넘는 쓰기를 잡는다"
+else
+    echo "도구 확인: 실패. 배열 경계 검사가 듣지 않는다"
+    fail=1
+fi
+if echo "$tool_inside" | grep -q "VERIFICATION SUCCESSFUL"; then
+    echo "도구의 한계: 배열 뒤에 다른 필드가 있으면 한 칸 넘는 쓰기를 잡지 못한다 (제품의 구조체는 배열을 끝에 둔다)"
+else
+    echo "도구 확인: 이 판의 도구는 배열 뒤에 필드가 있어도 한 칸 넘는 쓰기를 잡는다"
+fi
 
 for prop in $PROPS; do
     count=$((count + 1))

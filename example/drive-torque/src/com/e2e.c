@@ -82,7 +82,8 @@ bool e2e_check(e2e_rx_t *st, uint8_t data_id, const frame_t *frame, bool seen, b
             /* 값이나 counter가 바뀌었거나, 다른 종류의 메시지다 */
             st->ok = false;
         } else {
-            /* 지난 counter에서 몇 앞섰는가 (0-15). 16을 먼저 더해 뺄셈이 음수가 되지 않게 한다 */
+            /* 지난 counter에서 몇 앞섰는가 (0-15). 16u를 더해 뺄셈이 음수가 되지 않고 식이 부호 없는 계산이 되게 한다.
+             * 작은 정수형은 식 안에서 int로 넓어지므로, 그대로 빼면 음수에 bit 연산이 걸린다. 결과는 더하지 않아도 같다 */
             uint8_t step = (uint8_t)(((frame->counter & E2E_COUNTER_MASK) + 16u
                                       - (st->last_counter & E2E_COUNTER_MASK)) & E2E_COUNTER_MASK);
             /* 처음 받은 메시지는 견줄 것이 없으므로 받아들인다.

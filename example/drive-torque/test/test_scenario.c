@@ -508,6 +508,10 @@ static void tc_113(void)
     CHECK(t_off >= 0);
     CHECK((t_off - (int)T_FAULT) <= 110);
     CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+    /* 고장이 정말 들어갔는가: 지난 토크가 남아 있는 동안 가속이 고장 없는 실행보다 크고,
+     * 모터의 토크가 내려가는 것이 inverter의 timeout (50 ms)만큼 늦다. fault를 빼면 이 둘이 실패한다 */
+    CHECK(over_ms >= 10);
+    CHECK((t_off - first_motor_off(log_ref, n_ref, T_FAULT)) >= 30);
     {
         /* VCU의 검사 (SWR-19)도 이 고장을 본다. inverter가 스스로 토크를 내리는 것이 더 빨라서,
          * 범위를 벗어난 주기가 3번 이어지기 전에 범위 안으로 돌아온다.
@@ -1071,6 +1075,8 @@ static void tc_123(void)
         { 8000u, 1.0, false, GEAR_D },  /* 다시 D로 */
     };
     static const int32_t offsets[] = { 0, 100, -100 };
+    /* 범위를 벗어난 주기가 이어진 가장 큰 횟수. 줄은 묵지 않음과 한 주기 묵음, 칸은 오차 0, +10, -10 Nm */
+    static const int expected_worst[2][3] = { { 0, 1, 0 }, { 1, 2, 0 } };
     int worst_all = 0;
 
     for (int stale = 0; stale < 2; stale++) {
@@ -1095,6 +1101,7 @@ static void tc_123(void)
             }
             CHECK_EQ(bad, 0);
             CHECK(worst < 3);
+            CHECK_EQ(worst, expected_worst[stale][k]);
             /* 운전이 뜻한 대로 되었는지: 서 있다가 R을 받아들였고, 끝에는 D로 달린다 */
             CHECK_EQ(log_buf[7200].diag.gear, GEAR_R);
             CHECK_EQ(log_buf[n - 1].diag.gear, GEAR_D);
@@ -1299,6 +1306,8 @@ static void tc_128(void)
         }
     }
     CHECK_EQ(bad, 0);
+    /* 선은 허용에 고착되어 있다. VCU가 쓴 값과 선의 값이 다르다 */
+    CHECK(log_buf[n - 1].enable_wire);
     CHECK(log_buf[n - 1].speed_mps < 0.01);
 }
 
@@ -1326,6 +1335,9 @@ static void tc_129(void)
         CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
         CHECK_EQ(log_buf[t_cut - 1].warning, 0);
         CHECK(log_buf[n - 1].torque_act_nm < 0.01);
+        /* 끊긴 때의 선은 끊김이고, 그 주기에 VCU는 아직 허용이라고 쓰고 있었다 */
+        CHECK(!log_buf[fault.t_ms].enable_wire);
+        CHECK(log_buf[fault.t_ms].enable || (t_cut == (int)fault.t_ms));
         if ((t_cut - (int)fault.t_ms) > worst_warn_ms) {
             worst_warn_ms = t_cut - (int)fault.t_ms;
         }
@@ -1385,8 +1397,8 @@ static void tc_124(void)
         }
     }
     /* 시간 예산표 (docs/technical-safety-concept.md 9.4절): 창 15 ms + 전달 1 ms + inverter의 응답 60 ms */
-    CHECK(worst_trip_ms <= 16);
-    CHECK(worst_off_ms <= 77);
+    CHECK(worst_trip_ms <= 15);
+    CHECK(worst_off_ms <= 76);
     CHECK_EQ(worst_over_ms, 0);
     printf("  측정 FI-23: fault부터 watchdog이 끊을 때까지 가장 나쁜 경우 %d ms, 모터의 토크가 5%% 아래로 내려갈 때까지 %d ms\n",
            worst_trip_ms, worst_off_ms);
@@ -1394,8 +1406,9 @@ static void tc_124(void)
 
 /*
  * TC-125: SWR-20 fault injection FI-24
- * 실행의 다른 고장 넷: 기능의 task가 빠짐, 감시와 출력의 task가 빠짐, 실행을 확인하는 task가 빠짐,
- * task가 하나도 실행되지 않음 (MCU가 멈춤). 어느 것이든 옳은 답이 나가지 않아 watchdog이 끊는다.
+ * 실행의 다른 고장 여섯: 기능의 task가 빠짐, 감시와 출력의 task가 빠짐, 실행을 확인하는 task가 빠짐,
+ * task가 하나도 실행되지 않음 (MCU가 멈춤), 기능의 task가 한 주기에 두 번 실행됨, 감시와 출력의 task가 두 번 실행됨.
+ * 어느 것이든 옳은 답이 나가지 않아 watchdog이 끊는다.
  */
 static void tc_125(void)
 {
@@ -1408,10 +1421,12 @@ static void tc_125(void)
         { T_FAULT, FAULT_TASK_SKIP, 2 },
         { T_FAULT, FAULT_TASK_SKIP, 3 },
         { T_FAULT, FAULT_TASK_STOP, 0 },
+        { T_FAULT, FAULT_TASK_TWICE, 1 },
+        { T_FAULT, FAULT_TASK_TWICE, 2 },
     };
     int worst_trip_ms = 0;
 
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 6; k++) {
         scenario_t sc = { "fi-24", 3000u, driver, 2, &faults[k], 1, NULL };
         int n = scenario_run(&sc, log_buf, LOG_CAP);
         int t_trip = first_time(log_buf, n, 0u, is_watchdog_tripped);
@@ -1421,7 +1436,7 @@ static void tc_125(void)
         CHECK(log_buf[n - 1].torque_act_nm < 0.01);
         /* watchdog이 끊은 것을 VCU가 아는가 (SWR-21). 입력의 task와 출력의 task가 살아 있으면
          * 다음 주기의 되읽기에서 드러나 구동 허용 차단과 경고가 된다. 출력의 task가 죽었으면 경고를 쓰지 못한다 */
-        CHECK_EQ(log_buf[n - 1].warning, ((k == 0) || (k == 2)) ? 2 : 0);
+        CHECK_EQ(log_buf[n - 1].warning, ((k == 1) || (k == 3)) ? 0 : 2);
         if ((t_trip - (int)T_FAULT) > worst_trip_ms) {
             worst_trip_ms = t_trip - (int)T_FAULT;
         }

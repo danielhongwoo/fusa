@@ -1042,6 +1042,10 @@ static void tc_018(void)
     CHECK(!e2e_check(&rx, 66u, &f, false, false, 0u));
     /* 받은 적이 없다고 알려 오면 넘겨받은 메시지의 내용이 옳아 보여도 쓰지 않는다 */
     CHECK(!e2e_check(&rx, 66u, &f, false, true, 0u));
+    /* 켠 직후의 판정은 무효다. 새 메시지 없이 읽기만 해서는 유효가 되지 않는다.
+     * 다시 켠 뒤에 본다. 위의 두 줄이 판정을 이미 무효로 써 두었기 때문이다 */
+    e2e_rx_init(&rx);
+    CHECK(!e2e_check(&rx, 66u, &f, true, false, 0u));
     /* 처음 받은 메시지는 견줄 것이 없으므로 counter가 무엇이든 받아들인다 */
     CHECK(receive(&rx, 66u, frame_of(66u, 7u, 500)));
     /* counter가 1 앞서면 유효하다 */
@@ -1288,6 +1292,27 @@ static void tc_022(void)
     (void)feed(&st, 4900, 2400, 1);
     CHECK(st.fault);
 
+    /* 뺀 채널이 범위 안으로 돌아와 있어도, 남은 채널이 범위를 벗어나면 3주기 뒤에 페달 고장이다 */
+    make_ready(&st);
+    (void)feed(&st, 4900, apps2(300), 3);
+    CHECK_EQ(st.excluded, 1);
+    CHECK_EQ(feed(&st, apps1(300), 2400, 3), 0);
+    CHECK(st.fault);
+    make_ready(&st);
+    (void)feed(&st, apps1(300), 0, 3);
+    CHECK_EQ(st.excluded, 2);
+    CHECK_EQ(feed(&st, 100, apps2(300), 3), 0);
+    CHECK(st.fault);
+    /* 페달을 놓고 있을 때 (다른 채널의 값이 0%) 한 채널의 선이 끊겨도 그 채널을 뺀다 */
+    make_ready(&st);
+    CHECK_EQ(feed(&st, 0, apps2(0), 3), 0);
+    CHECK_EQ(st.excluded, 1);
+    CHECK(!st.fault);
+    make_ready(&st);
+    CHECK_EQ(feed(&st, apps1(0), 0, 3), 0);
+    CHECK_EQ(st.excluded, 2);
+    CHECK(!st.fault);
+
     /* 기억한 값이 알 수 없는 값이 되어도 (memory의 값이 틀려도) 그 값의 채널을 빼지 않는다 */
     make_ready(&st);
     (void)feed(&st, 4900, apps2(300), 2);
@@ -1466,18 +1491,24 @@ static void tc_021(void)
     CHECK(!flow_check(&f));
     flow_mark(&f, 3u);
     CHECK(flow_check(&f));
-    /* 답은 질문의 번호에서 시작해 31을 곱하고 표시를 더해 가는 값의 아래 8 bit다.
-     * 0번 질문, 표시 1, 2, 3: ((0 * 31 + 1) * 31 + 2) * 31 + 3 = 1026, 아래 8 bit는 2 */
-    CHECK_EQ(flow_answer(&f, 800, 750), 2);
-    CHECK_EQ(flow_answer(&f, 800, 800), 2);
-    CHECK_EQ(flow_answer(&f, 800, -800), 2);
-    /* 보낸 토크의 크기가 허용 토크를 넘으면 답이 틀리게 나온다 */
-    CHECK_EQ(flow_answer(&f, 800, 801), 253);
-    CHECK_EQ(flow_answer(&f, 800, -801), 253);
+    /* 답은 질문의 번호에서 시작해 31을 곱하고 표시 셋과 표시의 수를 차례로 더해 가는 값의 아래 8 bit다.
+     * 0번 질문, 표시 1, 2, 3, 수 3: (((0 * 31 + 1) * 31 + 2) * 31 + 3) * 31 + 3 = 31809, 아래 8 bit는 65 */
+    CHECK_EQ(flow_answer(&f, 800, 750), 65);
+    CHECK_EQ(flow_answer(&f, 800, 800), 65);
+    CHECK_EQ(flow_answer(&f, 800, -800), 65);
+    /* 보낸 토크의 크기가 허용 토크를 넘으면 답이 틀리게 나온다 (모든 bit를 뒤집은 값) */
+    CHECK_EQ(flow_answer(&f, 800, 801), 190);
+    CHECK_EQ(flow_answer(&f, 800, -801), 190);
     /* 허용 토크가 음수로 틀려 있으면 0으로 본다 */
-    CHECK_EQ(flow_answer(&f, -5, 0), 2);
-    CHECK_EQ(flow_answer(&f, -5, 3), 253);
-    CHECK_EQ(flow_answer(&f, -5, -3), 253);
+    CHECK_EQ(flow_answer(&f, -5, 0), 65);
+    CHECK_EQ(flow_answer(&f, -5, 3), 190);
+    CHECK_EQ(flow_answer(&f, -5, -3), 190);
+    /* task가 한 번 더 실행되어 넷째 표시가 생기면, 앞의 세 표시가 옳아도 답이 옳은 답이 아니다 */
+    flow_mark(&f, 3u);
+    CHECK(!flow_check(&f));
+    CHECK(flow_answer(&f, 800, 750) != 65);
+    flow_init(&f);
+    mark3(&f, 1u, 2u, 3u);
 
     /* 주기를 닫으면 표시가 지워지고 질문의 번호가 오른다. 표시의 값도 남지 않는다 */
     flow_next(&f);
@@ -1485,27 +1516,27 @@ static void tc_021(void)
     CHECK_EQ(f.marks[0], 0);
     CHECK_EQ(f.marks[1], 0);
     CHECK_EQ(f.marks[2], 0);
-    /* task 하나가 빠진 주기의 답은 옳은 답 (97)이 아니다. 지난 주기의 표시가 빈 자리를 채우지 않는다 */
+    /* task 하나가 빠진 주기의 답은 옳은 답 (194)이 아니다. 지난 주기의 표시가 빈 자리를 채우지 않는다 */
     flow_mark(&f, 1u);
     flow_mark(&f, 2u);
-    CHECK(flow_answer(&f, 800, 750) != 97);
+    CHECK(flow_answer(&f, 800, 750) != 194);
     flow_mark(&f, 3u);
     flow_next(&f);
     f.question = 1u;
     mark3(&f, 1u, 2u, 3u);
     CHECK(flow_check(&f));
-    CHECK_EQ(flow_answer(&f, 800, 750), 97); /* 1번 질문: (29791 + 1026)의 아래 8 bit */
+    CHECK_EQ(flow_answer(&f, 800, 750), 194); /* 1번 질문: (31^4 + 31809)의 아래 8 bit */
     /* 번호는 255 다음에 0이다 */
     f.question = 255u;
     flow_next(&f);
     mark3(&f, 1u, 2u, 3u);
-    CHECK_EQ(flow_answer(&f, 800, 750), 2);
+    CHECK_EQ(flow_answer(&f, 800, 750), 65);
 
-    /* 순서가 틀리면 틀리다. 그 표시에서 나온 답은 옳은 답 (2)과 다르다 */
+    /* 순서가 틀리면 틀리다. 그 표시에서 나온 답은 옳은 답 (65)과 다르다 */
     flow_init(&f);
     mark3(&f, 2u, 1u, 3u);
     CHECK(!flow_check(&f));
-    CHECK_EQ(flow_answer(&f, 800, 750), 164); /* ((0 * 31 + 2) * 31 + 1) * 31 + 3 = 1956 */
+    CHECK_EQ(flow_answer(&f, 800, 750), 223); /* (((0 * 31 + 2) * 31 + 1) * 31 + 3) * 31 + 3 = 60639 */
     /* 자리 하나만 틀려도 틀리다 */
     flow_next(&f);
     mark3(&f, 3u, 2u, 3u);
@@ -1527,6 +1558,24 @@ static void tc_021(void)
     flow_mark(&f, 3u);
     CHECK(!flow_check(&f));
     CHECK_EQ(f.count, 4);
+    /* 넘친 표시는 구조체의 밖에 쓰이지 않는다. 표시의 배열이 구조체의 끝에 있으므로 (flow.h),
+     * 한 칸 넘는 쓰기는 바로 뒤에 둔 값에 떨어진다. 그 값이 그대로인지 본다 */
+    {
+        struct {
+            flow_t f;
+            uint8_t guard[4];
+        } g;
+        for (int i = 0; i < 4; i++) {
+            g.guard[i] = 0xA5u;
+        }
+        flow_init(&g.f);
+        mark3(&g.f, 1u, 2u, 3u);
+        flow_mark(&g.f, 0x33u);
+        flow_mark(&g.f, 0x44u);
+        for (int i = 0; i < 4; i++) {
+            CHECK_EQ(g.guard[i], 0xA5);
+        }
+    }
     flow_next(&f);
     mark3(&f, 1u, 2u, 3u);
     flow_mark(&f, 1u);

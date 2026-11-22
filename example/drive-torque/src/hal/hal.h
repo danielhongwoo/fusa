@@ -67,7 +67,7 @@ typedef struct {
     bool pedal_fault;        /* 페달 고장으로 판정했는가 */
     torque_t torque_req;     /* 기능이 낸 토크 요구 (깎기 전) */
     torque_t torque_allowed; /* 감시가 계산한 허용 토크 */
-    bool latched;            /* 기능의 고장으로 고정했는가 */
+    bool latched;            /* 고장 대응의 상태가 구동 허용 차단인가 (원인이 무엇이든) */
     uint32_t clamp_count;    /* 출력 단계가 토크 요구를 깎은 횟수 */
     bool brake;              /* 판정한 브레이크 상태 */
     bool brake_fault;        /* 브레이크 신호의 고장으로 판정했는가 */

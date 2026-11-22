@@ -4,6 +4,7 @@
 #   make test      빌드와 test만
 #   make intro     1장의 실행 예: 안전 장치가 없는 제어기와 예제의 제어기를 같은 고장에서 견준다
 #   make mutation  제품 코드에 결함을 하나씩 넣어 test가 잡는지 본다
+#   make proof-mutation  제품 코드에 결함을 하나씩 넣어 증명이 잡는지 본다
 #   make clean     build 폴더를 지운다
 #
 # 도구가 없으면 그 단계를 건너뛰고 "건너뜀"이라고 찍는다.
@@ -33,7 +34,7 @@ CPPCHECK   := $(shell command -v cppcheck 2>/dev/null)
 CLANG_TIDY := $(shell command -v clang-tidy 2>/dev/null || ls /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null)
 CBMC       := $(shell command -v cbmc 2>/dev/null)
 
-.PHONY: check test intro intro-figure trace static coverage prove mutation clean dirs skipped
+.PHONY: check test intro intro-figure trace static coverage prove mutation proof-mutation clean dirs skipped
 
 check: test intro trace static coverage prove skipped
 	@echo "make check: 끝"
@@ -158,6 +159,9 @@ else
 endif
 
 # test가 결함을 잡는지 본다. 시간이 걸려서 check에는 넣지 않았다
+proof-mutation:
+	@python3 tools/proof_mutation.py
+
 mutation:
 	@python3 tools/mutation_check.py
 

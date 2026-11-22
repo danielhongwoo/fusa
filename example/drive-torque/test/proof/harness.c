@@ -687,8 +687,10 @@ void prove_inverter_check(void)
  * 성질 14 (SWR-20): 실행의 확인. 표시, 표시의 수, 질문의 번호가 어떤 값에서 시작해도 성립한다.
  *   가. 맞다고 하는 것은 표시가 셋이고 1, 2, 3의 순서일 때뿐이다.
  *   나. 그때 보낸 토크의 크기가 허용 토크 안이면, 답은 질문의 번호로 정해진 값 하나다.
- *       허용 토크를 넘으면 그 값이 아니다.
+ *       허용 토크를 넘으면 그 값이 아니다. 표시 셋이 옳아도 수가 셋이 아니면 그 값이 아니다.
  *   다. 표시를 남길 때 배열 밖을 쓰지 않고, 표시의 수는 4를 넘지 않는다.
+ *       배열 밖을 쓰지 않는다는 것은 도구의 경계 검사가 본다. 그 검사는 배열이 구조체의 끝에 있을 때에만
+ *       한 칸 넘는 쓰기를 잡는다 (test/proof/tool_check.c). 그래서 flow_t의 배열을 끝에 두었다.
  *   라. 주기를 닫으면 표시가 없는 상태가 되고 (값도 남지 않는다), 질문의 번호가 1 오른다 (255 다음은 0).
  * 말해 주지 않는 것: 순서가 틀린 표시에서 나온 답이 옳은 답과 반드시 다른가. 답이 8 bit여서
  * 우연히 같은 조합이 있다. 그래서 답을 쓰기 전에 가.를 따로 확인한다.
@@ -717,13 +719,18 @@ void prove_flow(void)
     assert(ok == ((f.count == 3) && (f.marks[0] == 1) && (f.marks[1] == 2) && (f.marks[2] == 3)));
     /* 나 */
     answer = flow_answer(&f, allowed, out);
-    expected = (((uint32_t)f.question * 29791u) + 1026u) & 0xFFu;
+    expected = (((uint32_t)f.question * 923521u) + 31809u) & 0xFFu;
     if (ok) {
         if ((out <= allowed) && (out >= -allowed)) {
             assert(answer == expected);
         } else {
             assert(answer != expected);
         }
+    }
+    /* 나-2. 표시 셋이 옳아도 그 수가 셋이 아니면 (task가 더 실행되었으면) 그 값이 아니다 */
+    if ((f.marks[0] == 1) && (f.marks[1] == 2) && (f.marks[2] == 3) && (f.count != 3)
+        && (out <= allowed) && (out >= -allowed)) {
+        assert(answer != expected);
     }
     /* 다 */
     flow_mark(&f, mark);

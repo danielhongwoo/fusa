@@ -29,6 +29,7 @@ typedef enum {
     FAULT_TASK_SKIP,         /* task 하나가 실행되지 않음. param은 task table의 몇 번째인가 (0부터) */
     FAULT_TASK_STOP,         /* task가 하나도 실행되지 않음 (MCU가 멈춤) */
     FAULT_TASK_SLOW,         /* task의 주기가 두 배로 늘어남 (clock의 고장) */
+    FAULT_TASK_TWICE,        /* task 하나가 한 주기에 두 번 실행됨. param은 task table의 몇 번째인가 (0부터) */
     FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
     FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
     FAULT_COUNT
@@ -52,6 +53,10 @@ void hal_sim_inverter_check(bool on);
 
 /* 외부 watchdog이 있는가. 기본은 있다. 1장의 단순한 제어기에는 없다 */
 void hal_sim_watchdog_present(bool present);
+
+/* inverter에 닿는 구동 허용 신호의 선의 값. VCU가 쓴 값 (hal_sim_enable)과 다를 수 있다:
+ * 외부 watchdog이 막거나 끊었을 때, 선이 고착되거나 끊겼을 때 */
+bool hal_sim_enable_wire(void);
 
 /* 외부 watchdog이 구동 허용 신호를 끊었는가 */
 bool hal_sim_watchdog_tripped(void);

@@ -191,10 +191,11 @@ static void watchdog_trip(void)
 }
 
 /* watchdog이 기다리는 답. 제품의 코드 (src/flow/flow.c)와 따로 적었다:
- * 질문의 번호에서 시작해 31을 곱하고 1, 2, 3을 차례로 더한 값의 아래 8 bit */
+ * 질문의 번호에서 시작해 31을 곱하고 표시 1, 2, 3과 표시의 수 3을 차례로 더한 값의 아래 8 bit.
+ * 31^4 = 923521이고, ((1 * 31 + 2) * 31 + 3) * 31 + 3 = 31809다 */
 static unsigned watchdog_expected(unsigned question)
 {
-    return ((question * 29791u) + 1026u) & 0xFFu;
+    return (((question & 0xFFu) * 923521u) + 31809u) & 0xFFu;
 }
 
 void hal_sim_step(time_ms_t t_ms)
@@ -352,6 +353,8 @@ bool hal_enable_readback(void)
 {
     return enable_wire();
 }
+
+bool hal_sim_enable_wire(void) { return enable_wire(); }
 
 void hal_watchdog_write(uint8_t answer)
 {

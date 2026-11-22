@@ -444,9 +444,47 @@ static void tc_208(void)
     CHECK_EQ(excess_ms, 0);
     CHECK_EQ(log_fault[n - 1].torque_out, 0);
     CHECK(!log_fault[n - 1].enable); /* VCU는 끊으라고 쓴다. 선이 따르지 않을 뿐이다 */
+    CHECK(log_fault[n - 1].enable_wire); /* 선은 끝까지 허용이다. 구동을 막은 것은 토크 요구 0이다 */
+    CHECK(!log_ref[n_ref - 1].diag.latched && log_ref[n_ref - 1].enable_wire);
     CHECK_EQ(log_fault[n - 1].warning, 2);
     CHECK(log_fault[n - 1].torque_act_nm < 0.01);
     printf("  측정 FI-29: 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms\n", max_excess, excess_ms);
+}
+
+/* TC-209가 쓰는 시간표: 기능의 결함이 켜지는 때에 inverter도 100 Nm 더 내기 시작한다 */
+static void inverter_offset_and_fault(time_ms_t t_ms)
+{
+    if (t_ms == T_FAULT) {
+        hal_sim_set_fault(FAULT_INVERTER_TORQUE_OFFSET, 1000);
+    }
+    switch_fault_on(t_ms);
+}
+
+/*
+ * TC-209: SWR-19 fault injection FI-33
+ * 기능이 100 Nm 더 큰 토크를 요구하는 것과 같은 때에 inverter가 100 Nm 더 낸다 (fault 둘).
+ * 출력 단계는 기능의 요구를 깎는다. inverter의 검사가 견주는 것은 깎은 뒤에 실제로 보낸 토크여야 한다.
+ * 깎기 전의 요구와 견주면 범위가 100 Nm 넓어져 inverter의 고장이 보이지 않는다.
+ * inverter의 검사가 3번째 주기에 끊는다. 출력 단계의 고정 (5번째 주기)보다 먼저다.
+ */
+static void tc_209(void)
+{
+    static const driver_point_t driver[] = {
+        { 0u, 0.0, false, GEAR_D },
+        { T_PEDAL_ON, 0.3, false, GEAR_D },
+    };
+    scenario_t sc = { "fi-33", 3000u, driver, 2, NULL, 0, inverter_offset_and_fault };
+    int n = run(&sc, log_fault, APP_FAULT_OFFSET, 1000, T_FAULT);
+    int t_latch = first_latched(log_fault, n);
+
+    /* 넘는 토크 요구는 한 주기도 나가지 않는다 */
+    CHECK_EQ(log_fault[T_FAULT].torque_out, 800);
+    /* inverter가 알린 토크가 범위를 벗어난 3번째 주기에 끊는다. 깎인 주기는 그때 4번째다 */
+    CHECK_EQ(t_latch, (int)T_FAULT + 30);
+    CHECK_EQ(log_fault[t_latch].diag.inverter_out_cycles, 3);
+    CHECK_EQ(log_fault[n - 1].torque_out, 0);
+    CHECK(!log_fault[n - 1].enable);
+    CHECK(log_fault[n - 1].torque_act_nm < 0.01);
 }
 
 int main(void)
@@ -460,6 +498,7 @@ int main(void)
         { "TC-206", "FI-09 브레이크를 밟고 있는데 기능이 최대 토크를 요구", tc_206 },
         { "TC-207", "FI-12 브레이크 접점 하나가 고착된 채 기능이 최대 토크를 요구", tc_207 },
         { "TC-208", "FI-29 구동 허용 신호의 선이 고착된 채 기능이 큰 토크를 요구", tc_208 },
+        { "TC-209", "FI-33 기능이 큰 토크를 요구하는 중에 inverter도 더 냄", tc_209 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

@@ -4,6 +4,8 @@
  */
 #include "vcu.h"
 
+#include <stddef.h>
+
 #include "hal.h"
 
 void vcu_init(vcu_t *vcu)
@@ -157,3 +159,8 @@ const vcu_task_t vcu_task_table[] = {
 };
 
 const int vcu_task_count = (int)(sizeof(vcu_task_table) / sizeof(vcu_task_table[0]));
+
+/* SWR-20: 표시를 남기는 task의 수는 표의 task에서 실행을 확인하는 task 하나를 뺀 것이다.
+ * 표에 task를 더하고 표시를 정하지 않으면 여기에서 compile이 멈춘다 */
+_Static_assert((sizeof(vcu_task_table) / sizeof(vcu_task_table[0])) == ((size_t)FLOW_TASK_COUNT + 1u),
+               "task table과 FLOW_TASK_COUNT가 맞지 않는다");

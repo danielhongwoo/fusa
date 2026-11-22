@@ -46,6 +46,9 @@ int scenario_run(const scenario_t *sc, sample_t *log, int log_cap)
                            || (hal_sim_fault_on(FAULT_TASK_SKIP) && (hal_sim_fault_param(FAULT_TASK_SKIP) == i));
             if (((t % period) == 0u) && !skipped) {
                 vcu_task_table[i].run(&vcu);
+                if (hal_sim_fault_on(FAULT_TASK_TWICE) && (hal_sim_fault_param(FAULT_TASK_TWICE) == i)) {
+                    vcu_task_table[i].run(&vcu);
+                }
             }
         }
         /* 5. plant */
@@ -61,6 +64,7 @@ int scenario_run(const scenario_t *sc, sample_t *log, int log_cap)
             s->apps2_mv = hal_adc_read_mv(HAL_ADC_APPS2);
             s->torque_out = hal_sim_last_torque();
             s->enable = hal_sim_enable();
+            s->enable_wire = hal_sim_enable_wire();
             s->warning = hal_sim_warning();
             s->diag = *hal_sim_diag();
             s->watchdog_tripped = hal_sim_watchdog_tripped();

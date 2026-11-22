@@ -28,6 +28,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEST_TIMEOUT_S = 300  # 반복이 끝나지 않게 되는 변이가 도구를 멈추지 않게 한다
 
 # (파일, 원래 코드, 바꾼 코드, 설명)
 MUTANTS = [
@@ -153,6 +154,22 @@ MUTANTS = [
      "inverter의 상태를 다른 종류의 data ID로 검사한다"),
     ("src/vcu/vcu.c", "vcu->speed = vcu->speed_valid ? rx.frame.value : 0;", "vcu->speed = rx.frame.value;",
      "무효인 차량 속도의 값을 그대로 쓴다"),
+    ("src/flow/flow.c", "    answer = ((answer * 31u) + f->count) & 0xFFu;\n", "", "답에 표시의 수를 넣지 않는다"),
+    ("src/vcu/vcu.c", "inverter_check_record(&vcu->inverter_check, vcu->torque_out);",
+     "inverter_check_record(&vcu->inverter_check, vcu->torque_req);",
+     "inverter의 검사에 보낸 토크가 아니라 깎기 전의 요구를 기록한다"),
+    ("src/vcu/vcu.c", "diag.inverter_out_cycles = vcu->inverter_check.out_cycles;",
+     "diag.inverter_out_cycles = vcu->inverter_check.invalid_cycles;", "진단 메시지에 다른 횟수를 싣는다"),
+    ("src/com/e2e.c", "    st->synced = false;\n    st->ok = false;\n}", "    st->synced = false;\n    st->ok = true;\n}",
+     "받는 쪽의 처음 판정을 유효로 둔다"),
+    ("src/input/pedal_check.c", "        bad = range2;\n", "        bad = range2 && range1;\n",
+     "채널 1을 뺀 뒤 남은 채널의 실패를 뺀 채널도 벗어났을 때만 본다"),
+    ("src/input/pedal_check.c", "        bad = range1;\n", "        bad = range1 && range2;\n",
+     "채널 2를 뺀 뒤 남은 채널의 실패를 뺀 채널도 벗어났을 때만 본다"),
+    ("src/input/pedal_check.c", "        if (range1 && !range2) {", "        if (range1 && !range2 && (p2 > 0)) {",
+     "다른 채널이 페달을 놓은 값이면 채널 1의 단선을 한 채널의 고장으로 보지 않는다"),
+    ("src/input/pedal_check.c", "        if (range2 && !range1) {", "        if (range2 && !range1 && (p1 > 0)) {",
+     "다른 채널이 페달을 놓은 값이면 채널 2의 단선을 한 채널의 고장으로 보지 않는다"),
     ("src/input/pedal_check.c", "        bad = range2;\n", "        bad = range2 || range1;\n", "뺀 채널 1의 범위를 계속 본다"),
     ("src/input/pedal_check.c", "        bad = range1;\n", "        bad = range1 || range2;\n", "뺀 채널 2의 범위를 계속 본다"),
     ("src/input/pedal_check.c", "        if (range1 && !range2) {", "        if (range1) {",
@@ -397,11 +414,20 @@ EQUIVALENT = [
      "출력과 진단 메시지는 같다"),
     ("src/vcu/vcu.c", "    if (ok) {\n        hal_watchdog_write(", "    if (ok || !ok) {\n        hal_watchdog_write(",
      "task의 순서가 틀려도 외부 watchdog에 답을 쓴다",
-     "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 그 주기에 남은 표시에서 만들므로 (flow_answer), 순서가 틀리면 답도 "
-     "틀리게 나오고 watchdog이 끊는다. 다만 표시가 틀렸는데 답이 우연히 같은 조합이 있다 (답이 8 bit다). "
-     "그 조합에서는 이 줄이 유일한 보호이므로 엄밀하게는 동등하지 않다. 순서가 틀린 표시의 답이 옳은 답과 "
-     "다르다는 것은 unit test (TC-021)가 값 하나로 본다"),
+     "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 그 주기에 남은 표시와 그 수에서 만들므로 (flow_answer), "
+     "task가 빠지거나 더 실행되거나 순서가 틀리면 답도 틀리게 나오고 watchdog이 끊는다. 다만 표시가 틀렸는데 답이 "
+     "우연히 같은 조합이 있다 (답이 8 bit다). 그 조합에서는 이 줄이 유일한 보호이므로 엄밀하게는 동등하지 않다. "
+     "이 이유는 두 번 틀렸다. 처음에는 지난 주기의 표시가 남아 빈 자리를 채웠고 (변이 검사가 알렸다), 다음에는 "
+     "task가 두 번 실행되어 넷째 표시가 버려지면 앞의 셋만으로 옳은 답이 나왔다 (검토자가 찾았다). "
+     "두 경우 모두 답이 틀리게 나오도록 고쳤고, TC-021과 TC-125, 증명한 성질 14가 그것을 본다"),
 ]
+
+# build가 잡아야 하는 변이. 상수가 다른 곳의 값과 맞물려 있고, 그것을 _Static_assert가 compile할 때 견준다.
+# 이 변이가 compile되면 그 견줌이 없어진 것이다.
+# 설명 -> compile 출력에 있어야 하는 글
+BUILD_CAUGHT = {
+    "상수 FLOW_TASK_COUNT를 3에서 1 올린다": "task table과 FLOW_TASK_COUNT가 맞지 않는다",
+}
 
 # 상수를 자동으로 바꿀 파일. 안전 요구사항을 받는 부분의 상수와,
 # 감시의 한계와 맞물리는 기능의 상수 (올리는 속도, 후진의 비율)다
@@ -426,6 +452,7 @@ def main():
     count = len(mutants) - len(EQUIVALENT)
     work = tempfile.mkdtemp(prefix="mutation-")
     missed = 0
+    by_build = 0
     try:
         for i, (path, old, new, what, why_equivalent) in enumerate(mutants):
             copy = os.path.join(work, "m%02d" % i)
@@ -437,8 +464,21 @@ def main():
                 missed += 1
                 continue
             open(target, "w", encoding="utf-8").write(text.replace(old, new))
-            result = subprocess.run(["make", "-s", "test"], cwd=copy, capture_output=True, text=True)
+            try:
+                result = subprocess.run(["make", "-s", "test"], cwd=copy, capture_output=True, text=True,
+                                        timeout=TEST_TIMEOUT_S)
+            except subprocess.TimeoutExpired:
+                # 끝나지 않는 test는 실패한 test다
+                result = subprocess.CompletedProcess([], 1, "", "")
             output = result.stdout + result.stderr
+            if what in BUILD_CAUGHT:
+                if ("error:" in output) and (BUILD_CAUGHT[what] in output):
+                    by_build += 1
+                    print("build  %s" % what)
+                else:
+                    print("오류  build가 잡아야 하는 변이가 compile되었다 (%s)" % what)
+                    missed += 1
+                continue
             if "error:" in output:
                 # compile이 안 되는 변이는 test가 잡은 것이 아니다
                 print("오류  compile되지 않는 변이다 (%s)" % what)
@@ -457,8 +497,8 @@ def main():
             print("%s  %s" % ("잡음" if caught else "놓침", what))
     finally:
         shutil.rmtree(work, ignore_errors=True)
-    print("결함 %d개 가운데 %d개를 test가 잡았다. 동등한 변이 %d개는 세지 않았다"
-          % (count, count - missed, len(EQUIVALENT)))
+    print("결함 %d개 가운데 %d개를 test가, %d개를 build (_Static_assert)가 잡았다. 동등한 변이 %d개는 세지 않았다"
+          % (count, count - missed - by_build, by_build, len(EQUIVALENT)))
     return 1 if missed else 0
 
 

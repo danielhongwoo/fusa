@@ -43,7 +43,7 @@ torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear, torque_t
         }
     }
 
-    /* 요구할 수 있는 크기의 상한. 평소에는 최대 토크이고, 줄여 가는 동안에는 낮다 */
+    /* SWR-26: 받은 상한을 넘게 요구하지 않는다. 평소에는 최대 토크이고, 줄여 가는 동안에는 35 Nm다 (SWR-24) */
     if (target > limit) {
         target = limit;
     }
@@ -51,7 +51,7 @@ torque_t app_step(app_t *st, permille_t pedal, bool brake, gear_t gear, torque_t
         target = -limit;
     }
 
-    /* 토크는 천천히 올리고, 내릴 때는 바로 내린다.
+    /* SWR-26: 토크는 한 주기에 25 Nm까지만 올리고, 내릴 때는 바로 내린다.
      * 알려진 단순화: 주행 중에 기어가 D에서 R로 바뀌면 한 주기에 양수에서 음수로 넘어간다.
      * 차량 속도를 보고 막는 것은 하지 않았다 (docs/technical-safety-concept.md 6절) */
     /* 올리기 시작하는 곳은 지난 주기의 토크다. 방향이 바뀌었으면 0에서 다시 올린다.

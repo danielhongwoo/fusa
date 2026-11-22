@@ -38,6 +38,9 @@ uint8_t flow_answer(const flow_t *f, torque_t allowed, torque_t out)
     for (uint8_t i = 0u; i < FLOW_TASK_COUNT; i++) {
         answer = ((answer * 31u) + f->marks[i]) & 0xFFu;
     }
+    /* 표시의 수도 넣는다. 넣지 않으면 task가 한 번 더 실행되어 넷째 표시가 버려진 주기에도
+     * 앞의 세 표시만으로 옳은 답이 나온다 */
+    answer = ((answer * 31u) + f->count) & 0xFFu;
     /* SWR-20: 보낸 토크의 크기가 허용 토크를 넘었으면 답이 틀리게 나온다.
      * 허용 토크가 음수로 틀려 있어도 부호를 뒤집는 계산이 넘치지 않게 0에서 자른다 */
     torque_t limit = (allowed < 0) ? 0 : allowed;

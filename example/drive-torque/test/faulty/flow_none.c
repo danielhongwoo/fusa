@@ -29,7 +29,7 @@ bool flow_check(const flow_t *f)
 
 uint8_t flow_answer(const flow_t *f, torque_t allowed, torque_t out)
 {
-    /* 표시가 1, 2, 3이고 토크가 허용 범위 안일 때의 답을 그대로 낸다 */
+    /* 표시가 1, 2, 3으로 셋이고 토크가 허용 범위 안일 때의 답을 그대로 낸다 */
     uint32_t answer = f->question;
 
     (void)allowed;
@@ -37,6 +37,7 @@ uint8_t flow_answer(const flow_t *f, torque_t allowed, torque_t out)
     answer = ((answer * 31u) + 1u) & 0xFFu;
     answer = ((answer * 31u) + 2u) & 0xFFu;
     answer = ((answer * 31u) + 3u) & 0xFFu;
+    answer = ((answer * 31u) + 3u) & 0xFFu; /* 표시의 수 */
     return (uint8_t)answer;
 }
 

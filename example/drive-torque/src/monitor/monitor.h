@@ -64,11 +64,14 @@ torque_t output_stage_step(output_stage_t *st, reaction_t *reaction, torque_t to
 #define INVERTER_OUT_CYCLES      ((uint8_t)3)    /* 범위를 벗어난 주기가 이만큼 이어지면 구동 허용 차단 */
 #define INVERTER_INVALID_CYCLES  ((uint8_t)10)   /* 상태가 무효인 주기가 이만큼 이어지면 구동 허용 차단 */
 
+/* 배열은 구조체의 끝에 둔다. 증명 도구 (CBMC)의 경계 검사는 pointer로 받은 구조체 안의 배열에 대해
+ * 구조체의 끝만 본다. 배열 뒤에 다른 필드가 있으면 한 칸 넘는 쓰기가 그 필드에 떨어져도 잡지 못한다
+ * (docs/test-report.md 6절. tools/prove.sh가 이 한계를 작은 예로 확인한다) */
 typedef struct {
-    torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */
     uint8_t pos;            /* 다음에 적을 자리 */
     uint8_t out_cycles;     /* 알린 토크가 범위를 벗어난 주기가 몇 번 이어졌는가 */
     uint8_t invalid_cycles; /* inverter의 상태가 무효인 주기가 몇 번 이어졌는가 */
+    torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */
 } inverter_check_t;
 
 void inverter_check_init(inverter_check_t *st);
