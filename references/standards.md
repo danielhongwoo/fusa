@@ -16,7 +16,9 @@
 
 2판이다. 이 책은 2판을 기준으로 쓴다.
 
-3판의 상태: ISO의 목록에서 Part 1, 2, 6, 7은 의견을 받는 초안 (DIS) 단계로, Part 3과 10은 그 앞의 초안 단계로 보였다. 목록이 언제 기준인지는 알 수 없다. 발행은 2027년 전후로 예상되나 확정된 일정은 없다. Part 6이 초안 단계에 있으므로 10-16장은 "새 판에서 달라지는 점"을 따로 살펴야 한다.
+3판의 상태 (2026-11-22 확인): Part 1, 2, 3, 4, 6, 8, 9의 초안 (DIS)이 ISO store에 올라 있다. Part 3의 초안 투표가 2026-10에 시작되었다는 기록이 있다. 발행일은 정해지지 않았고 2027년 이후로 보인다. Part 6이 초안 단계에 있으므로 10-16장은 "새 판에서 달라지는 점"을 따로 살펴야 한다. 초안에서 Part 3의 제목이 바뀐 것으로 보인다는 보고가 있다 (`기억`으로 다룬다).
+
+2018년 판은 2024년에 다시 확인되어 현행이다.
 
 | Part | 제목 | 쓰는 장 | 확인 |
 |---|---|---|---|
@@ -35,6 +37,16 @@
 
 Part 1-9와 12가 규범 (normative) 문서이고, Part 10과 11은 해설 (guideline)이다. Part 1은 용어만 정의한다.
 
+한국어 번역본 (KS R ISO 26262)이 옮긴 판
+
+| Part | 옮긴 판 | 확인 |
+|---|---|---|
+| 1, 2, 3, 4, 6, 7, 8, 9 | ISO 26262:2011 | 검색 |
+| 10 | ISO 26262-10:2012 | 검색 |
+| 5, 11, 12 | ISO 26262:2018 | 검색 |
+
+번역본의 대부분이 1판을 옮긴 것이다. 이 책의 근거로는 2018년 판의 영문 원문을 쓴다.
+
 ### IEC 61508:2010, Functional safety of electrical/electronic/programmable electronic safety-related systems
 
 Edition 2이다. Edition 3은 최종 승인 단계이고 아직 발행 전이다. Part 3의 최종 투표가 2026-11에 끝났다는 기록이 있다. 발행은 2026년 말에서 2027년 사이로 예상된다.
@@ -48,6 +60,8 @@ Edition 2이다. Edition 3은 최종 승인 단계이고 아직 발행 전이다
 | 5 | Examples of methods for the determination of safety integrity levels | 3, 6 | 검색 |
 | 6 | Guidelines on the application of IEC 61508-2 and IEC 61508-3 | 9 | 검색 |
 | 7 | Overview of techniques and measures | 8, 12, 13, 15 | 검색 |
+
+한국어 번역본 (KS C IEC 61508-1 - -7)은 Edition 2를 옮긴 것이다 (`검색`).
 
 어느 Part가 요구사항이고 어느 Part가 해설인지는 확인하지 못했다 (`기억`: Part 1-3이 요구사항, Part 4가 정의, Part 5-7이 해설).
 
