@@ -143,6 +143,10 @@ nhtsa-etc-ev-fsa는 이 책의 관통 예제와 같은 시스템 (전기차의 �
 | UL 4600 | https://www.shopulstandards.com | UL의 무료 열람 서비스가 있다 (가입 필요, 보기 전용) | UL 4600이 대상인지 확인하지 못했다 |
 | SEI CERT C (웹판) | https://wiki.sei.cmu.edu | 최신 규칙 전체 | 확인 |
 | Therac-25 논문 (다시 실은 판) | https://web.mit.edu/6.033/2004/wwwdocs/papers/Therac_1.html | 논문 전체, 5부로 나뉨 | 확인 |
+| Therac-25 논문 (IEEE Computer에 실린 모양의 사본) | https://www.se.rit.edu/~swen-342/resources/ 아래의 PDF | 논문 전체, 24쪽 | 2026-11-22에 읽음. 1장의 근거. 저자의 페이지 (sunnyday.mit.edu)는 연결되지 않았다 |
+| ISO/IEC Directives, Part 2 (9판, 2021) | https://www.iso.org/sites/directives/current/part2/index.xhtml | 전체. ISO와 IEC의 문서를 쓰는 규칙 | 2026-11-22에 읽음. 4장의 근거 |
+| ISO의 규격별 페이지 | https://www.iso.org/standard/68383.html (ISO 26262-1:2018), 90020.html - 90031.html (다음 판의 초안) | 판, 단계, 소개 글 | 2026-11-22에 읽음. curl로는 열리지 않아 브라우저로 읽었다 |
+| IEC의 판매 페이지 | https://webstore.iec.ch/en/publication/5515 (IEC 61508-1) | 판, 다음 판의 단계와 발행 예정일 | 2026-11-22에 읽음 |
 | PX4 safety 설정 문서 | https://docs.px4.io/main/en/config/safety.html | failsafe의 종류와 동작 | 확인 |
 | ArduPilot Copter failsafe 문서 | https://ardupilot.org/copter/docs/failsafe-landing-page.html | failsafe의 종류 | 확인 |
 
