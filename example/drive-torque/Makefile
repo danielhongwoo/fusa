@@ -2,6 +2,7 @@
 #
 #   make check     빌드, test, 추적 검사, 정적 분석, coverage, 증명을 차례로 돌린다
 #   make test      빌드와 test만
+#   make intro     1장의 실행 예: 안전 장치가 없는 제어기와 예제의 제어기를 같은 고장에서 견준다
 #   make mutation  제품 코드에 결함을 하나씩 넣어 test가 잡는지 본다
 #   make clean     build 폴더를 지운다
 #
@@ -31,9 +32,9 @@ CPPCHECK   := $(shell command -v cppcheck 2>/dev/null)
 CLANG_TIDY := $(shell command -v clang-tidy 2>/dev/null || ls /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null)
 CBMC       := $(shell command -v cbmc 2>/dev/null)
 
-.PHONY: check test trace static coverage prove mutation clean dirs skipped
+.PHONY: check test intro intro-figure trace static coverage prove mutation clean dirs skipped
 
-check: test trace static coverage prove skipped
+check: test intro trace static coverage prove skipped
 	@echo "make check: 끝"
 
 dirs:
@@ -69,6 +70,25 @@ test: build/test_unit build/test_scenario build/test_fault_app build/test_no_mon
 	@build/test_fault_app
 	@echo "== 대조 test (감시를 뺀다)"
 	@build/test_no_monitor
+
+# ---- 1장의 실행 예 ----
+# 같은 시나리오를 안전 장치가 없는 제어기와 예제의 제어기로 돌린다.
+# 어느 제어기인지는 link할 때 정해진다
+
+build/intro_naive: intro/naive_vcu.c $(SIM) intro/demo.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+build/intro_vcu: $(SRC) $(SIM) intro/demo.c | dirs
+	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+
+intro: build/intro_naive build/intro_vcu
+	@echo "== 1장의 실행 예 (페달 센서의 고착)"
+	@build/intro_naive naive build/out/intro-naive.csv
+	@build/intro_vcu vcu build/out/intro-vcu.csv
+
+# 책의 그림을 다시 만든다 (figures/ch01-stuck-pedal.svg)
+intro-figure: intro
+	@python3 tools/plot_intro.py build/out/intro-naive.csv build/out/intro-vcu.csv ../../figures/ch01-stuck-pedal.svg
 
 # ---- 추적 ----
 
