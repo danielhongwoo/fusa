@@ -295,8 +295,11 @@ static void tc_205(void)
             if (excess > SG01_ACCEL_EXCESS) {
                 excess_ms++;
             }
-            /* 소프트웨어 수준: 나간 토크가 정상인 기능의 토크를 55 Nm 넘게 앞선 때가 없다 */
-            if ((log_fault[i].torque_out - log_ref[i].torque_out) >= 550) {
+            /* 소프트웨어 수준: 나간 토크가 정상인 기능의 토크를 5 Nm 넘게 앞선 때가 없다.
+             * 증명한 성질 7을 시나리오에서 확인한다. 기준 실행의 출력은 정상인 기능의 요구 그대로이고 (성질 6),
+             * 허용 토크가 오르는 기준이 실제로 보낸 토크이므로 앞선 크기는 주기가 지나도 쌓이지 않는다.
+             * 두 실행의 입력이 같아야 성립한다 (이 시나리오에는 기어의 바뀜이 없다) */
+            if ((log_fault[i].torque_out - log_ref[i].torque_out) > 50) {
                 ahead++;
             }
         }

@@ -282,7 +282,7 @@ requirements:
     alloc: "기능"
     text: "기능의 토크 요구는 페달 값에서 나온 목표의 크기를 넘지 않고, 기능이 지난 주기에 낸 요구의 크기에서 한 주기에 25 Nm 넘게 오르지 않는다 (방향이 바뀌면 0에서 다시 센다). 받은 상한 (SWR-24)을 넘게 요구하지 않는다. 이 요구사항은 SG-02에서 온 것이다: 기능이 이것을 지키지 않으면 감시가 정상인 기능을 깎는다. SG-01은 기능이 이것을 어겨도 지켜진다 (감시와 출력 단계가 깎는다)."
     parents: [TSR-09]
-    verified_by: [TC-007, TC-022]
+    verified_by: [TC-007, TC-011, TC-022]
     proved_by: [prove_normal_function_not_clamped]
   - id: SWR-25
     alloc: "상태 기계"

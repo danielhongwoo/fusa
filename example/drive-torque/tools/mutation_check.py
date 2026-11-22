@@ -402,6 +402,17 @@ MUTANTS = [
      "기능에 판정한 브레이크가 아니라 접점 1을 넘긴다"),
     ("src/input/input.c", "in->gear = GEAR_N; /* 알 수 없는 값은 N으로 본다 */",
      "in->gear = GEAR_D;", "알 수 없는 기어 값을 D로 본다"),
+    # 배열을 구조체의 끝에 둔다는 약속을 깨는 변이. 증명 도구는 구조체의 끝만 보므로, 이 약속이 깨지면
+    # 한 칸 넘는 쓰기를 증명도 test도 알리지 못한다. compile할 때의 확인 (_Static_assert)이 잡아야 한다
+    ("src/flow/flow.h", "    uint8_t marks[FLOW_TASK_COUNT]; /* 이 주기에 task가 남긴 표시. 남긴 순서대로다 */\n",
+     "    uint8_t marks[FLOW_TASK_COUNT]; /* 이 주기에 task가 남긴 표시. 남긴 순서대로다 */\n    uint8_t spare;\n",
+     "실행 확인의 구조체에서 배열 뒤에 필드를 더한다"),
+    ("src/input/input.h", "    bool window[PEDAL_WINDOW_CYCLES]; /* 최근 주기들의 검사 결과. true가 실패다 */\n",
+     "    bool window[PEDAL_WINDOW_CYCLES]; /* 최근 주기들의 검사 결과. true가 실패다 */\n    uint8_t spare;\n",
+     "페달 검사의 구조체에서 배열 뒤에 필드를 더한다"),
+    ("src/monitor/monitor.h", "    torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */\n",
+     "    torque_t sent[INVERTER_HISTORY_CYCLES]; /* 최근 주기들에 보낸 토크 */\n    torque_t spare;\n",
+     "inverter 검사의 구조체에서 배열 뒤에 필드를 더한다"),
 ]
 
 # (파일, 원래 코드, 바꾼 코드, 설명, 동등한 이유)
@@ -415,8 +426,10 @@ EQUIVALENT = [
     ("src/vcu/vcu.c", "    if (ok) {\n        hal_watchdog_write(", "    if (ok || !ok) {\n        hal_watchdog_write(",
      "task의 순서가 틀려도 외부 watchdog에 답을 쓴다",
      "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 그 주기에 남은 표시와 그 수에서 만들므로 (flow_answer), "
-     "task가 빠지거나 더 실행되거나 순서가 틀리면 답도 틀리게 나오고 watchdog이 끊는다. 다만 표시가 틀렸는데 답이 "
-     "우연히 같은 조합이 있다 (답이 8 bit다). 그 조합에서는 이 줄이 유일한 보호이므로 엄밀하게는 동등하지 않다. "
+     "task가 빠지거나 더 실행되거나 순서가 틀리면 답도 틀리게 나오고 watchdog이 끊는다. task가 남길 수 있는 표시 "
+     "(1, 2, 3의 열, 일곱 개까지)와 모든 질문의 번호에서 틀린 열이 옳은 답을 내는 경우가 없다는 것을 TC-021이 "
+     "모두 세어 확인한다. 그래서 닿을 수 있는 상태에서는 동등하다. 표시가 다른 값이 되는 경우 (memory가 "
+     "망가진 경우)에는 답이 우연히 같을 수 있고 (답이 8 bit다), 그때는 이 줄이 마지막 보호다. "
      "이 이유는 두 번 틀렸다. 처음에는 지난 주기의 표시가 남아 빈 자리를 채웠고 (변이 검사가 알렸다), 다음에는 "
      "task가 두 번 실행되어 넷째 표시가 버려지면 앞의 셋만으로 옳은 답이 나왔다 (검토자가 찾았다). "
      "두 경우 모두 답이 틀리게 나오도록 고쳤고, TC-021과 TC-125, 증명한 성질 14가 그것을 본다"),
@@ -426,7 +439,10 @@ EQUIVALENT = [
 # 이 변이가 compile되면 그 견줌이 없어진 것이다.
 # 설명 -> compile 출력에 있어야 하는 글
 BUILD_CAUGHT = {
-    "상수 FLOW_TASK_COUNT를 3에서 1 올린다": "task table과 FLOW_TASK_COUNT가 맞지 않는다",
+    "상수 FLOW_TASK_COUNT를 3에서 1 올린다": "FLOW_TASK_COUNT",
+    "실행 확인의 구조체에서 배열 뒤에 필드를 더한다": "flow_t: 배열은 구조체의 끝에 있어야 한다",
+    "페달 검사의 구조체에서 배열 뒤에 필드를 더한다": "pedal_check_t: 배열은 구조체의 끝에 있어야 한다",
+    "inverter 검사의 구조체에서 배열 뒤에 필드를 더한다": "inverter_check_t: 배열은 구조체의 끝에 있어야 한다",
 }
 
 # 상수를 자동으로 바꿀 파일. 안전 요구사항을 받는 부분의 상수와,

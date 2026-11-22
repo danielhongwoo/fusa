@@ -67,6 +67,10 @@ def main():
             result = subprocess.run(["sh", "tools/prove.sh"], cwd=copy, capture_output=True, text=True, env=env)
             if result.returncode != 0 and ("실패    " + prop) in result.stdout:
                 print("잡음  %s (%s)" % (what, prop))
+            elif ("오류    " + prop) in result.stdout:
+                # 도구가 변이된 코드를 읽지 못한 것은 증명이 잡은 것이 아니다
+                print("오류  도구가 판정을 내지 못한 변이다 (%s)" % what)
+                missed += 1
             else:
                 print("놓침  %s (%s)" % (what, prop))
                 missed += 1

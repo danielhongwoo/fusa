@@ -47,9 +47,14 @@ for prop in $PROPS; do
     reached=$(echo "$out" | grep -c "^\[$prop\.assertion\.[0-9]*\].*SUCCESS")
     if echo "$out" | grep -q "VERIFICATION SUCCESSFUL" && [ "$reached" -gt 0 ]; then
         echo "증명됨  $prop (assert $reached개)"
-    else
+    elif echo "$out" | grep -q "VERIFICATION FAILED"; then
         echo "실패    $prop"
         echo "$out" | grep -E 'FAILURE|VERIFICATION|error' | head -10
+        fail=1
+    else
+        # 증명이 실패한 것이 아니라 도구가 끝까지 돌지 못했다 (읽지 못하는 코드, 닿지 않은 assert)
+        echo "오류    $prop (도구가 판정을 내지 못했다)"
+        echo "$out" | grep -iE 'error|VERIFICATION' | head -10
         fail=1
     fi
 done

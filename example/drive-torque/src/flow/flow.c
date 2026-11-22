@@ -4,6 +4,16 @@
  */
 #include "flow.h"
 
+#include <stddef.h>
+
+/* 배열이 구조체의 끝에 있고 그 뒤에 빈 자리도 없다는 것을 compile할 때 확인한다.
+ * 증명 도구는 pointer로 받은 구조체의 끝만 본다. 배열 뒤에 필드가 생기면
+ * 한 칸 넘는 쓰기를 증명도 test도 알리지 못한다 (docs/test-report.md 6절) */
+_Static_assert((offsetof(flow_t, marks) + sizeof(((flow_t *)0)->marks)) == sizeof(flow_t),
+               "flow_t: 배열은 구조체의 끝에 있어야 한다");
+/* flow_check는 표시 셋을 하나씩 직접 본다. task의 수를 바꾸면 flow_check도 함께 고쳐야 한다 */
+_Static_assert(FLOW_TASK_COUNT == 3u, "flow_check는 FLOW_TASK_COUNT가 3이라고 보고 쓴 것이다");
+
 void flow_init(flow_t *f)
 {
     for (uint8_t i = 0u; i < FLOW_TASK_COUNT; i++) {

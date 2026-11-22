@@ -185,74 +185,85 @@ static bool always(int i) { (void)i; return true; }
 /* TC-014: SWR-14 최근 100주기 가운데 검사 실패가 10번을 넘으면 페달 고장으로 고정한다 */
 static void tc_014(void)
 {
-    pedal_check_t st;
+    /* 상태를 구조체 바로 뒤에 값을 둔 틀에 넣는다. 기록의 배열이 구조체의 끝에 있으므로 (input.h),
+     * 한 칸 넘는 쓰기는 그 값에 떨어진다. 끝에서 그 값이 그대로인지 본다 */
+    struct {
+        pedal_check_t st;
+        uint8_t guard[4];
+    } g = { .guard = { 0xA5u, 0xA5u, 0xA5u, 0xA5u } };
+    pedal_check_t *const st = &g.st;
 
     fail_by_range = false;
     /* 8주기마다 한 번 실패한다 (FI-07, FI-08의 모양). 이어지는 횟수로는 판정되지 않는다.
      * 11번째 실패는 7 + 8 x 10 = 87번째 주기다. 그 주기에 고장이 된다 */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 400, every_8th), 87);
-    CHECK(st.fault);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 400, every_8th), 87);
+    CHECK(st->fault);
 
     /* 10주기마다 한 번 실패한다. 어느 100주기를 잡아도 실패가 10번이다. 넘지 않으므로 판정하지 않는다 */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 2000, every_10th), -1);
-    CHECK(!st.fault);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 2000, every_10th), -1);
+    CHECK(!st->fault);
     /* 11주기마다 한 번 실패한다. 실패가 기록의 자리를 옮겨 가며 적힌다.
      * 오래된 실패가 기록에서 지워지지 않으면 쌓여서 고장이 된다 (10주기마다의 경우는 같은 자리만 덮어써서 그것을 보지 못한다) */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 2000, every_11th), -1);
-    CHECK(!st.fault);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 2000, every_11th), -1);
+    CHECK(!st->fault);
 
     /* 돌아보는 길이는 정확히 100주기다.
      * 0 - 18번째 주기에 10번 실패한 뒤, 99번째 주기에 실패하면 0번째의 실패가 아직 기록에 있다: 11번 */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 300, ten_then_at_99), 99);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 300, ten_then_at_99), 99);
     /* 100번째 주기에 실패하면 0번째의 실패는 기록에서 밀려났다: 10번 */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 300, ten_then_at_100), -1);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 300, ten_then_at_100), -1);
 
     /* 기록의 마지막 자리 (99)도 적고 센다. 11번째 실패가 그 자리에 적히는 경우다 */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 300, eleven_ending_at_96), 96);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 300, eleven_ending_at_96), 96);
 
     /* 실패의 종류를 가리지 않는다. 채널 하나가 전압 범위를 벗어나는 실패도 센다
      * (위의 경우는 모두 두 채널이 어긋나는 실패였다) */
     fail_by_range = true;
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 400, every_8th), 87);
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 2000, every_11th), -1);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 400, every_8th), 87);
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 2000, every_11th), -1);
     fail_by_range = false;
 
     /* 켠 직후부터 한 주기 걸러 실패하면 검사를 3주기 이어서 통과하지 못한다.
      * 그동안에도 실패를 센다. 11번째 실패는 20번째 주기다 */
-    pedal_check_init(&st);
-    CHECK_EQ(first_fault_cycle(&st, 100, every_2nd), 20);
-    CHECK(!st.ready);
+    pedal_check_init(st);
+    CHECK_EQ(first_fault_cycle(st, 100, every_2nd), 20);
+    CHECK(!st->ready);
 
     /* 적을 자리의 값이 범위를 벗어나 있어도 (memory의 값이 틀려도) 배열 밖을 쓰지 않는다 */
-    make_ready(&st);
-    st.window_pos = 100u;
-    CHECK_EQ(first_fault_cycle(&st, 1, every_10th), -1);
-    CHECK_EQ(st.window_pos, 1);
-    st.window_pos = 255u;
-    CHECK_EQ(first_fault_cycle(&st, 1, every_10th), -1);
-    CHECK_EQ(st.window_pos, 1);
+    make_ready(st);
+    st->window_pos = 100u;
+    CHECK_EQ(first_fault_cycle(st, 1, every_10th), -1);
+    CHECK_EQ(st->window_pos, 1);
+    st->window_pos = 255u;
+    CHECK_EQ(first_fault_cycle(st, 1, every_10th), -1);
+    CHECK_EQ(st->window_pos, 1);
     /* 적을 자리가 범위를 하나 벗어난 채 실패가 들어오는 경우. 실패가 이미 10번 적혀 있다.
      * 자리를 처음으로 돌려 거기에 적어야 한다: 11번이 되어 고장이고, 다음 자리는 1이다.
-     * 범위 검사가 하나 어긋나면 배열의 바로 뒤 (적을 자리를 담은 변수)를 덮어쓴다 */
-    make_ready(&st);
-    CHECK_EQ(first_fault_cycle(&st, 20, first_ten_even), -1);
-    st.window_pos = 100u;
-    CHECK_EQ(first_fault_cycle(&st, 1, always), 0);
-    CHECK_EQ(st.window_pos, 1);
+     * 범위 검사가 하나 어긋나면 배열의 바로 뒤에 쓰고 다음 자리가 101이 된다 */
+    make_ready(st);
+    CHECK_EQ(first_fault_cycle(st, 20, first_ten_even), -1);
+    st->window_pos = 100u;
+    CHECK_EQ(first_fault_cycle(st, 1, always), 0);
+    CHECK_EQ(st->window_pos, 1);
     /* 기록의 값이 틀려 실패가 11번 들어 있으면 다음 주기에 고장이 된다 (안전한 쪽) */
-    make_ready(&st);
+    make_ready(st);
     for (int i = 10; i < 21; i++) {
-        st.window[i] = true;
+        st->window[i] = true;
     }
-    CHECK_EQ(first_fault_cycle(&st, 1, every_10th), 0);
+    CHECK_EQ(first_fault_cycle(st, 1, every_10th), 0);
+
+    /* 위의 긴 실행들 (100주기를 넘는다)에서 기록의 배열 밖을 쓰지 않았다 */
+    for (int i = 0; i < 4; i++) {
+        CHECK_EQ(g.guard[i], 0xA5);
+    }
 }
 
 /* TC-004: SWR-04 안전한 페달 값은 작은 쪽이고, 믿을 수 없으면 0이다 */
@@ -1198,128 +1209,134 @@ static permille_t feed(pedal_check_t *st, millivolt_t a1, millivolt_t a2, int n)
 /* TC-022: SWR-24 채널 하나만 범위를 벗어나면 그 채널을 빼고 남은 채널로 간다 */
 static void tc_022(void)
 {
-    pedal_check_t st;
+    /* 상태를 구조체 바로 뒤에 값을 둔 틀에 넣는다. 기록의 배열이 구조체의 끝에 있으므로 (input.h),
+     * 한 칸 넘는 쓰기는 그 값에 떨어진다. 끝에서 그 값이 그대로인지 본다 */
+    struct {
+        pedal_check_t st;
+        uint8_t guard[4];
+    } g = { .guard = { 0xA5u, 0xA5u, 0xA5u, 0xA5u } };
+    pedal_check_t *const st = &g.st;
 
     /* 채널 1이 범위 위로 벗어난다 (4900 mV). 채널 2는 30%다.
      * 판정 전의 두 주기에는 작은 쪽 (채널 2)을 따른다. 3번째 주기에 채널 1을 빼고, 페달 고장은 아니다 */
-    make_ready(&st);
-    CHECK_EQ(feed(&st, 4900, apps2(300), 2), 300);
-    CHECK_EQ(st.excluded, 0);
-    CHECK_EQ(feed(&st, 4900, apps2(300), 1), 300);
-    CHECK_EQ(st.excluded, 1);
-    CHECK(!st.fault);
+    make_ready(st);
+    CHECK_EQ(feed(st, 4900, apps2(300), 2), 300);
+    CHECK_EQ(st->excluded, 0);
+    CHECK_EQ(feed(st, 4900, apps2(300), 1), 300);
+    CHECK_EQ(st->excluded, 1);
+    CHECK(!st->fault);
     /* 그 뒤로는 채널 2의 값이다. 채널 1이 무엇이든 보지 않는다 (범위 안으로 돌아와도 다시 넣지 않는다) */
-    CHECK_EQ(feed(&st, 4900, apps2(500), 1), 500);
-    CHECK_EQ(feed(&st, 0, apps2(500), 50), 500);
-    CHECK_EQ(feed(&st, apps1(100), apps2(500), 50), 500);
-    CHECK_EQ(st.excluded, 1);
-    CHECK(!st.fault);
+    CHECK_EQ(feed(st, 4900, apps2(500), 1), 500);
+    CHECK_EQ(feed(st, 0, apps2(500), 50), 500);
+    CHECK_EQ(feed(st, apps1(100), apps2(500), 50), 500);
+    CHECK_EQ(st->excluded, 1);
+    CHECK(!st->fault);
 
     /* 채널 1이 범위 아래로 벗어난다 (선이 끊김, 0 mV). 판정 전의 두 주기에는 작은 쪽이 0이다 */
-    make_ready(&st);
-    CHECK_EQ(feed(&st, 0, apps2(300), 2), 0);
-    CHECK_EQ(feed(&st, 0, apps2(300), 1), 300);
-    CHECK_EQ(st.excluded, 1);
+    make_ready(st);
+    CHECK_EQ(feed(st, 0, apps2(300), 2), 0);
+    CHECK_EQ(feed(st, 0, apps2(300), 1), 300);
+    CHECK_EQ(st->excluded, 1);
     /* 채널 2가 벗어나면 채널 2를 빼고 채널 1로 간다 */
-    make_ready(&st);
-    CHECK_EQ(feed(&st, apps1(300), 0, 3), 300);
-    CHECK_EQ(st.excluded, 2);
-    CHECK(!st.fault);
-    CHECK_EQ(feed(&st, apps1(700), 2400, 10), 700);
+    make_ready(st);
+    CHECK_EQ(feed(st, apps1(300), 0, 3), 300);
+    CHECK_EQ(st->excluded, 2);
+    CHECK(!st->fault);
+    CHECK_EQ(feed(st, apps1(700), 2400, 10), 700);
 
     /* 두 채널이 모두 범위를 벗어나면 어느 쪽도 믿을 수 없다. 페달 고장이다 */
-    make_ready(&st);
-    CHECK_EQ(feed(&st, 0, 0, 3), 0);
-    CHECK(st.fault);
-    CHECK_EQ(st.excluded, 0);
+    make_ready(st);
+    CHECK_EQ(feed(st, 0, 0, 3), 0);
+    CHECK(st->fault);
+    CHECK_EQ(st->excluded, 0);
     /* 두 채널이 범위 안에서 어긋나면 어느 채널이 틀렸는지 모른다. 페달 고장이다 */
-    make_ready(&st);
-    CHECK_EQ(feed(&st, apps1(900), apps2(300), 3), 0);
-    CHECK(st.fault);
-    CHECK_EQ(st.excluded, 0);
+    make_ready(st);
+    CHECK_EQ(feed(st, apps1(900), apps2(300), 3), 0);
+    CHECK(st->fault);
+    CHECK_EQ(st->excluded, 0);
     /* 세 주기가 모두 같은 채널의 범위 실패여야 한다. 가운데 주기가 불일치이면 페달 고장이다 */
-    make_ready(&st);
-    (void)feed(&st, 4900, apps2(300), 1);
-    (void)feed(&st, apps1(900), apps2(300), 1);
-    (void)feed(&st, 4900, apps2(300), 1);
-    CHECK(st.fault);
-    CHECK_EQ(st.excluded, 0);
+    make_ready(st);
+    (void)feed(st, 4900, apps2(300), 1);
+    (void)feed(st, apps1(900), apps2(300), 1);
+    (void)feed(st, 4900, apps2(300), 1);
+    CHECK(st->fault);
+    CHECK_EQ(st->excluded, 0);
     /* 첫 주기가 불일치여도 같다 */
-    make_ready(&st);
-    (void)feed(&st, apps1(900), apps2(300), 1);
-    (void)feed(&st, 4900, apps2(300), 2);
-    CHECK(st.fault);
-    CHECK_EQ(st.excluded, 0);
+    make_ready(st);
+    (void)feed(st, apps1(900), apps2(300), 1);
+    (void)feed(st, 4900, apps2(300), 2);
+    CHECK(st->fault);
+    CHECK_EQ(st->excluded, 0);
     /* 벗어난 채널이 주기마다 다르면 페달 고장이다 */
-    make_ready(&st);
-    (void)feed(&st, 4900, apps2(300), 1);
-    (void)feed(&st, apps1(300), 0, 1);
-    (void)feed(&st, 4900, apps2(300), 1);
-    CHECK(st.fault);
-    CHECK_EQ(st.excluded, 0);
+    make_ready(st);
+    (void)feed(st, 4900, apps2(300), 1);
+    (void)feed(st, apps1(300), 0, 1);
+    (void)feed(st, 4900, apps2(300), 1);
+    CHECK(st->fault);
+    CHECK_EQ(st->excluded, 0);
     /* 통과한 주기가 끼면 다시 센다. 그 뒤의 세 주기로 판정한다 */
-    make_ready(&st);
-    (void)feed(&st, apps1(900), apps2(300), 2);
-    (void)feed(&st, apps1(300), apps2(300), 1);
-    (void)feed(&st, 4900, apps2(300), 3);
-    CHECK_EQ(st.excluded, 1);
-    CHECK(!st.fault);
+    make_ready(st);
+    (void)feed(st, apps1(900), apps2(300), 2);
+    (void)feed(st, apps1(300), apps2(300), 1);
+    (void)feed(st, 4900, apps2(300), 3);
+    CHECK_EQ(st->excluded, 1);
+    CHECK(!st->fault);
 
     /* 채널 1을 뺀 뒤 남은 채널 2가 범위를 벗어난다. 2번까지는 판정하지 않고, 3번 이어지면 페달 고장이다 */
-    make_ready(&st);
-    (void)feed(&st, 4900, apps2(300), 3);
-    (void)feed(&st, 4900, 2400, 2);
-    CHECK(!st.fault);
-    CHECK_EQ(feed(&st, 4900, apps2(300), 1), 300);
-    CHECK_EQ(feed(&st, 4900, 2400, 3), 0);
-    CHECK(st.fault);
+    make_ready(st);
+    (void)feed(st, 4900, apps2(300), 3);
+    (void)feed(st, 4900, 2400, 2);
+    CHECK(!st->fault);
+    CHECK_EQ(feed(st, 4900, apps2(300), 1), 300);
+    CHECK_EQ(feed(st, 4900, 2400, 3), 0);
+    CHECK(st->fault);
     /* 채널 2를 뺀 뒤에는 채널 1의 범위를 본다 */
-    make_ready(&st);
-    (void)feed(&st, apps1(300), 0, 3);
-    CHECK_EQ(feed(&st, 100, 0, 3), 0);
-    CHECK(st.fault);
+    make_ready(st);
+    (void)feed(st, apps1(300), 0, 3);
+    CHECK_EQ(feed(st, 100, 0, 3), 0);
+    CHECK(st->fault);
     /* 채널을 뺀 뒤에는 뺀 채널의 실패를 기록하지 않는다. 오래 달려도 간헐 고장으로 판정하지 않는다 */
-    make_ready(&st);
-    (void)feed(&st, 4900, apps2(300), 3);
-    CHECK_EQ(feed(&st, 4900, apps2(300), 300), 300);
-    CHECK(!st.fault);
+    make_ready(st);
+    (void)feed(st, 4900, apps2(300), 3);
+    CHECK_EQ(feed(st, 4900, apps2(300), 300), 300);
+    CHECK(!st->fault);
     /* 남은 채널이 가끔 범위를 벗어나면 (8주기마다 한 번, 11번째에) 페달 고장이다 */
     for (int i = 0; i < 10; i++) {
-        (void)feed(&st, 4900, 2400, 1);
-        (void)feed(&st, 4900, apps2(300), 7);
+        (void)feed(st, 4900, 2400, 1);
+        (void)feed(st, 4900, apps2(300), 7);
     }
-    CHECK(!st.fault);
-    (void)feed(&st, 4900, 2400, 1);
-    CHECK(st.fault);
+    CHECK(!st->fault);
+    (void)feed(st, 4900, 2400, 1);
+    CHECK(st->fault);
 
     /* 뺀 채널이 범위 안으로 돌아와 있어도, 남은 채널이 범위를 벗어나면 3주기 뒤에 페달 고장이다 */
-    make_ready(&st);
-    (void)feed(&st, 4900, apps2(300), 3);
-    CHECK_EQ(st.excluded, 1);
-    CHECK_EQ(feed(&st, apps1(300), 2400, 3), 0);
-    CHECK(st.fault);
-    make_ready(&st);
-    (void)feed(&st, apps1(300), 0, 3);
-    CHECK_EQ(st.excluded, 2);
-    CHECK_EQ(feed(&st, 100, apps2(300), 3), 0);
-    CHECK(st.fault);
+    make_ready(st);
+    (void)feed(st, 4900, apps2(300), 3);
+    CHECK_EQ(st->excluded, 1);
+    CHECK_EQ(feed(st, apps1(300), 2400, 3), 0);
+    CHECK(st->fault);
+    make_ready(st);
+    (void)feed(st, apps1(300), 0, 3);
+    CHECK_EQ(st->excluded, 2);
+    CHECK_EQ(feed(st, 100, apps2(300), 3), 0);
+    CHECK(st->fault);
     /* 페달을 놓고 있을 때 (다른 채널의 값이 0%) 한 채널의 선이 끊겨도 그 채널을 뺀다 */
-    make_ready(&st);
-    CHECK_EQ(feed(&st, 0, apps2(0), 3), 0);
-    CHECK_EQ(st.excluded, 1);
-    CHECK(!st.fault);
-    make_ready(&st);
-    CHECK_EQ(feed(&st, apps1(0), 0, 3), 0);
-    CHECK_EQ(st.excluded, 2);
-    CHECK(!st.fault);
+    make_ready(st);
+    CHECK_EQ(feed(st, 0, apps2(0), 3), 0);
+    CHECK_EQ(st->excluded, 1);
+    CHECK(!st->fault);
+    make_ready(st);
+    CHECK_EQ(feed(st, apps1(0), 0, 3), 0);
+    CHECK_EQ(st->excluded, 2);
+    CHECK(!st->fault);
 
     /* 기억한 값이 알 수 없는 값이 되어도 (memory의 값이 틀려도) 그 값의 채널을 빼지 않는다 */
-    make_ready(&st);
-    (void)feed(&st, 4900, apps2(300), 2);
-    st.suspect = 7u;
-    (void)feed(&st, 4900, apps2(300), 1);
-    CHECK(st.fault);
-    CHECK_EQ(st.excluded, 0);
+    make_ready(st);
+    (void)feed(st, 4900, apps2(300), 2);
+    st->suspect = 7u;
+    (void)feed(st, 4900, apps2(300), 1);
+    CHECK(st->fault);
+    CHECK_EQ(st->excluded, 0);
 
     /* 줄여 감 상태에서 기능이 요구할 수 있는 토크는 35 Nm까지다. 다른 상태에서는 최대 토크다 */
     CHECK_EQ(reaction_app_limit(REACTION_LIMP), 350);
@@ -1345,6 +1362,10 @@ static void tc_022(void)
             (void)app_step(&app, 1000, false, GEAR_D, 2500);
         }
         CHECK_EQ(app_step(&app, 1000, false, GEAR_D, 350), 350);
+    }
+    /* 위의 긴 실행들 (100주기를 넘는다)에서 기록의 배열 밖을 쓰지 않았다 */
+    for (int i = 0; i < 4; i++) {
+        CHECK_EQ(g.guard[i], 0xA5);
     }
 }
 
@@ -1468,6 +1489,23 @@ static void tc_020(void)
     CHECK(!inverter_check_step(&st, true, 2801));
     CHECK(!inverter_check_step(&st, true, -2801));
     CHECK_EQ(st.out_cycles, 2);
+
+    /* 오래 기록해도 기록의 배열 밖을 쓰지 않는다. 구조체 바로 뒤에 둔 값이 그대로인지 본다 (monitor.h) */
+    {
+        struct {
+            inverter_check_t st;
+            torque_t guard[2];
+        } g;
+
+        g.guard[0] = 123456789;
+        g.guard[1] = 123456789;
+        inverter_check_init(&g.st);
+        for (int i = 0; i < 20; i++) {
+            inverter_check_record(&g.st, 700 + i);
+        }
+        CHECK_EQ(g.guard[0], 123456789);
+        CHECK_EQ(g.guard[1], 123456789);
+    }
 }
 
 /* 표시 셋을 차례로 남긴다 */
@@ -1481,83 +1519,149 @@ static void mark3(flow_t *f, uint8_t a, uint8_t b, uint8_t c)
 /* TC-021: SWR-20 task가 정해진 순서로 한 번씩 실행되었을 때에만 옳은 답이 나온다 */
 static void tc_021(void)
 {
-    flow_t f;
+    /* 상태를 구조체 바로 뒤에 값을 둔 틀에 넣는다. 표시의 배열이 구조체의 끝에 있으므로 (flow.h),
+     * 한 칸 넘는 쓰기는 그 값에 떨어진다. 끝에서 그 값이 그대로인지 본다 */
+    struct {
+        flow_t f;
+        uint8_t guard[4];
+    } gf = { .guard = { 0xA5u, 0xA5u, 0xA5u, 0xA5u } };
+    flow_t *const f = &gf.f;
 
     /* 표시가 없으면 틀리다. 1, 2까지는 하나가 모자라고, 3까지 남기면 맞다 */
-    flow_init(&f);
-    CHECK(!flow_check(&f));
-    flow_mark(&f, 1u);
-    flow_mark(&f, 2u);
-    CHECK(!flow_check(&f));
-    flow_mark(&f, 3u);
-    CHECK(flow_check(&f));
+    flow_init(f);
+    CHECK(!flow_check(f));
+    flow_mark(f, 1u);
+    flow_mark(f, 2u);
+    CHECK(!flow_check(f));
+    flow_mark(f, 3u);
+    CHECK(flow_check(f));
     /* 답은 질문의 번호에서 시작해 31을 곱하고 표시 셋과 표시의 수를 차례로 더해 가는 값의 아래 8 bit다.
      * 0번 질문, 표시 1, 2, 3, 수 3: (((0 * 31 + 1) * 31 + 2) * 31 + 3) * 31 + 3 = 31809, 아래 8 bit는 65 */
-    CHECK_EQ(flow_answer(&f, 800, 750), 65);
-    CHECK_EQ(flow_answer(&f, 800, 800), 65);
-    CHECK_EQ(flow_answer(&f, 800, -800), 65);
+    CHECK_EQ(flow_answer(f, 800, 750), 65);
+    CHECK_EQ(flow_answer(f, 800, 800), 65);
+    CHECK_EQ(flow_answer(f, 800, -800), 65);
     /* 보낸 토크의 크기가 허용 토크를 넘으면 답이 틀리게 나온다 (모든 bit를 뒤집은 값) */
-    CHECK_EQ(flow_answer(&f, 800, 801), 190);
-    CHECK_EQ(flow_answer(&f, 800, -801), 190);
+    CHECK_EQ(flow_answer(f, 800, 801), 190);
+    CHECK_EQ(flow_answer(f, 800, -801), 190);
     /* 허용 토크가 음수로 틀려 있으면 0으로 본다 */
-    CHECK_EQ(flow_answer(&f, -5, 0), 65);
-    CHECK_EQ(flow_answer(&f, -5, 3), 190);
-    CHECK_EQ(flow_answer(&f, -5, -3), 190);
+    CHECK_EQ(flow_answer(f, -5, 0), 65);
+    CHECK_EQ(flow_answer(f, -5, 3), 190);
+    CHECK_EQ(flow_answer(f, -5, -3), 190);
     /* task가 한 번 더 실행되어 넷째 표시가 생기면, 앞의 세 표시가 옳아도 답이 옳은 답이 아니다 */
-    flow_mark(&f, 3u);
-    CHECK(!flow_check(&f));
-    CHECK(flow_answer(&f, 800, 750) != 65);
-    flow_init(&f);
-    mark3(&f, 1u, 2u, 3u);
+    flow_mark(f, 3u);
+    CHECK(!flow_check(f));
+    CHECK(flow_answer(f, 800, 750) != 65);
+    flow_init(f);
+    mark3(f, 1u, 2u, 3u);
 
     /* 주기를 닫으면 표시가 지워지고 질문의 번호가 오른다. 표시의 값도 남지 않는다 */
-    flow_next(&f);
-    CHECK(!flow_check(&f));
-    CHECK_EQ(f.marks[0], 0);
-    CHECK_EQ(f.marks[1], 0);
-    CHECK_EQ(f.marks[2], 0);
+    flow_next(f);
+    CHECK(!flow_check(f));
+    CHECK_EQ(f->marks[0], 0);
+    CHECK_EQ(f->marks[1], 0);
+    CHECK_EQ(f->marks[2], 0);
     /* task 하나가 빠진 주기의 답은 옳은 답 (194)이 아니다. 지난 주기의 표시가 빈 자리를 채우지 않는다 */
-    flow_mark(&f, 1u);
-    flow_mark(&f, 2u);
-    CHECK(flow_answer(&f, 800, 750) != 194);
-    flow_mark(&f, 3u);
-    flow_next(&f);
-    f.question = 1u;
-    mark3(&f, 1u, 2u, 3u);
-    CHECK(flow_check(&f));
-    CHECK_EQ(flow_answer(&f, 800, 750), 194); /* 1번 질문: (31^4 + 31809)의 아래 8 bit */
+    flow_mark(f, 1u);
+    flow_mark(f, 2u);
+    CHECK(flow_answer(f, 800, 750) != 194);
+    flow_mark(f, 3u);
+    flow_next(f);
+    f->question = 1u;
+    mark3(f, 1u, 2u, 3u);
+    CHECK(flow_check(f));
+    CHECK_EQ(flow_answer(f, 800, 750), 194); /* 1번 질문: (31^4 + 31809)의 아래 8 bit */
     /* 번호는 255 다음에 0이다 */
-    f.question = 255u;
-    flow_next(&f);
-    mark3(&f, 1u, 2u, 3u);
-    CHECK_EQ(flow_answer(&f, 800, 750), 65);
+    f->question = 255u;
+    flow_next(f);
+    mark3(f, 1u, 2u, 3u);
+    CHECK_EQ(flow_answer(f, 800, 750), 65);
 
     /* 순서가 틀리면 틀리다. 그 표시에서 나온 답은 옳은 답 (65)과 다르다 */
-    flow_init(&f);
-    mark3(&f, 2u, 1u, 3u);
-    CHECK(!flow_check(&f));
-    CHECK_EQ(flow_answer(&f, 800, 750), 223); /* (((0 * 31 + 2) * 31 + 1) * 31 + 3) * 31 + 3 = 60639 */
+    flow_init(f);
+    mark3(f, 2u, 1u, 3u);
+    CHECK(!flow_check(f));
+    CHECK_EQ(flow_answer(f, 800, 750), 223); /* (((0 * 31 + 2) * 31 + 1) * 31 + 3) * 31 + 3 = 60639 */
     /* 자리 하나만 틀려도 틀리다 */
-    flow_next(&f);
-    mark3(&f, 3u, 2u, 3u);
-    CHECK(!flow_check(&f));
-    flow_next(&f);
-    mark3(&f, 1u, 1u, 3u);
-    CHECK(!flow_check(&f));
-    flow_next(&f);
-    mark3(&f, 1u, 2u, 2u);
-    CHECK(!flow_check(&f));
+    flow_next(f);
+    mark3(f, 3u, 2u, 3u);
+    CHECK(!flow_check(f));
+    flow_next(f);
+    mark3(f, 1u, 1u, 3u);
+    CHECK(!flow_check(f));
+    flow_next(f);
+    mark3(f, 1u, 2u, 2u);
+    CHECK(!flow_check(f));
     /* task 하나가 빠졌다 */
-    flow_next(&f);
-    flow_mark(&f, 2u);
-    flow_mark(&f, 3u);
-    CHECK(!flow_check(&f));
+    flow_next(f);
+    flow_mark(f, 2u);
+    flow_mark(f, 3u);
+    CHECK(!flow_check(f));
     /* task 하나가 더 실행되었다. 표시가 넘치면 그 뒤에 무엇이 와도 틀리다 */
-    flow_next(&f);
-    mark3(&f, 1u, 2u, 3u);
-    flow_mark(&f, 3u);
-    CHECK(!flow_check(&f));
-    CHECK_EQ(f.count, 4);
+    flow_next(f);
+    mark3(f, 1u, 2u, 3u);
+    flow_mark(f, 3u);
+    CHECK(!flow_check(f));
+    CHECK_EQ(f->count, 4);
+    /* task가 남길 수 있는 표시 (1, 2, 3)의 모든 열을 일곱 개까지, 모든 질문의 번호에서 세어 본다.
+     * 옳은 답이 나오는 열은 1, 2, 3 하나뿐이다. 답은 8 bit여서 우연히 같아지는 열이 있을 수 있는데,
+     * 닿을 수 있는 표시에서는 없다는 것을 여기에서 확인한다 */
+    {
+        long wrong_but_right = 0;
+        long right_but_wrong = 0;
+        long outside = 0;
+
+        for (int q = 0; q < 256; q++) {
+            flow_t ref;
+            uint8_t right;
+
+            flow_init(&ref);
+            ref.question = (uint8_t)q;
+            mark3(&ref, 1u, 2u, 3u);
+            right = flow_answer(&ref, 800, 750);
+            for (int len = 0; len <= 7; len++) {
+                int total = 1;
+                for (int i = 0; i < len; i++) {
+                    total *= 3;
+                }
+                for (int code = 0; code < total; code++) {
+                    struct {
+                        flow_t f;
+                        uint8_t guard[2];
+                    } gt = { .guard = { 0xA5u, 0xA5u } };
+                    flow_t *const t = &gt.f;
+                    int rest = code;
+                    bool is_right = (len == 3) && (code == 5); /* 3진법으로 0, 1, 2 (= 5): 표시 1, 2, 3 */
+
+                    flow_init(t);
+                    t->question = (uint8_t)q;
+                    for (int i = 0; i < len; i++) {
+                        int div = 1;
+                        for (int k = i + 1; k < len; k++) {
+                            div *= 3;
+                        }
+                        flow_mark(t, (uint8_t)((rest / div) + 1));
+                        rest %= div;
+                    }
+                    if (!is_right && (flow_answer(t, 800, 750) == right)) {
+                        wrong_but_right++;
+                    }
+                    if (is_right && ((flow_answer(t, 800, 750) != right) || !flow_check(t))) {
+                        right_but_wrong++;
+                    }
+                    if (!is_right && flow_check(t)) {
+                        wrong_but_right++;
+                    }
+                    /* 표시가 넘쳐도 구조체의 밖을 쓰지 않는다 */
+                    if ((gt.guard[0] != 0xA5u) || (gt.guard[1] != 0xA5u)) {
+                        outside++;
+                    }
+                }
+            }
+        }
+        CHECK_EQ((int)wrong_but_right, 0);
+        CHECK_EQ((int)right_but_wrong, 0);
+        CHECK_EQ((int)outside, 0);
+    }
     /* 넘친 표시는 구조체의 밖에 쓰이지 않는다. 표시의 배열이 구조체의 끝에 있으므로 (flow.h),
      * 한 칸 넘는 쓰기는 바로 뒤에 둔 값에 떨어진다. 그 값이 그대로인지 본다 */
     {
@@ -1576,16 +1680,19 @@ static void tc_021(void)
             CHECK_EQ(g.guard[i], 0xA5);
         }
     }
-    flow_next(&f);
-    mark3(&f, 1u, 2u, 3u);
-    flow_mark(&f, 1u);
-    flow_mark(&f, 3u);
-    CHECK(!flow_check(&f));
+    flow_next(f);
+    mark3(f, 1u, 2u, 3u);
+    flow_mark(f, 1u);
+    flow_mark(f, 3u);
+    CHECK(!flow_check(f));
     for (int i = 0; i < 300; i++) {
-        flow_mark(&f, 1u);
+        flow_mark(f, 1u);
     }
-    CHECK_EQ(f.count, 4);
-    CHECK_EQ(f.question, 6); /* 표시를 남기는 것은 번호를 바꾸지 않는다. 주기를 여섯 번 닫았다 */
+    CHECK_EQ(f->count, 4);
+    CHECK_EQ(f->question, 6); /* 표시를 남기는 것은 번호를 바꾸지 않는다. 주기를 여섯 번 닫았다 */
+    for (int i = 0; i < 4; i++) {
+        CHECK_EQ(gf.guard[i], 0xA5);
+    }
 }
 
 int main(void)

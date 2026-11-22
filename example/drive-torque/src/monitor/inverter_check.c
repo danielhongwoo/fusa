@@ -4,6 +4,14 @@
  */
 #include "monitor.h"
 
+#include <stddef.h>
+
+/* 배열이 구조체의 끝에 있고 그 뒤에 빈 자리도 없다는 것을 compile할 때 확인한다.
+ * 증명 도구는 pointer로 받은 구조체의 끝만 본다. 배열 뒤에 필드가 생기면
+ * 한 칸 넘는 쓰기를 증명도 test도 알리지 못한다 (docs/test-report.md 6절) */
+_Static_assert((offsetof(inverter_check_t, sent) + sizeof(((inverter_check_t *)0)->sent)) == sizeof(inverter_check_t),
+               "inverter_check_t: 배열은 구조체의 끝에 있어야 한다");
+
 void inverter_check_init(inverter_check_t *st)
 {
     for (uint8_t i = 0u; i < INVERTER_HISTORY_CYCLES; i++) {
