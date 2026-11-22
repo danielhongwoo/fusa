@@ -86,10 +86,10 @@ def main():
     last_top, last_h = PANELS[-1][5], PANELS[-1][6]
     out.append('  <text x="%d" y="%d" text-anchor="middle" fill="#444444">시간 (초)</text>'
                % (LEFT + plot_w // 2, last_top + last_h + 38))
-    lx = LEFT + 20
-    ly = PANELS[0][5] + 40
+    lx = LEFT + 435
+    ly = PANELS[0][5] + 149  # 5와 10 km/h의 격자선 사이, 점선의 아래. 선과 겹치지 않는 곳
     for i, (name, color, dash) in enumerate(SERIES):
-        y = ly + i * 20
+        y = ly + i * 15
         extra = ' stroke-dasharray="%s"' % dash if dash else ""
         out.append('  <line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2.5"%s/>'
                    % (lx, y, lx + 36, y, color, extra))

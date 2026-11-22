@@ -28,6 +28,7 @@
 | software | 구조 설계 | [architecture.md](architecture.md) | 했다 |
 | software | 구현 | `src/` | 했다 |
 | software | 검증: test, 정적 분석, coverage, 증명 | [test-report.md](test-report.md) | 했다. PC 시뮬레이션에서만 |
+| concept | fault, error, failure, hazard의 정리 | [fault-table.md](fault-table.md) | 했다 |
 | 전체 | safety case | [safety-case.md](safety-case.md) | 닫히지 않았다. 열린 가지 넷 |
 | 전체 | 형상과 변경의 관리 | git의 이력 | 절차를 따로 적지 않았다 |
 
@@ -46,7 +47,8 @@
 
 | 무엇을 | 언제 | 누가 | 만든 쪽에서 떨어진 정도 | 기록 |
 |---|---|---|---|---|
-| 예제의 설계 | 코드를 쓰기 전 | 두 검토자 | 다른 에이전트. 같은 계열의 모델 | `reviews/2026-11-22-example-design/` |
+| 책과 예제의 계획 | 시작할 때 | 두 검토자 | 다른 에이전트. 같은 계열의 모델 | `reviews/2026-11-22-plan/` |
+| 예제의 설계 | 코드를 쓰기 전 | 두 검토자 | 위와 같다 | `reviews/2026-11-22-example-design/` |
 | 예제의 산출물과 코드, 장의 원고 | 단계가 끝날 때 | 두 검토자 | 위와 같다 | `reviews/2026-11-22-stage1/` |
 | 코드가 요구사항대로인가 | 바꿀 때마다 | 도구 (`make check`) | 사람이 아니다 | `build/reports/` |
 | 과정을 계획대로 했는가 (audit) | - | - | - | 하지 않았다 |
