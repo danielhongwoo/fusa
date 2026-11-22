@@ -1,6 +1,6 @@
 # 부록 A. 용어집
 
-초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다.
+초안이다. 장을 쓰면서 용어를 더하고 풀이를 고친다. 단계 1에서 열두 개를 더했다. 단계 2의 1, 4, 5장에서 열두 개를 더했다.
 
 ## 읽는 법
 
@@ -208,6 +208,18 @@ ASIL이 낮은 소프트웨어가 ASIL이 높은 소프트웨어를 방해하지
 - 주의: 근거 문서는 소송에서 원고 쪽 전문가였던 사람의 발표 자료다. 여기에서는 공학의 원칙을 설명한 부분만 쓴다.
 - 근거: `koopman-toyota-ua` 31-32쪽
 
+### single point of failure
+
+그곳 하나가 고장 나면 다른 것이 막아 주지 못하고 그대로 시스템의 failure가 되는 곳이다. 하드웨어만이 아니다. 여러 요소가 함께 쓰는 입력이나, 여러 벌이 똑같이 도는 소프트웨어도 single point of failure가 될 수 있다.
+
+- 근거: Leveson과 Turner (1993) 38쪽 (hardware interlock을 없앤 것이 소프트웨어를 single point of failure로 만들었다), `ariane-501-report` 9쪽 (두 장치가 같은 소프트웨어를 돌린다), `koopman-toyota-ua` 33-34쪽 (재판에서 원고 쪽 전문가였던 사람의 발표 자료)
+
+### interlock
+
+조건이 맞지 않으면 위험한 동작이 일어나지 못하게 막는 장치다. 제어하는 소프트웨어와 따로 동작하는 hardware interlock은 소프트웨어가 틀렸을 때의 마지막 보호가 된다.
+
+- 근거: Leveson과 Turner (1993) 19-20쪽, 29쪽
+
 ### latent fault
 
 평소에는 드러나지 않다가 다른 fault와 겹칠 때에야 드러나는 fault다. 감시 기능의 고장이 흔한 예다. 이 풀이는 이 책의 것이다.
@@ -311,6 +323,74 @@ safety case의 논증을 그림으로 적는 표기법이다. 주장 (goal), 주
 
 - 주의: 표기법은 논증이 충분하다는 것을 보장하지 않는다. 읽는 사람이 따져 볼 수 있게 할 뿐이다.
 - 근거: `gsn-standard-v3` 11-13쪽
+
+## 규격과 과정
+
+### normative, informative
+
+규격 문서의 요소를 둘로 나눈 것이다. normative는 규정을 담는 부분이고, informative는 이해를 돕거나 배경을 알려 주는 부분이다. 요구사항은 normative한 부분에만 있다.
+
+- 근거: ISO/IEC Directives, Part 2 (2021) 3.2.1, 3.2.2 (웹에서 읽음, 2026-11-22). 예: `gsn-standard-v3` 9쪽
+
+### shall, should, may, can
+
+ISO와 IEC의 문서에서 쓰는 조동사다. shall은 요구사항, should는 권고, may는 허용, can은 가능성이나 능력을 나타낸다. 그 문서를 따랐다고 주장하려면 shall이 붙은 것에서 벗어날 수 없다.
+
+- 주의: 다른 기관의 문서는 다르게 정의한다. SORA는 should를 강한 의무의 뜻으로 쓴다. 문서마다 정의를 먼저 찾는다.
+- 근거: ISO/IEC Directives, Part 2 (2021) 3.3.3 - 3.3.7, 7절 (웹에서 읽음, 2026-11-22). `sora-2-5-main-body` 29쪽
+
+### compliance, assessment, certification
+
+이 책에서는 이렇게 구분한다. compliance는 만든 쪽이 규격의 요구사항을 만족한다고 주장하는 것이다. assessment는 만든 쪽에서 떨어진 누군가가 그 주장을 따져 보는 것이다. certification은 권한이 있는 기관이 결과를 공식으로 인정하는 것이다.
+
+- 주의: 이 구분은 저자의 정리이고 규격의 정의가 아니다. 항공에서는 소프트웨어를 따로 인증하지 않고, 소프트웨어가 든 시스템을 특정한 인증의 맥락에서 승인한다 `(2차 자료)`.
+- 근거: `nhtsa-safety-standards-assessment` 33-34쪽 (DO-178C와 ISO 26262:2011을 설명), `faa-ac-20-115d` 1쪽
+
+### safety lifecycle
+
+안전에 관한 일을 처음 구상할 때부터 폐기할 때까지 단계로 나눈 것이다. 단계마다 입력, 목적, 활동, 산출물이 있고, 모든 단계에 걸쳐 verification과 assessment가 있다.
+
+- 주의: waterfall이 아니다. 단계는 일의 종류이고 순서의 강제가 아니다.
+- 근거: `hse-hsg238` 37-38쪽. `iec-61508-overview-slides` 21쪽 `(2차 자료)`
+
+### safety plan
+
+lifecycle의 활동을 이 프로젝트에서 누가, 언제, 무엇으로 하고 누가 확인하는지를 적은 계획이다.
+
+- 근거: `nasa-gb-8719-13` 23쪽, 101쪽. `nasa-std-8739-8b` 6쪽
+
+### verification, audit, assessment
+
+만든 것을 확인하는 세 가지 일이다. verification은 산출물이 그 단계의 입력을 만족하는지를 본다. audit은 정한 과정을 따랐는지를 본다. assessment는 증거를 바탕으로 functional safety가 달성되었는지를 판단한다.
+
+- 주의: 셋은 서로를 대신하지 못한다. 16장의 test는 verification의 한 수단이다.
+- 근거: `hse-hsg238` 43쪽, 52쪽. `nasa-std-8739-8b` 10쪽
+
+### independence (독립)
+
+확인하는 사람이 만든 사람에게서 떨어져 있는 정도다. 기술의 독립 (개발에 참여하지 않았다), 관리의 독립 (다른 조직이고 스스로 정한다), 재정의 독립 (예산을 개발 조직이 쥐지 않는다)으로 나눌 수 있다.
+
+- 주의: ISO 26262가 등급에 따라 요구하는 독립의 정도는 이 책이 확인하지 못했다. 소프트웨어 요소 사이의 독립 (freedom from interference)과는 다른 말이다.
+- 근거: `nasa-std-8739-8b` 48쪽. `nhtsa-safety-standards-assessment` 34쪽 `(2차 자료)` (ISO 26262:2011 기준)
+
+### confirmation measure, confirmation review
+
+ISO 26262에서 산출물과 과정을 확인하는 활동을 가리키는 말이다 `(2차 자료)`. confirmation review는 등급에 따라 요구되고, 검토자가 개발자, 프로젝트 관리, 산출물의 작성자로부터 독립적이기를 요구한다고 한다 `(2차 자료)`.
+
+- 주의: 종류와 등급별 요구는 이 책이 확인하지 못했다.
+- 근거: `autosar-safety-measures` 46쪽 (ISO 26262:2018을 참조하는 문서. 용어만 나온다), `nhtsa-safety-standards-assessment` 34쪽 (ISO 26262:2011 기준)
+
+### tailoring
+
+과정을 이 프로젝트의 위험과 복잡도에 맞게 줄이거나 늘리는 것이다. 줄일 수 없는 바닥이 있고, 줄일 때에는 이유를 대고 개발 조직이 아닌 쪽의 승인을 받는다.
+
+- 근거: `nasa-gb-8719-13` 43-46쪽, 87쪽. `nasa-std-8739-8b` 56-57쪽. `hse-hsg238` 33쪽, 38쪽
+
+### safety culture
+
+과정이 종이에 있는 것으로 그치지 않고 실제로 지켜지게 하는 조직의 성질을 가리키는 말이다. 받은 문서에 정의는 없고, 그것이 없을 때의 모습 (일정의 압박, 규칙을 무시하라는 압박, 소통의 실패, 안전이 우선순위를 받지 못함)이 적혀 있다.
+
+- 근거: `hse-hsg238` 7쪽, 32쪽. `nasa-gb-8719-13` 265쪽. `b737max-jatr` 50쪽
 
 ## 로봇과 기계
 
