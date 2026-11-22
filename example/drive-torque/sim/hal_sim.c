@@ -6,6 +6,8 @@
 
 #include <stddef.h>
 
+#include "frame_sim.h"
+
 #define MSG_PERIOD_MS 10u
 #define ADC_MAX_MV    5000
 
@@ -18,11 +20,19 @@ static struct {
     millivolt_t apps1_stuck_mv;
     /* 받은 메시지 */
     bool speed_seen;
+    bool speed_fresh;
     speed_t speed_value;
+    unsigned speed_counter;
+    frame_t speed_frame;
     time_ms_t speed_rx_ms;
     bool inv_seen;
-    hal_inverter_status_t inv_value;
+    bool inv_fresh;
+    unsigned inv_counter;
+    frame_t inv_frame;
     time_ms_t inv_rx_ms;
+    /* 전송 중에 되풀이되는 토크 요구 메시지 (FAULT_TORQUE_MSG_REPEAT) */
+    frame_t torque_frame_last;
+    frame_t torque_frame_stuck;
     /* 내보낸 것 */
     torque_t torque_out;
     bool enable_out;
@@ -77,17 +87,37 @@ static void update_messages(void)
     if ((sim.now_ms % MSG_PERIOD_MS) != 0u) {
         return;
     }
-    if (!sim.fault_on[FAULT_SPEED_MSG_LOSS]) {
+    /* 제동 제어기가 차량 속도를 보낸다. 값은 속도의 크기다 */
+    if (sim.fault_on[FAULT_SPEED_MSG_REPEAT] && sim.speed_seen) {
+        /* 같은 메시지가 다시 온다. counter도 그대로다 */
+        sim.speed_fresh = true;
+        sim.speed_rx_ms = sim.now_ms;
+    } else if (!sim.fault_on[FAULT_SPEED_MSG_LOSS]) {
+        double v = sim.plant->speed_mps;
         if (!sim.fault_on[FAULT_SPEED_MSG_FREEZE] || !sim.speed_seen) {
-            sim.speed_value = (speed_t)(sim.plant->speed_mps * 100.0);
+            sim.speed_value = (speed_t)(((v < 0.0) ? -v : v) * 100.0);
+        }
+        sim.speed_counter = (sim.speed_counter + 1u) & 15u;
+        frame_sim_make(&sim.speed_frame, SIM_ID_SPEED, sim.speed_counter, sim.speed_value);
+        if (sim.fault_on[FAULT_SPEED_MSG_CORRUPT]) {
+            /* 전송 중에 값이 바뀐다. CRC는 그대로다 */
+            sim.speed_frame.value += sim.fault_param[FAULT_SPEED_MSG_CORRUPT];
         }
         sim.speed_seen = true;
+        sim.speed_fresh = true;
         sim.speed_rx_ms = sim.now_ms;
+    } else {
+        /* 메시지가 오지 않는다 */
     }
-    sim.inv_value.fault = false;
-    sim.inv_value.torque_act = (torque_t)(sim.plant->torque_act_nm * 10.0);
-    sim.inv_seen = true;
-    sim.inv_rx_ms = sim.now_ms;
+    /* inverter가 추정한 토크를 알린다 */
+    if (!sim.fault_on[FAULT_INVERTER_MSG_LOSS]) {
+        sim.inv_counter = (sim.inv_counter + 1u) & 15u;
+        frame_sim_make(&sim.inv_frame, SIM_ID_INVERTER, sim.inv_counter,
+                       (int32_t)(sim.plant->torque_act_nm * 10.0));
+        sim.inv_seen = true;
+        sim.inv_fresh = true;
+        sim.inv_rx_ms = sim.now_ms;
+    }
 }
 
 void hal_sim_init(plant_t *plant)
@@ -96,16 +126,22 @@ void hal_sim_init(plant_t *plant)
     sim.now_ms = 0u;
     hal_sim_clear_faults();
     sim.speed_seen = false;
+    sim.speed_fresh = false;
     sim.speed_value = 0;
+    sim.speed_counter = 0u;
+    sim.speed_frame = (frame_t){ 0, 0u, 0u };
     sim.speed_rx_ms = 0u;
     sim.inv_seen = false;
-    sim.inv_value.fault = false;
-    sim.inv_value.torque_act = 0;
+    sim.inv_fresh = false;
+    sim.inv_counter = 0u;
+    sim.inv_frame = (frame_t){ 0, 0u, 0u };
     sim.inv_rx_ms = 0u;
+    sim.torque_frame_last = (frame_t){ 0, 0u, 0u };
+    sim.torque_frame_stuck = (frame_t){ 0, 0u, 0u };
     sim.torque_out = 0;
     sim.enable_out = true; /* 켠 직후의 출력은 알 수 없다고 보고 나쁜 쪽으로 둔다 */
     sim.warning_out = 0u;
-    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false };
+    sim.diag_out = (hal_diag_t){ 0, false, 0, 0, false, 0u, false, false, false, 0, false };
     sim.enable_written_this_tick = false;
     sim.order_violations = 0u;
     update_sensors();
@@ -124,6 +160,9 @@ void hal_sim_set_fault(fault_id_t fault, int32_t param)
     if (fault == FAULT_APPS1_STUCK) {
         sim.apps1_stuck_mv = sim.adc_mv[HAL_ADC_APPS1];
     }
+    if (fault == FAULT_TORQUE_MSG_REPEAT) {
+        sim.torque_frame_stuck = sim.torque_frame_last;
+    }
     sim.fault_on[fault] = true;
     sim.fault_param[fault] = param;
 }
@@ -136,6 +175,7 @@ void hal_sim_clear_faults(void)
     }
 }
 
+void hal_sim_inverter_check(bool on) { sim.plant->check_frames = on; }
 torque_t hal_sim_last_torque(void) { return sim.torque_out; }
 bool hal_sim_enable(void) { return sim.enable_out; }
 uint32_t hal_sim_order_violations(void) { return sim.order_violations; }
@@ -175,33 +215,53 @@ gear_t hal_gear_read(void)
     return sim.plant->gear;
 }
 
-bool hal_can_rx_speed(speed_t *speed, time_ms_t *age_ms)
+void hal_can_rx_speed(hal_rx_t *rx)
 {
-    if (!sim.speed_seen) {
-        return false;
-    }
-    *speed = sim.speed_value;
-    *age_ms = sim.now_ms - sim.speed_rx_ms;
-    return true;
+    rx->frame = sim.speed_frame;
+    rx->seen = sim.speed_seen;
+    rx->fresh = sim.speed_fresh;
+    rx->age_ms = sim.now_ms - sim.speed_rx_ms;
+    sim.speed_fresh = false;
 }
 
-bool hal_can_rx_inverter(hal_inverter_status_t *status, time_ms_t *age_ms)
+void hal_can_rx_inverter(hal_rx_t *rx)
 {
-    if (!sim.inv_seen) {
-        return false;
+    rx->frame = sim.inv_frame;
+    rx->seen = sim.inv_seen;
+    rx->fresh = sim.inv_fresh;
+    rx->age_ms = sim.now_ms - sim.inv_rx_ms;
+    sim.inv_fresh = false;
+}
+
+/* 출력을 쓰는 순서를 센다. 제품은 구동 허용 신호를 먼저 쓰고 토크 요구를 보내야 한다 (docs/hsi.md 4절).
+ * sim에는 CAN의 지연이 없어 순서가 결과에 나타나지 않으므로, 순서 자체를 센다 */
+static void count_order(void)
+{
+    if (!sim.enable_written_this_tick) {
+        sim.order_violations++;
     }
-    *status = sim.inv_value;
-    *age_ms = sim.now_ms - sim.inv_rx_ms;
-    return true;
+}
+
+void hal_can_tx_torque_frame(const frame_t *frame)
+{
+    frame_t on_bus = *frame;
+
+    count_order();
+    sim.torque_out = frame->value;
+    sim.torque_frame_last = *frame;
+    /* 전송 중의 고장 */
+    if (sim.fault_on[FAULT_TORQUE_MSG_REPEAT]) {
+        on_bus = sim.torque_frame_stuck; /* 지난 메시지가 되풀이된다 */
+    }
+    if (sim.fault_on[FAULT_TORQUE_MSG_CORRUPT]) {
+        on_bus.value += sim.fault_param[FAULT_TORQUE_MSG_CORRUPT]; /* 값이 바뀐다. CRC는 그대로다 */
+    }
+    plant_send_frame(sim.plant, &on_bus);
 }
 
 void hal_can_tx_torque(torque_t torque)
 {
-    /* 제품은 구동 허용 신호를 먼저 쓰고 토크 요구를 보내야 한다 (docs/hsi.md 4절).
-     * sim에는 CAN의 지연이 없어 순서가 결과에 나타나지 않으므로, 순서 자체를 센다 */
-    if (!sim.enable_written_this_tick) {
-        sim.order_violations++;
-    }
+    count_order();
     sim.torque_out = torque;
     plant_send_torque(sim.plant, (double)torque / 10.0);
 }

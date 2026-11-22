@@ -21,6 +21,13 @@ typedef enum {
     GEAR_D = 3
 } gear_t;
 
+/* CAN으로 오가는 메시지 하나. 값에 counter와 CRC가 붙는다 (src/com/e2e.h) */
+typedef struct {
+    int32_t value;
+    uint8_t counter;
+    uint8_t crc;
+} frame_t;
+
 #define TORQUE_MAX      ((torque_t)2500)  /* 모터의 최대 토크: 250.0 Nm */
 #define PEDAL_FULL      ((permille_t)1000)
 #define CYCLE_MS        ((time_ms_t)10)   /* 제어 주기 */

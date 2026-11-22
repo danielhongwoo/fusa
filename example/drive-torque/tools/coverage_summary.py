@@ -10,7 +10,7 @@ statement와 MC/DC가 100%가 아니면 실패한다. 기능의 파일은 숫자
 import re
 import sys
 
-SAFETY = ("src/input/", "src/monitor/", "src/reaction/", "src/vcu/")
+SAFETY = ("src/input/", "src/monitor/", "src/reaction/", "src/com/", "src/vcu/")
 
 
 def main():

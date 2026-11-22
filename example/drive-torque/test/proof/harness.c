@@ -16,6 +16,7 @@
 #include <assert.h>
 
 #include "app.h"
+#include "e2e.h"
 #include "input.h"
 #include "monitor.h"
 #include "reaction.h"
@@ -413,4 +414,126 @@ void prove_brake_check(void)
     if (st.fault) {
         assert(pressed);
     }
+}
+
+/* 부호 있는 값을 전송하는 32 bit로 편 것. 제품의 코드 (src/com/e2e.c)와 따로 적었다 */
+static uint32_t wire(int32_t v)
+{
+    return (v >= 0) ? (uint32_t)v : (0xFFFFFFFFu - (uint32_t)(-(v + 1)));
+}
+
+/*
+ * 성질 10 (SWR-17, SWR-18): 메시지의 보호와 검사의 규칙. 받는 쪽의 상태가 무엇이었든 아래가 성립한다.
+ *   가. 보내는 쪽은 값을 그대로 싣고, counter는 0-15 안에서 1 오른다.
+ *   나. 보낸 메시지를 그대로, 제때 받으면: 처음 받았거나 counter가 지난 것에서 1-3 앞섰을 때,
+ *       그리고 그때에만 유효하다.
+ *   다. 같은 메시지를 새 메시지로 한 번 더 받으면 무효다.
+ *   라. 받은 적이 없거나 받은 뒤 50 ms가 넘었으면 무효다.
+ *   마. 새 메시지가 없으면 판정이 바뀌지 않는다 (50 ms 안에서).
+ */
+void prove_message_rules(void)
+{
+    e2e_tx_t tx;
+    e2e_rx_t rx0;
+    e2e_rx_t rx;
+    frame_t sent;
+    uint8_t data_id = nondet_uint8();
+    int32_t value = nondet_int32();
+    uint32_t age_ok = nondet_uint32();
+    uint32_t age_any = nondet_uint32();
+    bool seen = nondet_bool();
+    bool fresh = nondet_bool();
+    uint8_t step;
+    bool valid;
+
+    /* 가. 보내는 쪽의 상태가 망가져 있었더라도 */
+    tx.counter = nondet_uint8();
+    e2e_protect(&tx, data_id, value, &sent);
+    assert(sent.value == value);
+    assert(sent.counter <= 15);
+    assert(tx.counter == ((sent.counter + 1) % 16));
+
+    rx0.last_counter = nondet_uint8();
+    rx0.synced = nondet_bool();
+    rx0.ok = nondet_bool();
+    __CPROVER_assume(rx0.last_counter <= 15);
+    __CPROVER_assume(age_ok <= 50u);
+    step = (uint8_t)((sent.counter + 16 - rx0.last_counter) % 16);
+
+    /* 나 */
+    rx = rx0;
+    valid = e2e_check(&rx, data_id, &sent, true, true, age_ok);
+    assert(valid == (!rx0.synced || ((step >= 1) && (step <= 3))));
+    /* 다 */
+    valid = e2e_check(&rx, data_id, &sent, true, true, age_ok);
+    assert(!valid);
+
+    /* 라 */
+    rx = rx0;
+    valid = e2e_check(&rx, data_id, &sent, seen, fresh, age_any);
+    if (!seen || (age_any > 50u)) {
+        assert(!valid);
+    }
+    /* 마 */
+    if (seen && !fresh && (age_any <= 50u)) {
+        assert(valid == rx0.ok);
+    }
+}
+
+/*
+ * 성질 11 (SWR-18): 전송 중에 바뀐 메시지는 무효다. 받는 쪽의 상태가 무엇이었든, 제때 받았더라도 그렇다.
+ *   가. 값의 bit 하나가 바뀌었다.
+ *   나. counter의 bit 하나가 바뀌었다.
+ *   다. CRC의 bit 하나가 바뀌었다.
+ *   라. 다른 종류의 메시지다 (data ID가 다르다).
+ * 그런 메시지는 counter의 기준도 바꾸지 않는다.
+ * 말해 주지 않는 것: 값의 bit가 둘 넘게 바뀌는 경우. CRC가 8 bit이므로 잡지 못하는 조합이 있다
+ * (아무렇게나 바뀐 메시지 256개 가운데 하나쯤은 CRC가 우연히 맞는다).
+ * 보내는 쪽이 틀린 값을 옳은 counter와 CRC로 보내는 경우도 이 검사의 밖이다.
+ *
+ * 성질 10과 한 함수로 묶으면 증명이 10분 안에 끝나지 않았다. CRC는 XOR로 이루어진 계산이고,
+ * 이 도구가 쓰는 풀이 방식 (SAT)은 XOR이 길게 이어진 식에 약하다. 나누니 몇 초에 끝난다.
+ */
+void prove_message_change_detected(void)
+{
+    e2e_tx_t tx;
+    e2e_rx_t rx0;
+    e2e_rx_t rx;
+    frame_t sent;
+    frame_t changed;
+    uint8_t data_id = nondet_uint8();
+    uint8_t check_id = data_id;
+    uint8_t other_id = nondet_uint8();
+    int32_t value = nondet_int32();
+    int32_t other_value = nondet_int32();
+    uint8_t which = nondet_uint8();
+    uint8_t bit = nondet_uint8();
+    uint32_t age_ok = nondet_uint32();
+    bool valid;
+
+    tx.counter = nondet_uint8();
+    e2e_protect(&tx, data_id, value, &sent);
+    rx0.last_counter = nondet_uint8();
+    rx0.synced = nondet_bool();
+    rx0.ok = nondet_bool();
+    __CPROVER_assume(age_ok <= 50u);
+
+    changed = sent;
+    if ((which % 4u) == 0u) {
+        /* 가. 전송하는 32 bit 가운데 하나만 다른 값 */
+        __CPROVER_assume((wire(other_value) ^ wire(sent.value)) == ((uint32_t)1u << (bit % 32u)));
+        changed.value = other_value;
+    } else if ((which % 4u) == 1u) {
+        changed.counter = (uint8_t)(changed.counter ^ (uint8_t)(1u << (bit % 8u)));
+    } else if ((which % 4u) == 2u) {
+        changed.crc = (uint8_t)(changed.crc ^ (uint8_t)(1u << (bit % 8u)));
+    } else {
+        __CPROVER_assume(other_id != data_id);
+        check_id = other_id;
+    }
+
+    rx = rx0;
+    valid = e2e_check(&rx, check_id, &changed, true, true, age_ok);
+    assert(!valid);
+    assert((rx.last_counter == rx0.last_counter) && (rx.synced == rx0.synced));
 }

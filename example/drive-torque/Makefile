@@ -13,17 +13,17 @@
 
 CC      ?= cc
 CFLAGS  := -std=c11 -Wall -Wextra -Werror -pedantic -O0 -g
-INC     := -Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reaction -Isrc/vcu -Isim -Itest -Itest/faulty
+INC     := -Isrc/common -Isrc/hal -Isrc/input -Isrc/app -Isrc/monitor -Isrc/reaction -Isrc/com -Isrc/vcu -Isim -Itest -Itest/faulty
 
 # 제품 코드 (item의 소프트웨어)
 # 하드웨어를 부르지 않는 부분과 부르는 부분을 나눈다. unit test는 앞의 것만 link한다
-SRC_LOGIC  := src/input/pedal_check.c src/input/brake_check.c src/monitor/monitor.c src/reaction/reaction.c
+SRC_LOGIC  := src/input/pedal_check.c src/input/brake_check.c src/monitor/monitor.c src/reaction/reaction.c src/com/e2e.c
 SRC_IO     := src/input/input.c src/vcu/vcu.c
 SRC_SAFETY := $(SRC_LOGIC) $(SRC_IO)
 SRC_APP    := src/app/app.c
 SRC        := $(SRC_SAFETY) $(SRC_APP)
 # 시뮬레이션 (item의 밖)
-SIM        := sim/plant.c sim/hal_sim.c sim/scenario.c
+SIM        := sim/plant.c sim/frame_sim.c sim/hal_sim.c sim/scenario.c
 TESTLIB    := test/test_run.c
 
 # MC/DC를 재려면 GCC 14 이상이 필요하다
@@ -59,7 +59,7 @@ build/test_fault_app: $(SRC_SAFETY) build/app_good.o test/faulty/app_fault.c $(S
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
 # 대조: 감시와 출력 단계를 아무것도 하지 않는 모듈로 바꿔 끼운다
-build/test_no_monitor: src/input/pedal_check.c src/input/brake_check.c src/input/input.c src/reaction/reaction.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
+build/test_no_monitor: src/input/pedal_check.c src/input/brake_check.c src/input/input.c src/reaction/reaction.c src/com/e2e.c src/vcu/vcu.c build/app_good.o test/faulty/app_fault.c test/faulty/monitor_none.c $(SIM) $(TESTLIB) test/test_no_monitor.c | dirs
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
 
 test: build/test_unit build/test_scenario build/test_fault_app build/test_no_monitor
@@ -76,8 +76,10 @@ test: build/test_unit build/test_scenario build/test_fault_app build/test_no_mon
 # 같은 시나리오를 안전 장치가 없는 제어기와 예제의 제어기로 돌린다.
 # 어느 제어기인지는 link할 때 정해진다
 
+# 단순한 제어기는 보호가 없는 토크 요구를 보낸다. 그 함수는 제품의 HAL에 없고 sim의 header에만 있다.
+# 그 제어기의 소스 (1장에 실린 그대로)를 고치지 않으려고 header를 compiler의 option으로 넣는다
 build/intro_naive: intro/naive_vcu.c $(SIM) intro/demo.c | dirs
-	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm
+	$(CC) $(CFLAGS) $(INC) -include sim/hal_sim.h -o $@ $^ -lm
 
 build/intro_vcu: $(SRC) $(SIM) intro/demo.c | dirs
 	$(CC) $(CFLAGS) $(INC) -o $@ $^ -lm

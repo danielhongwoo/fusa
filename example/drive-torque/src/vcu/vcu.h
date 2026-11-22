@@ -6,6 +6,7 @@
 #define VCU_H
 
 #include "app.h"
+#include "e2e.h"
 #include "input.h"
 #include "monitor.h"
 #include "reaction.h"
@@ -21,6 +22,13 @@ typedef struct {
     torque_t torque_allowed; /* 감시가 계산한 허용 토크 */
     output_stage_t output;
     reaction_t reaction;     /* 고장 대응의 상태 */
+    e2e_rx_t speed_rx;       /* 차량 속도 메시지의 검사 */
+    bool speed_valid;
+    speed_t speed;           /* 유효할 때만 쓴다 */
+    e2e_rx_t inverter_rx;    /* inverter의 상태 메시지의 검사 */
+    bool inverter_valid;
+    torque_t inverter_torque; /* 유효할 때만 쓴다 */
+    e2e_tx_t torque_tx;      /* 토크 요구 메시지의 보호 */
     torque_t torque_out;     /* inverter로 보낸 토크 */
     bool enable;             /* 구동 허용 신호 */
     uint8_t warning;         /* 경고 요청: 0 없음, 1 주의, 2 경고 */

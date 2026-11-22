@@ -4,8 +4,7 @@
  * 기능과 감시의 코드는 하드웨어를 이 함수들로만 만난다.
  * 시뮬레이션에서는 sim/hal_sim.c가 구현하고, fault는 그 뒤에서만 넣는다.
  *
- * 단계 1의 VCU는 차량 속도, inverter의 상태, 시간을 읽는 함수를 부르지 않는다.
- * 단계 2에서 쓰려고 interface에 남겨 두었다 (docs/technical-safety-concept.md 6절).
+ * 신호마다의 단위, 켠 직후의 값, 고장일 때의 모습은 docs/hsi.md에 있다.
  */
 #ifndef HAL_H
 #define HAL_H
@@ -18,11 +17,13 @@ typedef enum {
     HAL_ADC_COUNT = 2
 } hal_adc_ch_t;
 
-/* inverter가 알려 주는 상태 */
+/* 받은 메시지 */
 typedef struct {
-    bool fault;          /* inverter가 스스로 알린 고장 */
-    torque_t torque_act; /* inverter가 추정한 실제 토크 */
-} hal_inverter_status_t;
+    frame_t frame;    /* 마지막으로 받은 메시지 */
+    bool seen;        /* 한 번이라도 받았는가 */
+    bool fresh;       /* 지난번에 읽은 뒤로 새 메시지를 받았는가 */
+    time_ms_t age_ms; /* 마지막으로 받은 뒤로 흐른 시간 */
+} hal_rx_t;
 
 /* 켜진 뒤로 흐른 시간 */
 time_ms_t hal_time_ms(void);
@@ -38,17 +39,14 @@ bool hal_brake2_pressed(void);
 /* 운전자가 고른 기어 */
 gear_t hal_gear_read(void);
 
-/*
- * 차량 속도 메시지 (제동 제어기가 CAN으로 보낸다).
- * 한 번도 받지 못했으면 false. age_ms는 마지막으로 받은 뒤로 흐른 시간이다.
- */
-bool hal_can_rx_speed(speed_t *speed, time_ms_t *age_ms);
+/* 차량 속도 메시지 (제동 제어기가 CAN으로 보낸다). 값은 속도의 크기, 단위 0.01 m/s */
+void hal_can_rx_speed(hal_rx_t *rx);
 
-/* inverter 상태 메시지. 뜻은 hal_can_rx_speed와 같다 */
-bool hal_can_rx_inverter(hal_inverter_status_t *status, time_ms_t *age_ms);
+/* inverter의 상태 메시지. 값은 inverter가 추정한 실제 토크, 단위 0.1 Nm */
+void hal_can_rx_inverter(hal_rx_t *rx);
 
-/* 토크 요구를 inverter로 보낸다 */
-void hal_can_tx_torque(torque_t torque);
+/* 토크 요구 메시지를 inverter로 보낸다. 값은 토크, 단위 0.1 Nm */
+void hal_can_tx_torque_frame(const frame_t *frame);
 
 /* 경고 요청을 계기판으로 보낸다. 0은 없음, 1은 주의, 2는 경고 */
 void hal_can_tx_warning(uint8_t level);
@@ -66,6 +64,9 @@ typedef struct {
     uint32_t clamp_count;    /* 출력 단계가 토크 요구를 깎은 횟수 */
     bool brake;              /* 판정한 브레이크 상태 */
     bool brake_fault;        /* 브레이크 신호의 고장으로 판정했는가 */
+    bool speed_valid;        /* 차량 속도 메시지가 유효한가 */
+    speed_t speed;           /* VCU가 쓰는 차량 속도. 메시지가 무효이면 0 */
+    bool inverter_valid;     /* inverter의 상태 메시지가 유효한가 */
 } hal_diag_t;
 
 void hal_can_tx_diag(const hal_diag_t *diag);

@@ -12,7 +12,7 @@ GCC=$1
 GCOV=$2
 CFLAGS=$3
 R=../..
-INC="-I$R/src/common -I$R/src/hal -I$R/src/input -I$R/src/app -I$R/src/monitor -I$R/src/reaction -I$R/src/vcu -I$R/sim -I$R/test -I$R/test/faulty"
+INC="-I$R/src/common -I$R/src/hal -I$R/src/input -I$R/src/app -I$R/src/monitor -I$R/src/reaction -I$R/src/com -I$R/src/vcu -I$R/sim -I$R/test -I$R/test/faulty"
 COV="--coverage -fcondition-coverage"
 
 mkdir -p build/cov build/out build/reports
@@ -20,20 +20,20 @@ rm -f build/cov/*.gcda build/cov/*.gcno build/cov/*.gcov
 cd build/cov
 
 # 제품 코드: 재는 대상
-for f in src/input/pedal_check.c src/input/brake_check.c src/input/input.c src/monitor/monitor.c src/reaction/reaction.c src/vcu/vcu.c src/app/app.c; do
+for f in src/input/pedal_check.c src/input/brake_check.c src/input/input.c src/monitor/monitor.c src/reaction/reaction.c src/com/e2e.c src/vcu/vcu.c src/app/app.c; do
     $GCC $CFLAGS $COV $INC -c -o "$(basename "$f" .c).o" "$R/$f"
 done
 # 결함 모듈이 감싸는 기능: 이름만 바꿔 compile한다. 재지 않는다
 $GCC $CFLAGS $INC -Dapp_init=app_good_init -Dapp_step=app_good_step -c -o app_good.o "$R/src/app/app.c"
 
-SIM="$R/sim/plant.c $R/sim/hal_sim.c $R/sim/scenario.c"
+SIM="$R/sim/plant.c $R/sim/frame_sim.c $R/sim/hal_sim.c $R/sim/scenario.c"
 $GCC $CFLAGS $INC -o cov_unit \
-    pedal_check.o brake_check.o monitor.o reaction.o app.o "$R/test/test_run.c" "$R/test/test_unit.c" -lgcov -lm
+    pedal_check.o brake_check.o monitor.o reaction.o e2e.o app.o "$R/test/test_run.c" "$R/test/test_unit.c" -lgcov -lm
 $GCC $CFLAGS $INC -o cov_scenario \
-    pedal_check.o brake_check.o input.o monitor.o reaction.o vcu.o app.o \
+    pedal_check.o brake_check.o input.o monitor.o reaction.o e2e.o vcu.o app.o \
     $SIM "$R/test/test_run.c" "$R/test/test_scenario.c" -lgcov -lm
 $GCC $CFLAGS $INC -o cov_fault_app \
-    pedal_check.o brake_check.o input.o monitor.o reaction.o vcu.o app_good.o \
+    pedal_check.o brake_check.o input.o monitor.o reaction.o e2e.o vcu.o app_good.o \
     "$R/test/faulty/app_fault.c" $SIM "$R/test/test_run.c" "$R/test/test_fault_app.c" -lgcov -lm
 
 # test는 예제 폴더에서 돌린다 (기록 파일의 경로 때문에)
@@ -41,7 +41,7 @@ $GCC $CFLAGS $INC -o cov_fault_app \
     && build/cov/cov_fault_app > /dev/null)
 
 $GCOV --conditions --branch-probabilities \
-    pedal_check.gcda brake_check.gcda input.gcda monitor.gcda reaction.gcda vcu.gcda app.gcda > gcov.txt 2>&1
+    pedal_check.gcda brake_check.gcda input.gcda monitor.gcda reaction.gcda e2e.gcda vcu.gcda app.gcda > gcov.txt 2>&1
 
 cd "$R"
 python3 tools/coverage_summary.py build/cov/gcov.txt | tee build/reports/coverage.txt

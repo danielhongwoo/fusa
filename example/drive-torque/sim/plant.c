@@ -6,6 +6,8 @@
 
 #include <math.h>
 
+#include "frame_sim.h"
+
 #define DT_S            0.001
 #define DRAG_CDA_M2     0.65
 #define AIR_DENSITY     1.2
@@ -21,6 +23,11 @@ void plant_init(plant_t *p)
     p->gear = GEAR_P;
     p->torque_sent_nm = 0.0;
     p->torque_sent_wait_ms = 0u;
+    p->frame_sent = (frame_t){ 0, 0u, 0u };
+    p->frame_sent_wait_ms = 0u;
+    p->check_frames = true;
+    p->rx_synced = false;
+    p->rx_counter = 0u;
     p->enable_sent = false;
     p->enable_sent_wait_ms = 0u;
     p->torque_cmd_nm = 0.0;
@@ -35,6 +42,31 @@ void plant_send_torque(plant_t *p, double torque_nm)
 {
     p->torque_sent_nm = torque_nm;
     p->torque_sent_wait_ms = PLANT_CAN_DELAY_MS;
+}
+
+void plant_send_frame(plant_t *p, const frame_t *frame)
+{
+    p->frame_sent = *frame;
+    p->frame_sent_wait_ms = PLANT_CAN_DELAY_MS;
+}
+
+/* inverter가 받은 메시지를 검사한다. 통과하면 참 */
+static bool inverter_accepts(plant_t *p, const frame_t *frame)
+{
+    unsigned step;
+    bool ok;
+
+    if (!p->check_frames) {
+        return true;
+    }
+    if (!frame_sim_crc_ok(frame, SIM_ID_TORQUE)) {
+        return false;
+    }
+    step = ((unsigned)frame->counter - p->rx_counter) & 15u;
+    ok = !p->rx_synced || ((step >= 1u) && (step <= 3u));
+    p->rx_counter = frame->counter;
+    p->rx_synced = true;
+    return ok;
 }
 
 void plant_send_enable(plant_t *p, bool on)
@@ -58,6 +90,16 @@ void plant_step_1ms(plant_t *p)
         if (p->torque_sent_wait_ms == 0u) {
             p->torque_cmd_nm = p->torque_sent_nm;
             p->cmd_age_ms = 0u;
+        }
+    }
+    if (p->frame_sent_wait_ms > 0u) {
+        p->frame_sent_wait_ms--;
+        if (p->frame_sent_wait_ms == 0u) {
+            if (inverter_accepts(p, &p->frame_sent)) {
+                p->torque_cmd_nm = (double)p->frame_sent.value / 10.0;
+                p->cmd_age_ms = 0u;
+            }
+            /* 틀린 메시지는 버린다. 옳은 메시지가 오지 않으면 시간이 지나 토크를 내지 않게 된다 */
         }
     }
     if (p->enable_sent_wait_ms > 0u) {

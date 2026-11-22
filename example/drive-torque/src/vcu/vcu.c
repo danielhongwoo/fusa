@@ -13,6 +13,13 @@ void vcu_init(vcu_t *vcu)
     app_init(&vcu->app);
     output_stage_init(&vcu->output);
     reaction_init(&vcu->reaction);
+    e2e_rx_init(&vcu->speed_rx);
+    e2e_rx_init(&vcu->inverter_rx);
+    e2e_tx_init(&vcu->torque_tx);
+    vcu->speed_valid = false;
+    vcu->speed = 0;
+    vcu->inverter_valid = false;
+    vcu->inverter_torque = 0;
     vcu->pedal_safe = 0;
     vcu->brake = true;
     vcu->torque_req = 0;
@@ -28,7 +35,17 @@ void vcu_init(vcu_t *vcu)
 /* 입력을 한 번 읽고 검사한다 */
 static void task_input(vcu_t *vcu)
 {
+    hal_rx_t rx;
+
     input_read(&vcu->in);
+    /* SWR-18: 받은 메시지는 검사를 통과한 것만 쓴다. 무효이면 마지막 값을 쓰지 않는다 */
+    hal_can_rx_speed(&rx);
+    vcu->speed_valid = e2e_check(&vcu->speed_rx, E2E_ID_SPEED, &rx.frame, rx.seen, rx.fresh, rx.age_ms);
+    vcu->speed = vcu->speed_valid ? rx.frame.value : 0;
+    hal_can_rx_inverter(&rx);
+    vcu->inverter_valid = e2e_check(&vcu->inverter_rx, E2E_ID_INVERTER, &rx.frame, rx.seen, rx.fresh,
+                                    rx.age_ms);
+    vcu->inverter_torque = vcu->inverter_valid ? rx.frame.value : 0;
     vcu->pedal_safe = pedal_check_step(&vcu->pedal_check, &vcu->in);
     /* SWR-11: 페달 고장은 토크 0의 사건이다 */
     if (vcu->pedal_check.fault) {
@@ -67,7 +84,10 @@ static void task_monitor_output(vcu_t *vcu)
 
     /* 구동 허용 신호를 먼저 쓴다. 끊어야 하는 주기에 CAN의 송신이 늦어져도 끊는 일이 밀리지 않는다 */
     hal_enable_write(vcu->enable);
-    hal_can_tx_torque(vcu->torque_out);
+    /* SWR-17: 싣는 값은 출력 단계가 돌려준 토크다. 깎기 전의 요구가 아니다 */
+    frame_t frame;
+    e2e_protect(&vcu->torque_tx, E2E_ID_TORQUE, vcu->torque_out, &frame);
+    hal_can_tx_torque_frame(&frame);
     hal_can_tx_warning(vcu->warning);
 
     hal_diag_t diag;
@@ -79,6 +99,9 @@ static void task_monitor_output(vcu_t *vcu)
     diag.clamp_count = vcu->output.clamp_count;
     diag.brake = vcu->brake;
     diag.brake_fault = vcu->brake_check.fault;
+    diag.speed_valid = vcu->speed_valid;
+    diag.speed = vcu->speed;
+    diag.inverter_valid = vcu->inverter_valid;
     hal_can_tx_diag(&diag);
 }
 

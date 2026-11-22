@@ -17,6 +17,13 @@ typedef struct {
     /* VCU가 보낸 것. 지연 뒤에 inverter에 닿는다 */
     double torque_sent_nm;
     time_ms_t torque_sent_wait_ms; /* 닿을 때까지 남은 시간. 0이면 보낸 것이 없다 */
+    frame_t frame_sent;            /* 보호가 붙은 토크 요구 메시지 */
+    time_ms_t frame_sent_wait_ms;
+
+    /* inverter의 메시지 검사 (가정 A-21) */
+    bool check_frames;       /* 거짓이면 받은 값을 검사 없이 쓴다 (대조 test) */
+    bool rx_synced;
+    unsigned rx_counter;
     bool enable_sent;
     time_ms_t enable_sent_wait_ms;
 
@@ -42,8 +49,11 @@ typedef struct {
 
 void plant_init(plant_t *p);
 
-/* VCU가 토크 요구 메시지를 보냈다 */
+/* VCU가 보호가 없는 토크 요구를 보냈다 (1장의 단순한 제어기). inverter는 검사 없이 쓴다 */
 void plant_send_torque(plant_t *p, double torque_nm);
+
+/* VCU가 보호가 붙은 토크 요구 메시지를 보냈다. inverter는 CRC와 counter를 검사하고 틀리면 버린다 */
+void plant_send_frame(plant_t *p, const frame_t *frame);
 
 /* VCU가 구동 허용 신호를 바꿨다 */
 void plant_send_enable(plant_t *p, bool on);

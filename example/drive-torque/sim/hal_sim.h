@@ -18,6 +18,11 @@ typedef enum {
     FAULT_SPEED_MSG_FREEZE,  /* 차량 속도 메시지는 오지만 값이 멈춤 */
     FAULT_BRAKE1_STUCK,      /* 브레이크 접점 1이 고착: param이 1이면 "밟음" (선이 끊김), 0이면 "놓음" (접점이 붙음) */
     FAULT_BRAKE2_STUCK,      /* 브레이크 접점 2가 고착: param이 1이면 "밟음" (접점이 붙음), 0이면 "놓음" (선이 끊김) */
+    FAULT_SPEED_MSG_CORRUPT, /* 차량 속도 메시지의 값이 전송 중에 param만큼 바뀜 */
+    FAULT_SPEED_MSG_REPEAT,  /* 같은 차량 속도 메시지가 되풀이됨 */
+    FAULT_INVERTER_MSG_LOSS, /* inverter의 상태 메시지가 오지 않음 */
+    FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
+    FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
     FAULT_COUNT
 } fault_id_t;
 
@@ -28,6 +33,13 @@ void hal_sim_step(time_ms_t t_ms);
 
 void hal_sim_set_fault(fault_id_t fault, int32_t param);
 void hal_sim_clear_faults(void);
+
+/* inverter가 받은 메시지를 검사하는지를 정한다. 기본은 검사한다. 거짓은 대조 test에 쓴다 */
+void hal_sim_inverter_check(bool on);
+
+/* 보호가 없는 토크 요구. 1장의 단순한 제어기 (intro/naive_vcu.c)만 쓴다.
+ * 제품의 HAL (src/hal/hal.h)에는 없다. 제품은 hal_can_tx_torque_frame을 쓴다 */
+void hal_can_tx_torque(torque_t torque);
 
 /* VCU가 내보낸 것을 본다 */
 torque_t hal_sim_last_torque(void);

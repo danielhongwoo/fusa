@@ -7,6 +7,7 @@
  * 제품 코드의 상수 이름을 쓰지 않는다. 상수가 잘못 바뀌면 test가 실패해야 하기 때문이다.
  */
 #include "app.h"
+#include "e2e.h"
 #include "input.h"
 #include "monitor.h"
 #include "reaction.h"
@@ -980,6 +981,124 @@ static void ft_003(void)
     CHECK_EQ(app_step(&app, 500, false, GEAR_R), -250);
 }
 
+/* 보내는 쪽의 counter가 주어진 값일 때 만든 메시지.
+ * TC-018은 메시지를 이것으로 만든다. 이것이 붙이는 CRC가 옳다는 것은 TC-017이 따로 계산한 값으로 본다 */
+static frame_t frame_of(uint8_t data_id, uint8_t counter, int32_t value)
+{
+    e2e_tx_t tx;
+    frame_t frame;
+
+    e2e_tx_init(&tx);
+    tx.counter = counter;
+    e2e_protect(&tx, data_id, value, &frame);
+    return frame;
+}
+
+/* TC-017: SWR-17 보내는 메시지에 counter와 CRC를 붙인다 */
+static void tc_017(void)
+{
+    static const uint8_t check_input[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+    e2e_tx_t tx;
+    frame_t frame;
+
+    /* CRC의 계산. 이 방식 (다항식 0x1D, 처음 값 0xFF, 끝에 뒤집음)에 널리 쓰는 확인값이다 */
+    CHECK_EQ(e2e_crc8(check_input, 9u), 0x4B);
+
+    /* counter는 0에서 시작해 메시지마다 1 오르고 15 다음에 0으로 돈다. 값은 받은 그대로 싣는다 */
+    e2e_tx_init(&tx);
+    for (int i = 0; i < 40; i++) {
+        e2e_protect(&tx, 33u, 750 + i, &frame);
+        CHECK_EQ(frame.counter, i % 16);
+        CHECK_EQ(frame.value, 750 + i);
+    }
+
+    /* CRC는 data ID, counter, 값에 걸친다. 기댓값은 제품의 코드와 따로 계산했다 */
+    CHECK_EQ(frame_of(33u, 0u, 0).crc, 0x98);
+    CHECK_EQ(frame_of(33u, 1u, 750).crc, 0xEF);
+    CHECK_EQ(frame_of(33u, 15u, 2500).crc, 0x88);
+    CHECK_EQ(frame_of(33u, 3u, -1000).crc, 0x98);
+    /* data ID가 다르면 값과 counter가 같아도 CRC가 다르다 */
+    CHECK_EQ(frame_of(66u, 1u, 750).crc, 0x5D);
+    CHECK_EQ(frame_of(99u, 7u, 1234).crc, 0xEA);
+}
+
+/* 받는 쪽의 검사를 한 번 부른다. 새 메시지가 방금 닿은 경우다 */
+static bool receive(e2e_rx_t *rx, uint8_t data_id, frame_t frame)
+{
+    return e2e_check(rx, data_id, &frame, true, true, 0u);
+}
+
+/* TC-018: SWR-18 받은 메시지의 CRC, data ID, counter, 시간을 검사한다 */
+static void tc_018(void)
+{
+    e2e_rx_t rx;
+    frame_t f = frame_of(66u, 0u, 0);
+
+    /* 받은 적이 없으면 무효다 */
+    e2e_rx_init(&rx);
+    CHECK(!e2e_check(&rx, 66u, &f, false, false, 0u));
+    /* 받은 적이 없다고 알려 오면 넘겨받은 메시지의 내용이 옳아 보여도 쓰지 않는다 */
+    CHECK(!e2e_check(&rx, 66u, &f, false, true, 0u));
+    /* 처음 받은 메시지는 견줄 것이 없으므로 counter가 무엇이든 받아들인다 */
+    CHECK(receive(&rx, 66u, frame_of(66u, 7u, 500)));
+    /* counter가 1 앞서면 유효하다 */
+    CHECK(receive(&rx, 66u, frame_of(66u, 8u, 510)));
+    /* 메시지를 둘까지 잃어도 (counter가 2, 3 앞섬) 유효하다 */
+    CHECK(receive(&rx, 66u, frame_of(66u, 10u, 520)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 13u, 530)));
+    /* 15 다음은 0이다. 그 사이를 건너뛰어도 같다 */
+    CHECK(receive(&rx, 66u, frame_of(66u, 15u, 540)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 0u, 550)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 3u, 560)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 14u, 560)) == false); /* 11 앞섬 */
+    CHECK(receive(&rx, 66u, frame_of(66u, 1u, 570)));           /* 14 -> 1은 3 앞섬 */
+    /* 셋을 잃으면 (4 앞섬) 무효다. 그다음 메시지부터 다시 유효하다 */
+    CHECK(!receive(&rx, 66u, frame_of(66u, 5u, 580)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 6u, 590)));
+    /* 같은 counter가 다시 오면 (되풀이) 무효다. 값이 달라도 같다 */
+    CHECK(!receive(&rx, 66u, frame_of(66u, 6u, 590)));
+    CHECK(!receive(&rx, 66u, frame_of(66u, 6u, 600)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 7u, 610)));
+    /* counter가 뒤로 가면 무효다 */
+    CHECK(!receive(&rx, 66u, frame_of(66u, 6u, 620)));
+    CHECK(receive(&rx, 66u, frame_of(66u, 7u, 630)));
+
+    /* 전송 중에 값이 바뀌면 무효다 */
+    f = frame_of(66u, 8u, 640);
+    f.value += 1;
+    CHECK(!receive(&rx, 66u, f));
+    /* counter가 바뀌어도 무효다 */
+    f = frame_of(66u, 8u, 640);
+    f.counter = 9u;
+    CHECK(!receive(&rx, 66u, f));
+    /* CRC가 바뀌어도 무효다 */
+    f = frame_of(66u, 8u, 640);
+    f.crc ^= 1u;
+    CHECK(!receive(&rx, 66u, f));
+    /* 다른 종류의 메시지 (data ID가 다름)는 무효다 */
+    CHECK(!receive(&rx, 66u, frame_of(99u, 8u, 640)));
+    /* 틀린 메시지는 counter의 기준을 바꾸지 않는다. 지난 옳은 메시지 (7)에서 1 앞선 것이 유효하다 */
+    CHECK(receive(&rx, 66u, frame_of(66u, 8u, 640)));
+
+    /* 새 메시지가 없으면 지난 판정이 그대로다. 유효였으면 받은 뒤 50 ms까지 유효하다 */
+    f = frame_of(66u, 8u, 640);
+    CHECK(e2e_check(&rx, 66u, &f, true, false, 10u));
+    CHECK(e2e_check(&rx, 66u, &f, true, false, 50u));
+    /* 50 ms를 넘으면 무효다 */
+    CHECK(!e2e_check(&rx, 66u, &f, true, false, 51u));
+    /* 한 번 무효가 되면 새 메시지가 와야 유효해진다 */
+    CHECK(!e2e_check(&rx, 66u, &f, true, false, 10u));
+    CHECK(receive(&rx, 66u, frame_of(66u, 9u, 650)));
+    /* 무효인 판정도 새 메시지가 없으면 그대로다 */
+    f = frame_of(66u, 10u, 660);
+    f.value += 1;
+    CHECK(!receive(&rx, 66u, f));
+    CHECK(!e2e_check(&rx, 66u, &f, true, false, 5u));
+    /* 새 메시지가 옳아도 받은 지 50 ms가 넘은 뒤에 읽었으면 무효다 */
+    f = frame_of(66u, 10u, 660);
+    CHECK(!e2e_check(&rx, 66u, &f, true, true, 51u));
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -999,6 +1118,8 @@ int main(void)
         { "TC-014", "최근 100주기 가운데 실패가 10번을 넘으면 페달 고장이다", tc_014 },
         { "TC-015", "고장 대응의 상태는 안전한 쪽으로만 바뀐다", tc_015 },
         { "TC-016", "브레이크는 두 접점으로 판정한다", tc_016 },
+        { "TC-017", "보내는 메시지에 counter와 CRC를 붙인다", tc_017 },
+        { "TC-018", "받은 메시지의 CRC, data ID, counter, 시간을 검사한다", tc_018 },
         { "FT-001", "기능: 토크 요구의 계산", ft_001 },
         { "FT-002", "기능: 토크를 올리는 속도", ft_002 },
         { "FT-003", "기능: 제동 우선", ft_003 },
