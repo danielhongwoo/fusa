@@ -390,7 +390,6 @@ void prove_faulty_function_bounded(void)
     reaction.state = (reaction_state_t)nondet_int32(); /* 고장 대응의 상태도 어떤 값이든 된다 */
     __CPROVER_assume((normal.prev >= -2500) && (normal.prev <= 2500));
     __CPROVER_assume((out.last_out >= -2500) && (out.last_out <= 2500));
-    __CPROVER_assume(out.excess_cycles <= 5);
     __CPROVER_assume(toward(out.last_out, GEAR_D) <= (toward(normal.prev, GEAR_D) + 50));
     __CPROVER_assume(toward(out.last_out, GEAR_R) <= (toward(normal.prev, GEAR_R) + 50));
 

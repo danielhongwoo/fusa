@@ -141,7 +141,9 @@ endif
 ifneq ($(CLANG_TIDY),)
 	@$(CLANG_TIDY) $(SRC) --quiet --checks='-*,bugprone-*,cert-*,clang-analyzer-*,-bugprone-easily-swappable-parameters' \
 		-- $(CFLAGS) $(INC) > build/reports/clang-tidy.txt 2>&1 || true
-	@echo "clang-tidy: 경고 $$(grep -c 'warning:' build/reports/clang-tidy.txt) 개 (보고서: build/reports/clang-tidy.txt)"
+	@n=$$(grep -c -E 'warning:|error:' build/reports/clang-tidy.txt); \
+		echo "clang-tidy: 경고 $$n 개 (보고서: build/reports/clang-tidy.txt)"; \
+		if [ "$$n" -ne 0 ]; then grep -E 'warning:|error:' build/reports/clang-tidy.txt | head -20; exit 1; fi
 else
 	@echo "건너뜀: clang-tidy가 없다" | tee -a build/skipped
 endif
