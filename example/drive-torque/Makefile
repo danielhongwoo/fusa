@@ -1,5 +1,3 @@
-# 책의 예제다. 실제 제품에 쓸 수 없다.
-#
 #   make check     빌드, test, 다른 compile option의 test, 추적 검사, 정적 분석, coverage, 증명을 차례로 돌린다
 #   make test      빌드와 test만
 #   make variants  같은 test를 최적화를 켠 build와 sanitizer를 넣은 build로 다시 돌린다

@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 시뮬레이션용 HAL 구현과 fault injection의 interface.
  * fault는 여기에서만 넣는다. src/의 코드에는 test용 코드가 없다.
  */

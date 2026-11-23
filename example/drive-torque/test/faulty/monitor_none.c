@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 감시가 없는 것과 같은 모듈. test에서만 쓴다.
  * src/monitor/monitor.c 대신 link되어 같은 interface (monitor.h)를 구현한다.
  * 토크 요구를 깎지 않고, 고정하지도 않는다.

@@ -1,5 +1,4 @@
 #!/bin/sh
-# 책의 예제다. 실제 제품에 쓸 수 없다.
 # GCC로 제품 코드의 coverage (statement, branch, MC/DC)를 잰다.
 # 사용법: sh tools/coverage.sh <gcc> <gcov> "<cflags>"   (example/drive-torque 폴더에서)
 #

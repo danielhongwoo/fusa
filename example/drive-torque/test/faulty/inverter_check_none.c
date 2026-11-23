@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 대조 test용: inverter가 알린 토크를 검사하지 않는 모듈.
  * test/test_no_inverter_check.c가 src/monitor/inverter_check.c 대신 이것을 link한다.
  */

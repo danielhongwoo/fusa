@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 대조 test: 감시를 뺀 VCU에 FI-02와 같은 fault를 넣는다.
  * 감시와 출력 단계를 아무것도 하지 않는 모듈 (test/faulty/monitor_none.c)로 바꿔 끼워 link한다.
  *

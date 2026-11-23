@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""책의 예제다. 실제 제품에 쓸 수 없다.
-
-검사 단계가 실패를 알리는지 본다.
+"""검사 단계가 실패를 알리는지 본다.
 
     python3 tools/step_check.py      (example/drive-torque 폴더에서. make step-check)
 

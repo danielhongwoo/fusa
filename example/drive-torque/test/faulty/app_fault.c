@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 결함이 있는 기능 모듈의 구현.
  * 정상인 기능 (src/app/app.c)은 소스를 고치지 않고 함수 이름만 바꿔 compile한 것을 부른다
  * (Makefile의 -Dapp_init=app_good_init -Dapp_step=app_good_step).

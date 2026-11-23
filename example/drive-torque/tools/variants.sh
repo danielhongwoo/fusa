@@ -1,5 +1,4 @@
 #!/bin/sh
-# 책의 예제다. 실제 제품에 쓸 수 없다.
 # 같은 test를 다른 compile option으로 다시 돌려, 출력이 -O0의 것과 한 줄도 다르지 않은지 본다.
 #   O2, Os     최적화를 켜도 동작이 같은가. host의 compiler에 대해서만 말해 준다.
 #              target의 compiler와 그 최적화는 보지 않는다

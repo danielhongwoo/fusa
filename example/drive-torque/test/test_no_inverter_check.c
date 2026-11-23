@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 대조 test: inverter가 알린 토크의 검사 (SWR-19)를 뺀 VCU.
  * 그 검사를 아무것도 하지 않는 모듈 (test/faulty/inverter_check_none.c)로 바꿔 끼워 link한다.
  *

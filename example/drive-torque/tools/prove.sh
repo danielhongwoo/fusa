@@ -1,5 +1,4 @@
 #!/bin/sh
-# 책의 예제다. 실제 제품에 쓸 수 없다.
 # CBMC로 test/proof/harness.c의 성질을 하나씩 증명한다.
 # 사용법: sh tools/prove.sh   (example/drive-torque 폴더에서)
 #

@@ -1,5 +1,4 @@
 /*
- * 책의 예제 코드다. 실제 제품에 쓸 수 없다.
  * 대조 test용: 실행의 순서를 보지 않고 늘 옳은 답을 내는 모듈.
  * 주기마다 정해진 값을 써 주기만 하면 되는 단순한 watchdog을 쓰는 것과 같다.
  * test/test_no_flow_check.c가 src/flow/flow.c 대신 이것을 link한다.
