@@ -31,7 +31,7 @@ Functional safety를 공부하며 쓰는 책의 원고 저장소다. 책은 func
 
 읽는 순서 (저자용. 단계 2에서 새로 쓰거나 깊게 고친 것)
 
-1. [chapters/ch01-accidents.md](chapters/ch01-accidents.md): 사고 사례 넷과 관통 예제의 소개
+1. [chapters/ch01-accidents.md](chapters/ch01-accidents.md): 사고 사례 넷과 주요 예제의 소개
 2. [chapters/ch04-standards-map.md](chapters/ch04-standards-map.md), [chapters/ch05-safety-lifecycle.md](chapters/ch05-safety-lifecycle.md): 규격의 지도와 일하는 틀
 3. [chapters/ch06-hara.md](chapters/ch06-hara.md): hazard에서 safety goal까지. "safety goal 둘"에 `SG-02`를 두 번 고친 경위가 있다
 4. [chapters/ch07-safety-concept.md](chapters/ch07-safety-concept.md): "감시의 틈: 세 번 고친 이야기"가 이 예제의 핵심이다

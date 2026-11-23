@@ -35,8 +35,8 @@
 |---|---|---|
 | 원고 | `chapters/` | 장마다 파일 하나. 책에 실릴 내용만 둔다 |
 | 장 계획 | `plans/` | 원고와 같은 이름의 파일. 핵심 질문, 다룰 내용, 예제 산출물, 근거, 상태 |
-| 관통 예제의 산출물 문서 | `example/drive-torque/docs/` | item definition, HARA, safety concept, 요구사항, safety case 등 |
-| 관통 예제의 코드와 test | `example/drive-torque/` 아래의 `src/`, `sim/`, `test/`, `tools/` | 구조는 PLAN.md의 단계 0에서 확정한다 |
+| 주요 예제의 산출물 문서 | `example/drive-torque/docs/` | item definition, HARA, safety concept, 요구사항, safety case 등 |
+| 주요 예제의 코드와 test | `example/drive-torque/` 아래의 `src/`, `sim/`, `test/`, `tools/` | 구조는 PLAN.md의 단계 0에서 확정한다 |
 | 보조 예제 | `example/robot-field-switch/`, `example/drone-failsafe/` | 20장과 21장 |
 | 그림 | `figures/` | SVG |
 | 참고 문서 | `references/` | 받은 파일은 git에 넣지 않는다 |
@@ -84,7 +84,7 @@
 |---|---|
 | 핵심 질문 | 항상 |
 | 본문 | 항상 |
-| 관통 예제에 적용 | 예제 산출물이 있는 장 |
+| 주요 예제에 적용 | 예제 산출물이 있는 장 |
 | sim이 보이는 것과 못 보이는 것 | 예제의 코드나 시뮬레이션 결과를 쓰는 장 |
 | 규격에서의 위치 | 규격과 관련된 장. Part와 조항 제목 수준으로 적는다 |
 | 흔한 오해 | 항상 |

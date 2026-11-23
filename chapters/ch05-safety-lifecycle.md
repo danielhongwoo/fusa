@@ -190,7 +190,7 @@ ISO 26262도 safety culture를 기르는 것과 안전 관리를 강조한다고
 | 줄이기 | 건너뛴 활동과 그 이유를 적는다. 말없이 건너뛰지 않는다 |
 | safety culture | 검토에서 나온 지적을 닫힐 때까지 따라간다. 안 좋은 소식을 일찍 말한다 |
 
-## 관통 예제에 적용
+## 주요 예제에 적용
 
 예제의 safety plan은 `example/drive-torque/docs/safety-plan.md`에 있다. 두 쪽쯤이다. 이 장의 눈으로 읽으면 약한 곳이 스스로 보인다.
 

@@ -73,7 +73,7 @@ model checking은 유한한 상태의 시스템을 자동으로 검증하는 for
 | bounded model checking (source) | harness가 만든 환경과 가정 (assume) 아래에서, 펼친 한계 안의 모든 입력에서 단언이 성립한다. unwinding assertion이 성립하면 그 한계가 충분하다 | 적지 않은 성질. 가정이 실제와 맞는다는 것. compiler가 만든 기계어, 실행 시간, 하드웨어 |
 | test (16장) | 넣어 본 입력에서 실제 실행 파일이 옳게 동작한다 | 넣지 않은 입력 |
 
-## 관통 예제에 적용
+## 주요 예제에 적용
 
 ### 정적 분석
 

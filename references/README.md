@@ -32,7 +32,7 @@
 | b737max-house-report | 미국 하원 교통인프라위원회 최종 보고서 (2020-09) | 미국 하원 | 1 | 245 | 3.5 |
 | koopman-toyota-ua | Koopman, A Case Study of Toyota Unintended Acceleration and Software Safety (2014) | 저자의 CMU 페이지 | 1 | 55 | 5.9 |
 
-### 관통 예제와 같은 주제를 다룬 미국 정부 보고서
+### 주요 예제와 같은 주제를 다룬 미국 정부 보고서
 
 | id | 문서 | 올린 곳 | 쓰는 장 | 쪽 | 크기 |
 |---|---|---|---|---|---|
@@ -40,7 +40,7 @@
 | nhtsa-safety-standards-assessment | Assessment of Safety Standards for Automotive Electronic Control Systems, DOT HS 812 285 (2016) | 미국 교통부 저장소 | 4, 22 | 49 | 0.6 |
 | nasa-toyota-ua-report | NASA Engineering and Safety Center, Toyota unintended acceleration 조사 보고서 (2011) | NHTSA | 1 | 177 | - |
 
-nhtsa-etc-ev-fsa는 이 책의 관통 예제와 같은 시스템 (전기차의 가속 제어)에 ISO 26262의 concept phase를 적용한 보고서다. 시스템 정의, hazard 분석 (HAZOP, STPA), ASIL 평가, safety goal, FMEA, functional safety concept, functional safety requirement를 담고 있다. ISO 26262의 요구사항에 관한 이 책의 주된 2차 자료다.
+nhtsa-etc-ev-fsa는 이 책의 주요 예제와 같은 시스템 (전기차의 가속 제어)에 ISO 26262의 concept phase를 적용한 보고서다. 시스템 정의, hazard 분석 (HAZOP, STPA), ASIL 평가, safety goal, FMEA, functional safety concept, functional safety requirement를 담고 있다. ISO 26262의 요구사항에 관한 이 책의 주된 2차 자료다.
 
 ### 개념과 분석 기법
 
@@ -120,7 +120,7 @@ nhtsa-etc-ev-fsa는 이 책의 관통 예제와 같은 시스템 (전기차의 �
 
 ### E-Gas monitoring concept에 대하여
 
-관통 예제의 감시 구조는 이 문서에 바탕을 둔다. 그런데 확인한 결과는 다음과 같다.
+주요 예제의 감시 구조는 이 문서에 바탕을 둔다. 그런데 확인한 결과는 다음과 같다.
 
 - 최신으로 알려진 v6.0의 공식 배포처를 찾지 못했다. 문서 공유 사이트의 사본만 있었고, 그런 사본은 쓰지 않는다.
 - v4.0 (2007-01-30)의 사본이 미국 NHTSA의 공개 문서철에 있다. 자동으로는 받지 못했다.

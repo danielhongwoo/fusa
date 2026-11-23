@@ -109,7 +109,7 @@ safety goal의 등급은 그것에서 나온 요구사항으로 내려간다. �
 
 어느 쪽이든 "다른 함수에 두었다"는 답이 되지 못한다.
 
-## 관통 예제에 적용
+## 주요 예제에 적용
 
 예제의 산출물은 `example/drive-torque/docs/`에 있다. `functional-safety-concept.md`가 두 safety goal에서 나온 functional safety requirement와 고장 대응의 상태를, `technical-safety-concept.md`가 구조와 값과 예산표를, `hsi.md`가 하드웨어와 만나는 신호를 담는다. 요구사항의 원본은 `requirements.yaml`이고, safety goal 둘에서 software safety requirement까지 예순두 개다.
 

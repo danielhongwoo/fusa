@@ -8,7 +8,7 @@
 
 ```
 example/
-  drive-torque/          관통 예제: 전기차의 구동 토크 제어
+  drive-torque/          주요 예제: 전기차의 구동 토크 제어
     docs/                산출물 문서
       scope.md           예제의 범위: item의 기능과 경계, hazard, 가정
       item-definition.md

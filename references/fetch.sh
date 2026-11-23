@@ -53,7 +53,7 @@ fetch b737max-house-report 2020.09.15-FINAL-737-MAX-Report.pdf \
 fetch koopman-toyota-ua koopman14_toyota_ua_slides.pdf \
     "https://users.ece.cmu.edu/~koopman/pubs/koopman14_toyota_ua_slides.pdf"
 
-# 관통 예제와 같은 주제를 다룬 미국 정부 보고서 (1, 6, 7장)
+# 주요 예제와 같은 주제를 다룬 미국 정부 보고서 (1, 6, 7장)
 fetch nhtsa-etc-ev-fsa dot_44158_DS1.pdf \
     "https://rosap.ntl.bts.gov/view/dot/44158/dot_44158_DS1.pdf"
 fetch nhtsa-safety-standards-assessment dot_12302_DS1.pdf \

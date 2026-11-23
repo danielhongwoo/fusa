@@ -11,7 +11,7 @@
 
 ### 책의 성격
 
-- functional safety의 사고방식과 소프트웨어 기법을 다루는 책이다. 왜 그렇게 하는지를 사고 사례와 failure의 원리로 설명하고, 관통 예제로 직접 해 본다.
+- functional safety의 사고방식과 소프트웨어 기법을 다루는 책이다. 왜 그렇게 하는지를 사고 사례와 failure의 원리로 설명하고, 주요 예제로 직접 해 본다.
 - ISO 26262는 구조와 용어 수준으로 소개한다. 요구사항을 조항별로 해설하지 않는다.
 - 이 책은 ISO 26262:2018의 원문을 보지 않고 쓴다. 규격이 무엇을 요구하는지에 관한 문장은 2차 자료에 근거했음을 밝힌다. 이 사실을 책의 머리말에도 적는다.
 - 근거는 누구나 받을 수 있는 공개 문서다: 사고 조사 보고서, 미국 정부의 연구 보고서, NASA와 EASA의 문서, AUTOSAR의 공개 규격 등. 독자가 같은 문서를 받아 확인할 수 있다.
@@ -84,7 +84,7 @@ Part I-IV는 자동차를 기준으로 쓴다. 로봇과 드론은 Part V에서 
 - 드론 쪽은 제도가 빠르게 바뀐다. 21장은 쓰는 시점에 다시 확인한다.
 - 로봇 열과 드론 열은 2026-11-22에 받은 문서와 견주었다. 받은 문서와 다른 칸은 없었다. `(확인 필요)`가 붙은 곳은 받은 문서로 확인하지 못한 것이다. 로봇 열의 근거는 ISO 13849-1의 2015년 판을 설명한 문서 하나다. 자동차 열은 규격 원문으로 확인하지 않았다.
 
-## 3. 관통 예제 (running example)
+## 3. 주요 예제 (running example)
 
 책 전체에서 시스템 하나를 hazard 분석부터 safety case까지 끌고 간다. 장마다 이 예제의 산출물이 하나씩 쌓인다.
 
@@ -126,7 +126,7 @@ flowchart TD
 
 ### 보조 예제
 
-20장과 21장에서는 작은 예제를 하나씩 따로 쓴다. 위험 평가에서 구조 설계까지만 가고, 관통 예제와 나란히 놓고 비교한다.
+20장과 21장에서는 작은 예제를 하나씩 따로 쓴다. 위험 평가에서 구조 설계까지만 가고, 주요 예제와 나란히 놓고 비교한다.
 
 - 로봇: 자율 이동 로봇의 속도에 따른 보호 영역 전환과 정지. 안전 기능은 인증된 센서와 safety controller가 수행한다. 이 예제는 일반 소프트웨어가 안전 기능에서 하는 일과 하지 않는 일의 경계를 보인다.
 - 드론: 소형 multicopter의 조종 link 상실, geofence 이탈, 위치 상실에 대한 대응. 고장이 나면 미리 정한 동작 (제자리 비행, 복귀, 착륙) 가운데 하나로 넘어가는 기능이다.
@@ -191,6 +191,6 @@ flowchart TD
 |---|---|---|
 | A | [용어집](chapters/appendix-a-glossary.md) | [계획](plans/appendix-a-glossary.md) |
 | B | [규격 구조 대응표](chapters/appendix-b-standards-map.md) | [계획](plans/appendix-b-standards-map.md) |
-| C | [관통 예제의 산출물](chapters/appendix-c-example-artifacts.md) | [계획](plans/appendix-c-example-artifacts.md) |
+| C | [주요 예제의 산출물](chapters/appendix-c-example-artifacts.md) | [계획](plans/appendix-c-example-artifacts.md) |
 | D | [참고 문헌](chapters/appendix-d-references.md) | [계획](plans/appendix-d-references.md) |
 | E | [차량 E/E 최소 지식](chapters/appendix-e-vehicle-ee-basics.md) | [계획](plans/appendix-e-vehicle-ee-basics.md) |

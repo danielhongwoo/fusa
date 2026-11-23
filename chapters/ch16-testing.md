@@ -132,7 +132,7 @@ Ariane 501은 1장에서 보았고, 여기에서는 test의 쪽만 본다. 조�
 
 이 장의 test는 verification의 수단이다. validation은 부록 A의 풀이대로 만든 것이 정해진 쓰임에서 요구사항을 만족하는지를 보는 일이고, 그 구별은 15장에서 다룬다. ISO 26262의 safety validation이 무엇을 요구하는지는 받은 문서에 설명이 없어서 이 책의 범위 밖에 둔다.
 
-## 관통 예제에 적용
+## 주요 예제에 적용
 
 결과는 `example/drive-torque/docs/test-report.md`에 있다 (2026-11-23의 `make check`와 `make mutation`).
 

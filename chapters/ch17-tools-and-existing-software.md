@@ -78,7 +78,7 @@ safety element out of context (SEooC, 맥락 없이 개발된 요소)는 특정 
 
 open source에 관해서는 받은 문서와 찾은 공개 자료의 근거가 얇다. NASA의 소프트웨어 보증 표준은 open source를 COTS와 같은 무리로 다루어 앞의 요구를 함께 걸고, 사용 조건에 GNU GPL처럼 같은 license로만 재배포하라는 조건까지 다루라고 적는다 (NASA, 2022, 20-21쪽). 독립 verification과 validation을 맡는 쪽에게는 프로젝트가 쓰는 open source를 모두 찾았는지, 그 보안 위험을 찾고 줄였는지를 확인하게 한다 (54쪽). source가 열려 있다는 것은 앞의 OTS 문제 가운데 source가 없다는 것 하나를 덜어 줄 뿐이고, 개발 과정과 test의 기록, 결함의 정보가 모자란 것은 그대로다. 이것은 이 책의 판단이다. 안전 관련 시스템에 open source를 쓰는 기준을 다룬 자료는 찾지 못했다.
 
-## 관통 예제에 적용
+## 주요 예제에 적용
 
 예제의 도구는 `example/drive-torque/docs/tools.md`에 정리되어 있다. compiler 둘 (Apple clang, coverage에는 GCC), 정적 분석 도구 둘, CBMC, 그리고 이 저장소가 만든 스크립트와 test의 틀과 sim이다. test의 결과가 sim이 fault를 정말 넣었는지와 틀이 실패를 정말 세는지에 달려 있으므로 이 둘도 도구로 센다. 어느 도구도 qualification되지 않았다. 그 문서는 qualification의 기록이 아니라 도구를 얼마나 믿고 있는지를 드러내는 표다.
 

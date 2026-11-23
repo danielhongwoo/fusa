@@ -77,7 +77,7 @@ functional safety는 safety 가운데 시스템이 입력에 맞게 올바르게
 
 고장을 알아챘을 때 시스템이 옮겨 가는 상태가 safe state다. 꺼진 상태만 safe state인 것은 아니다. 정상 동작일 수도 있고 성능을 낮춘 동작일 수도 있다 `(2차 자료)`. 기능을 끄는 것이 오히려 위험한 시스템이 많기 때문이다. 달리는 차의 구동력을 갑자기 끊으면 뒤차에 받힐 수 있다.
 
-## 관통 예제에 적용
+## 주요 예제에 적용
 
 예제의 제어기에서 fault, error, failure, hazard를 한 줄씩 따라가 본다. 전체 표는 `example/drive-torque/docs/fault-table.md`에 있다.
 
@@ -108,5 +108,5 @@ functional safety는 safety 가운데 시스템이 입력에 맞게 올바르게
 
 1. 주행 중에 계기판이 꺼졌다 켜지는 것은 availability, reliability, safety 가운데 무엇의 문제인가? 경우에 따라 답이 달라지는 까닭을 말해 보라.
 2. "CAN 메시지의 CRC가 맞지 않는다"는 fault, error, failure 가운데 무엇인가? 어느 시스템의 눈으로 보는지에 따라 답해 보라.
-3. 관통 예제에서 "토크 요구를 0으로 한다"가 safe state가 되는 hazard와 되지 않는 hazard를 하나씩 들어 보라.
+3. 주요 예제에서 "토크 요구를 0으로 한다"가 safe state가 되는 hazard와 되지 않는 hazard를 하나씩 들어 보라.
 4. 소프트웨어의 failure에 고장률을 매기기 어려운 까닭은 무엇인가?
