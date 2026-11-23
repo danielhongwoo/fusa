@@ -48,6 +48,12 @@ fetch b737max-ntsb-asr1901 ASR1901.pdf \
     "https://www.ntsb.gov/investigations/AccidentReports/Reports/ASR1901.pdf"
 fetch b737max-knkt-jt610 KNKT.18.10.33.04-Final-Report.pdf \
     "https://knkt.go.id/Repo/Files/Laporan/Penerbangan/2018/KNKT.18.10.33.04-Final-Report.pdf"
+fetch b737max-eaib-et302 ET_302__B737-8MAX_ACCIDENT_FINAL_REPORT.pdf \
+    "https://bea.aero/fileadmin/user_upload/ET_302__B737-8MAX_ACCIDENT_FINAL_REPORT.pdf"
+fetch b737max-ntsb-et302-comments US-comments-ET302-Report-March-2022.pdf \
+    "https://www.ntsb.gov/investigations/Documents/US%20comments%20ET302%20Report%20March%202022.pdf"
+fetch b737max-ntsb-et302-comments Response-to-EAIB-final-report.pdf \
+    "https://www.ntsb.gov/investigations/Documents/Response%20to%20EAIB%20final%20report.pdf"
 fetch b737max-house-report 2020.09.15-FINAL-737-MAX-Report.pdf \
     "https://democrats-transportation.house.gov/imo/media/doc/2020.09.15%20FINAL%20737%20MAX%20Report%20for%20Public%20Release.pdf"
 fetch koopman-toyota-ua koopman14_toyota_ua_slides.pdf \

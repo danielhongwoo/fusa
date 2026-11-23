@@ -29,6 +29,8 @@
 | b737max-jatr | Joint Authorities Technical Review, Boeing 737 MAX Flight Control System (2019-10) | FAA | 1 | 71 | 0.6 |
 | b737max-ntsb-asr1901 | NTSB Safety Recommendation Report ASR-19-01 | NTSB | 1 | 13 | 0.1 |
 | b737max-knkt-jt610 | KNKT 최종 보고서, Lion Air JT610 | KNKT (인도네시아) | 1 | 322 | 12.9 |
+| b737max-eaib-et302 | EAIB 최종 보고서 AI-01/19, Ethiopian Airlines ET302 (2022-12) | BEA (프랑스)의 사본. 발행 기관의 사이트는 응답하지 않음 | 1 | 331 | 22.1 |
+| b737max-ntsb-et302-comments | NTSB의 의견 둘: 초안에 대한 의견 (2022-05-12, 9쪽), 최종 보고서에 대한 응답 (2023-01-13, 7쪽) | NTSB | 1 | 16 | 0.3 |
 | b737max-house-report | 미국 하원 교통인프라위원회 최종 보고서 (2020-09) | 미국 하원 | 1 | 245 | 3.5 |
 | koopman-toyota-ua | Koopman, A Case Study of Toyota Unintended Acceleration and Software Safety (2014) | 저자의 CMU 페이지 | 1 | 55 | 5.9 |
 
