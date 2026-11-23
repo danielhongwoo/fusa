@@ -31,11 +31,11 @@ typedef enum {
     FAULT_TASK_SLOW,         /* task의 주기가 두 배로 늘어남 (clock의 고장) */
     FAULT_TASK_TWICE,        /* task 하나가 한 주기에 두 번 실행됨. param은 task table의 몇 번째인가 (0부터) */
     FAULT_TORQUE_MSG_CORRUPT, /* 토크 요구 메시지의 값이 전송 중에 param만큼 바뀜 */
-    FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 닿지 않음) */
-    FAULT_INVERTER_MSG_DROP, /* inverter의 상태 메시지가 bus에서 사라짐. 어느 것이 닿는지를 되풀이되는 모양으로 준다:
-                              * param은 SIM_DROP_PATTERN(길이, 표시)이고, 표시의 bit k가 1이면 그 모양의 k번째 메시지가 닿는다.
+    FAULT_TORQUE_MSG_REPEAT, /* 지난 토크 요구 메시지가 되풀이됨 (새 메시지는 도착하지 않음) */
+    FAULT_INVERTER_MSG_DROP, /* inverter의 상태 메시지가 bus에서 사라짐. 어느 것이 도착하는지를 되풀이되는 모양으로 준다:
+                              * param은 SIM_DROP_PATTERN(길이, 표시)이고, 표시의 bit k가 1이면 그 모양의 k번째 메시지가 도착한다.
                               * 보낸 쪽의 counter는 오른다 (FAULT_INVERTER_MSG_LOSS는 보내지 않는 경우여서 오르지 않는다) */
-    FAULT_INVERTER_MSG_CORRUPT, /* inverter의 상태 메시지의 값이 전송 중에 param만큼 바뀜 */
+    FAULT_INVERTER_MSG_CORRUPT, /* inverter의 상태 메시지의 값이 전송 중에 param만큼 바뀜 (test는 양수만 쓴다) */
     FAULT_COUNT
 } fault_id_t;
 
@@ -44,8 +44,8 @@ void hal_sim_init(plant_t *plant);
 /* 시각을 t_ms로 맞추고, 센서 값과 주기 메시지를 갱신한다 */
 void hal_sim_step(time_ms_t t_ms);
 
-/* FAULT_INVERTER_MSG_DROP의 param. 길이는 1 - 16. 예: SIM_DROP_PATTERN(3, 4)는 셋에 하나 (세 번째)만 닿는다.
- * SIM_DROP_PATTERN(1, 0)은 모두 잃는다 */
+/* FAULT_INVERTER_MSG_DROP의 param. 길이는 1 - 16을 받는다 (test가 쓰는 것은 7까지다).
+ * 예: SIM_DROP_PATTERN(3, 4)는 셋에 하나 (세 번째)만 도착한다. SIM_DROP_PATTERN(1, 0)은 모두 잃는다 */
 #define SIM_DROP_PATTERN(period, mask) ((int32_t)(((uint32_t)(mask) << 8) | (uint32_t)(period)))
 
 void hal_sim_set_fault(fault_id_t fault, int32_t param);
@@ -55,14 +55,14 @@ void hal_sim_clear_faults(void);
 void hal_sim_inverter_check(bool on);
 
 /* 외부 watchdog의 model (가정 A-24). 답을 기다리는 창은 지난 답에서 5 - 15 ms다. 값은 임시다.
- * 첫 답을 받기 전과 끊은 뒤에는 구동 허용 신호가 inverter에 닿지 않는다. 끊은 것은 다시 켤 때까지 풀리지 않는다 */
+ * 첫 답을 받기 전과 끊은 뒤에는 구동 허용 신호가 inverter에 도착하지 않는다. 끊은 것은 다시 켤 때까지 풀리지 않는다 */
 #define SIM_WD_WINDOW_MIN_MS 5u
 #define SIM_WD_WINDOW_MAX_MS 15u
 
 /* 외부 watchdog이 있는가. 기본은 있다. 1장의 단순한 제어기에는 없다 */
 void hal_sim_watchdog_present(bool present);
 
-/* inverter에 닿는 구동 허용 신호의 선의 값. VCU가 쓴 값 (hal_sim_enable)과 다를 수 있다:
+/* inverter에 도착하는 구동 허용 신호의 선의 값. VCU가 쓴 값 (hal_sim_enable)과 다를 수 있다:
  * 외부 watchdog이 막거나 끊었을 때, 선이 고착되거나 끊겼을 때 */
 bool hal_sim_enable_wire(void);
 
@@ -86,7 +86,7 @@ bool hal_sim_enable(void);
 /* 구동 허용 신호를 쓰기 전에 토크 요구를 보낸 횟수. 제품이 출력을 쓰는 순서를 test가 보는 데 쓴다 */
 uint32_t hal_sim_order_violations(void);
 
-/* inverter의 상태 메시지가 VCU에 닿은 횟수. test가 메시지를 정말 잃었는지 확인하는 데 쓴다 */
+/* inverter의 상태 메시지가 VCU에 도착한 횟수. test가 메시지를 정말 잃었는지 확인하는 데 쓴다 */
 uint32_t hal_sim_inverter_msgs_arrived(void);
 uint8_t hal_sim_warning(void);
 const hal_diag_t *hal_sim_diag(void);

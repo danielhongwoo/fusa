@@ -94,7 +94,7 @@ void inverter_check_record(inverter_check_t *st, torque_t sent);
  *   fresh  이번 주기에 검사를 통과한 새 상태 메시지를 받았는가. 거짓이면 reported를 보지 않는다
  *          (새 메시지가 없으면 reported는 지난 메시지의 값이거나 쓸 수 없는 값이다).
  *          그 주기에는 견주지 않고, 벗어난 횟수를 올리지도 지우지도 않는다
- * 사건은 둘이다: 범위를 벗어난 새 메시지가 이어진다, 새 메시지가 너무 드물게 닿는다.
+ * 사건은 둘이다: 범위를 벗어난 새 메시지가 이어진다, 새 메시지가 너무 드물게 도착한다.
  */
 bool inverter_check_step(inverter_check_t *st, bool fresh, torque_t reported);
 

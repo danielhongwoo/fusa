@@ -55,7 +55,7 @@ CASES = [
        "    if (p < 0) {\n        p = 0;\n    }\n    {\n        long long wide = (long long)(p * 1000);\n        (void)wide;\n    }\n")]),
     ("static: clang-tidy가 아무 말 없이 죽는다",
      ["static", "CLANG_TIDY=false"], r"clang-tidy: 경고 0 개[^\n]*\nclang-tidy: 실패 \(종료 상태 1\)", []),
-    ("coverage: test가 닿지 않는 문장",
+    ("coverage: test가 실행하지 않는 문장",
      ["coverage"], r"100%에 못 미친다: src/vcu/vcu\.c",
      [("src/vcu/vcu.c", "    if (ok) {\n        hal_watchdog_write(",
        "    if (vcu->torque_out == 1234567) {\n        ok = false;\n    }\n    if (ok) {\n        hal_watchdog_write(")]),

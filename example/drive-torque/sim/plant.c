@@ -86,7 +86,7 @@ static double clamp(double x, double lo, double hi)
 
 void plant_step_1ms(plant_t *p)
 {
-    /* 보낸 것이 지연 뒤에 inverter에 닿는다 */
+    /* 보낸 것이 지연 뒤에 inverter에 도착한다 */
     if (p->torque_sent_wait_ms > 0u) {
         p->torque_sent_wait_ms--;
         if (p->torque_sent_wait_ms == 0u) {

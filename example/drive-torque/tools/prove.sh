@@ -3,7 +3,7 @@
 # CBMC로 test/proof/harness.c의 성질을 하나씩 증명한다.
 # 사용법: sh tools/prove.sh   (example/drive-torque 폴더에서)
 #
-# CBMC는 시작 함수에서 닿지 않는 성질도 SUCCESS로 적는다.
+# CBMC는 시작 함수에서 도달하지 않는 성질도 SUCCESS로 적는다.
 # 그래서 성질마다 따로 돌리고, 그 성질의 assert가 결과에 실제로 있는지를 함께 본다.
 # 반복문은 101번까지 펼친다 (가장 긴 반복이 100번이다). 그보다 길게 도는 반복이 있으면 실패한다.
 # CBMC는 qualification되지 않았다.
@@ -52,7 +52,7 @@ for prop in $PROPS; do
         echo "$out" | grep -E 'FAILURE|VERIFICATION|error' | head -10
         fail=1
     else
-        # 증명이 실패한 것이 아니라 도구가 끝까지 돌지 못했다 (읽지 못하는 코드, 닿지 않은 assert)
+        # 증명이 실패한 것이 아니라 도구가 끝까지 돌지 못했다 (읽지 못하는 코드, 도달하지 않은 assert)
         echo "오류    $prop (도구가 판정을 내지 못했다)"
         echo "$out" | grep -iE 'error|VERIFICATION' | head -10
         fail=1

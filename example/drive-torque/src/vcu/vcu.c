@@ -93,7 +93,7 @@ static void task_app(vcu_t *vcu)
 static void task_monitor_output(vcu_t *vcu)
 {
     /* SWR-19: inverter가 알린 토크가 지난 주기들에 보낸 토크의 범위를 계속 벗어나거나,
-     * 새 상태 메시지가 너무 드물게 닿으면 구동 허용 차단의 사건이다.
+     * 새 상태 메시지가 너무 드물게 도착하면 구동 허용 차단의 사건이다.
      * 새 메시지가 없는 주기의 값은 지난 메시지의 것이어서 견주지 않는다 */
     if (inverter_check_step(&vcu->inverter_check, vcu->inverter_fresh, vcu->inverter_torque)) {
         reaction_raise(&vcu->reaction, REACTION_CUT);
@@ -168,3 +168,10 @@ const int vcu_task_count = (int)(sizeof(vcu_task_table) / sizeof(vcu_task_table[
  * 표에 task를 더하고 표시를 정하지 않으면 여기에서 compile이 멈춘다 */
 _Static_assert((sizeof(vcu_task_table) / sizeof(vcu_task_table[0])) == ((size_t)FLOW_TASK_COUNT + 1u),
                "task table과 FLOW_TASK_COUNT가 맞지 않는다");
+
+/* SWR-18, SWR-19: 받는 쪽의 검사가 받아들이는 만큼 메시지를 잃어도 inverter의 검사가 끊지 않아야 한다.
+ * 받는 쪽은 counter가 E2E_MAX_STEP 앞서는 것까지, 곧 이어서 E2E_MAX_STEP - 1개를 잃는 것까지 받아들인다.
+ * inverter의 검사는 창 안에서 INVERTER_FRESH_WINDOW - INVERTER_FRESH_MIN개까지 빠져도 끊지 않는다.
+ * 두 요소의 상수가 따로 바뀌면 이 약속이 깨진다. 두 요소를 잇는 곳에서 compile할 때 견준다 */
+_Static_assert((INVERTER_FRESH_WINDOW - INVERTER_FRESH_MIN) >= (E2E_MAX_STEP - 1u),
+               "받는 쪽이 받아들이는 손실을 inverter의 검사가 끊으면 안 된다");

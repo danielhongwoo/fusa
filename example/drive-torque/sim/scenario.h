@@ -52,11 +52,11 @@ typedef struct {
     millivolt_t apps2_mv;
     torque_t torque_out;
     bool enable;      /* VCU가 구동 허용 신호에 쓴 값 */
-    bool enable_wire; /* inverter에 닿는 선의 값 */
+    bool enable_wire; /* inverter로 가는 선의 값 */
     uint8_t warning;
     hal_diag_t diag;
     bool watchdog_tripped; /* 외부 watchdog이 구동 허용 신호를 끊었는가 */
-    uint32_t inverter_msgs; /* 이때까지 VCU에 닿은 inverter의 상태 메시지의 수 (sim이 센 것) */
+    uint32_t inverter_msgs; /* 이때까지 VCU에 도착한 inverter의 상태 메시지의 수 (sim이 센 것) */
     double torque_act_nm;
     double speed_mps;
     double accel_mps2;

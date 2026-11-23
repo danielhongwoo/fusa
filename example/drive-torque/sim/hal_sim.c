@@ -30,7 +30,7 @@ static struct {
     unsigned inv_counter;
     int32_t inv_prev_value;
     uint32_t inv_drop_index; /* 되풀이되는 모양의 몇 번째 메시지인가 (FAULT_INVERTER_MSG_DROP) */
-    uint32_t inv_arrived;    /* VCU에 닿은 상태 메시지의 수 */
+    uint32_t inv_arrived;    /* VCU에 도착한 상태 메시지의 수 */
     /* 외부 watchdog */
     bool wd_present;
     bool wd_armed;        /* 첫 답을 받았는가 */
@@ -130,7 +130,7 @@ static void update_messages(void)
         sim.inv_prev_value = now_value;
         bool arrives = true;
         if (sim.fault_on[FAULT_INVERTER_MSG_DROP]) {
-            /* 보냈지만 닿지 않는 메시지가 있다. counter는 이미 올랐다 */
+            /* 보냈지만 도착하지 않는 메시지가 있다. counter는 이미 올랐다 */
             uint32_t param = (uint32_t)sim.fault_param[FAULT_INVERTER_MSG_DROP];
             uint32_t period = param & 0xFFu;
             uint32_t mask = param >> 8;
@@ -197,7 +197,7 @@ static bool enable_line(void)
     return sim.enable_out && (!sim.wd_present || (sim.wd_armed && !sim.wd_tripped));
 }
 
-/* inverter에 닿는 선의 값. 선의 고장이 있으면 VCU와 watchdog이 무엇을 하든 그 값이다 */
+/* inverter로 가는 선의 값. 선의 고장이 있으면 VCU와 watchdog이 무엇을 하든 그 값이다 */
 static bool enable_wire(void)
 {
     if (sim.fault_on[FAULT_ENABLE_STUCK_ON]) {

@@ -97,12 +97,12 @@ bool inverter_check_step(inverter_check_t *st, bool fresh, torque_t reported)
         /* SWR-19: 새 메시지가 없는 주기다. 손에 있는 값은 지난 메시지의 것이어서 지금 보낸 토크와 견줄 수 없다.
          * 견주면 토크가 크게 내려가는 때에 고장 없는 inverter를 끊는다 (docs/change-impact.md의 CR-001).
          * 벗어난 횟수는 그대로 둔다. 올리면 벗어난 메시지 하나를 여러 번 세고,
-         * 지우면 벗어난 메시지와 빈 주기가 번갈아 올 때 한계에 닿지 않는다 */
+         * 지우면 벗어난 메시지와 빈 주기가 번갈아 올 때 한계에 이르지 않는다 */
     }
-    /* SWR-19: 사건은 둘이다. 범위를 벗어난 새 메시지가 이어졌거나, 새 메시지가 너무 드물게 닿는다.
+    /* SWR-19: 사건은 둘이다. 범위를 벗어난 새 메시지가 이어졌거나, 새 메시지가 너무 드물게 도착한다.
      * 뒤의 것이 없으면 받아들이는 손실의 모양에 끝이 없고, 판정에 걸리는 시간에도 끝이 없다 (CR-002).
      * 둘을 함께 두면, 알린 토크가 범위를 벗어난 채인 동안에는 메시지를 어떤 모양으로 잃든
-     * INVERTER_FRESH_WINDOW 주기 안에 사건이 된다: 그 안에 새 메시지가 INVERTER_FRESH_MIN번 닿았으면
-     * 앞의 것이, 닿지 않았으면 뒤의 것이 참이다 */
+     * INVERTER_FRESH_WINDOW 주기 안에 사건이 된다: 그 안에 새 메시지가 INVERTER_FRESH_MIN번 도착했으면
+     * 앞의 것이, 도착하지 않았으면 뒤의 것이 참이다 */
     return (st->out_cycles >= INVERTER_OUT_CYCLES) || (fresh_count(st->fresh_bits) < INVERTER_FRESH_MIN);
 }

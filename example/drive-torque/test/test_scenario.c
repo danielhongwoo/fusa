@@ -503,7 +503,7 @@ static void tc_112(void)
 
 /*
  * TC-113: SWR-17 fault injection FI-14
- * 운전자가 페달을 놓기 직전부터 지난 토크 요구 메시지 (75 Nm)가 되풀이되고 새 메시지는 닿지 않는다.
+ * 운전자가 페달을 놓기 직전부터 지난 토크 요구 메시지 (75 Nm)가 되풀이되고 새 메시지는 도착하지 않는다.
  * 메시지의 CRC는 맞다. counter가 그대로이므로 inverter가 되풀이로 알아채고 버린다.
  * 50 ms 동안은 지난 토크가 유지된다. 그 시간이 SG-01의 200 ms 안에 있다.
  */
@@ -537,7 +537,7 @@ static void tc_113(void)
     CHECK((t_off - first_motor_off(log_ref, n_ref, T_FAULT)) >= 30);
     {
         /* VCU의 검사 (SWR-19)도 이 고장을 본다. inverter가 스스로 토크를 내리는 것이 더 빨라서,
-         * 범위를 벗어난 주기가 3번 이어지기 전에 범위 안으로 돌아온다.
+         * 범위를 벗어난 새 메시지가 3번 이어지기 전에 범위 안으로 돌아온다.
          * 끊어도 되는 경우이므로 끊었는지는 판정하지 않고 재기만 한다 */
         int worst = 0;
         for (int i = 0; i < n; i++) {
@@ -681,7 +681,7 @@ static void tc_115(void)
     CHECK_EQ(bad, 0);
     printf("  측정 FI-16: 메시지가 끊긴 때부터 구동 허용 차단까지 %d ms\n", t_cut - (int)T_FAULT);
 
-    /* 메시지는 주기마다 닿는데 값이 전송 중에 바뀐다. 받는 쪽의 검사가 버리므로 (CRC가 맞지 않는다)
+    /* 메시지는 주기마다 도착하는데 값이 전송 중에 바뀐다. 받는 쪽의 검사가 버리므로 (CRC가 맞지 않는다)
      * 검사를 통과한 새 메시지가 없다. 끊긴 것과 같이 셋째 주기에 끊는다. 바뀐 값은 한 번도 쓰지 않는다 */
     {
         fault_event_t corrupt = { T_FAULT, FAULT_INVERTER_MSG_CORRUPT, 5000 };
@@ -693,7 +693,7 @@ static void tc_115(void)
         CHECK_EQ(t_cut2, (int)T_FAULT + 20);
         CHECK_EQ(bad_after_cut(log_buf, n, t_cut2), 0);
         CHECK(!log_buf[T_FAULT + 5u].diag.inverter_valid);
-        /* 메시지는 계속 닿았다 (잃은 것이 아니다) */
+        /* 메시지는 계속 도착했다 (잃은 것이 아니다) */
         CHECK_EQ((int)log_buf[n - 1].inverter_msgs, 300);
         /* 범위를 벗어난 횟수는 오르지 않았다: 바뀐 값 (500 Nm 큼)을 견주지 않았다 */
         CHECK_EQ(log_buf[n - 1].diag.inverter_out_cycles, 0);
@@ -934,12 +934,12 @@ static void tc_120(void)
     int t_cut;
     int n;
 
-    /* 값이 100 Nm 커진 채 inverter에 닿는다 */
+    /* 값이 100 Nm 커진 채 inverter에 도착한다 */
     (void)scenario_run(&sc_ref1, log_ref, LOG_CAP);
     n = scenario_run(&sc1, log_buf, LOG_CAP);
     max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
     t_cut = first_time(log_buf, n, 0u, is_latched);
-    /* 3번째로 범위를 벗어난 주기 (30 ms 뒤)에 끊는다 */
+    /* 3번째로 범위를 벗어난 새 메시지 (30 ms 뒤)에 끊는다 */
     CHECK_EQ(t_cut, (int)T_FAULT + 30);
     CHECK_EQ(bad_after_cut(log_buf, n, t_cut), 0);
     CHECK(over_ms <= 200);
@@ -1082,7 +1082,7 @@ static void slow_inaccurate_report(time_ms_t t_ms)
  * TC-123: SWR-19 고장이 없으면 끊지 않는다 (SG-02 쪽)
  * 토크가 가장 크게 바뀌는 운전을 한다: 끝까지 밟았다 놓기, 끝까지 밟은 채 브레이크, 페달을 빠르게 밟았다 놓기,
  * 서서 D와 R을 오가기. inverter가 알리는 값이 가정 (A-23)의 끝에 있는 경우도 본다: 10 Nm 크거나 작고, 한 주기 묵었다.
- * 범위를 벗어난 주기가 이어진 가장 큰 횟수를 잰다. 3이면 끊는다.
+ * 범위를 벗어난 새 메시지가 이어진 가장 큰 횟수를 잰다. 3이면 끊는다.
  */
 static void tc_123(void)
 {
@@ -1104,7 +1104,7 @@ static void tc_123(void)
         { 8000u, 1.0, false, GEAR_D },  /* 다시 D로 */
     };
     static const int32_t offsets[] = { 0, 100, -100 };
-    /* 범위를 벗어난 주기가 이어진 가장 큰 횟수. 줄은 묵지 않음과 한 주기 묵음, 칸은 오차 0, +10, -10 Nm */
+    /* 범위를 벗어난 새 메시지가 이어진 가장 큰 횟수. 줄은 묵지 않음과 한 주기 묵음, 칸은 오차 0, +10, -10 Nm */
     static const int expected_worst[2][3] = { { 0, 1, 0 }, { 1, 2, 0 } };
     int worst_all = 0;
 
@@ -1134,7 +1134,7 @@ static void tc_123(void)
             /* 운전이 뜻한 대로 되었는지: 서 있다가 R을 받아들였고, 끝에는 D로 달린다 */
             CHECK_EQ(log_buf[7200].diag.gear, GEAR_R);
             CHECK_EQ(log_buf[n - 1].diag.gear, GEAR_D);
-            printf("  측정 거짓 차단의 여유: 알리는 값의 오차 %+d Nm, %s: 범위를 벗어난 주기가 이어진 횟수는 가장 클 때 %d (3이면 끊는다)\n",
+            printf("  측정 거짓 차단의 여유: 알리는 값의 오차 %+d Nm, %s: 범위를 벗어난 새 메시지가 이어진 횟수는 가장 클 때 %d (3이면 끊는다)\n",
                    (int)(offsets[k] / 10), report_stale ? "한 주기 묵음" : "묵지 않음", worst);
             if (worst > worst_all) {
                 worst_all = worst;
@@ -1597,8 +1597,8 @@ static void loss_reset(void)
     loss_inverter_no_check = false;
 }
 
-/* 되풀이되는 모양 (길이 period, bit k가 1이면 k번째 메시지가 닿는다)이 SWR-19가 받아들이는 것인가:
- * 어느 5주기를 잡아도 닿는 메시지가 3개 이상인가. 제품의 코드와 따로 적은 셈이다 */
+/* 되풀이되는 모양 (길이 period, bit k가 1이면 k번째 메시지가 도착한다)이 SWR-19가 받아들이는 것인가:
+ * 어느 5주기를 잡아도 도착하는 메시지가 3개 이상인가. 제품의 코드와 따로 적은 셈이다 */
 static bool pattern_accepted(unsigned period, unsigned mask)
 {
     for (unsigned start = 0u; start < period; start++) {
@@ -1643,8 +1643,8 @@ static int count_invalid(const sample_t *log, int n, time_ms_t from_ms)
  * 받는 쪽의 검사 (SWR-18)는 새 메시지가 50 ms까지 없어도 마지막 값을 유효로 넘긴다.
  * 그 묵은 값을 보낸 토크의 범위와 견주면, 토크가 크게 내려가는 때에 고장 없는 inverter를 끊는다
  * (docs/fmea.md의 FM-29). 새 메시지가 없는 주기에는 견주지 않아야 한다 (CR-001).
- * 그리고 새 메시지가 너무 드물게 닿으면 (최근 5주기 가운데 3번보다 적으면) 그것으로 끊고 경고한다 (CR-002).
- * 받아들이는 손실 (이어서 둘까지, 어느 5주기에서도 3번 이상 닿음)에서는 끊지 않는다는 것과,
+ * 그리고 새 메시지가 너무 드물게 도착하면 (최근 5주기 가운데 3번보다 적으면) 그것으로 끊고 경고한다 (CR-002).
+ * 받아들이는 손실 (이어서 둘까지, 어느 5주기에서도 3번 이상 도착함)에서는 끊지 않는다는 것과,
  * 그보다 많이 잃으면 끊는다는 것을 함께 본다.
  * 잃는 모양은 둘이다: inverter가 보내지 않는 경우와, 보냈는데 bus에서 사라지는 경우 (counter가 건너뛴다).
  * 알리는 값이 가정 (A-23)의 끝에 있는 경우 (10 Nm 크고 한 주기 묵음)도 본다.
@@ -1695,7 +1695,7 @@ static void tc_134(void)
                     if (log_buf[n - 1].inverter_msgs != (msgs_ref - (uint32_t)lost)) {
                         wrong_msgs++;
                     }
-                    /* 잃는 모양이 적은 대로인가. bus에서 사라지면 counter가 건너뛴다: 셋 넘게 잃은 뒤에 닿은
+                    /* 잃는 모양이 적은 대로인가. bus에서 사라지면 counter가 건너뛴다: 셋 넘게 잃은 뒤에 도착한
                      * 메시지는 받는 쪽의 검사가 버린다 (무효인 주기가 생긴다). 둘까지는 받아들인다.
                      * 보내지 않는 경우에는 counter가 이어지므로 무효인 주기가 없다 (50 ms를 넘기 전까지) */
                     invalid = count_invalid(log_buf, n, 100u);
@@ -1741,7 +1741,7 @@ static void tc_134(void)
     }
 
     /* 2. 손실이 되풀이되는 모양. 길이 1 - 5의 모든 모양 (62가지)을, 토크가 가장 크게 바뀌는 운전 (TC-123의 것)
-     * 내내 넣는다. 어느 5주기에서도 3번 이상 닿는 모양에서는 끊지 않고, 나머지에서는 끊고 경고한다 */
+     * 내내 넣는다. 어느 5주기에서도 3번 이상 도착하는 모양에서는 끊지 않고, 나머지에서는 끊고 경고한다 */
     {
         static const driver_point_t hard[] = {
             { 0u, 0.0, false, GEAR_D },
@@ -1835,7 +1835,7 @@ static void tc_134(void)
 /*
  * TC-135: SWR-19 fault injection FI-34 (SG-01 쪽. 변경 요청 CR-002)
  * inverter가 틀린 토크를 내는 것과 같은 때에 상태 메시지를 잃는다. 손실의 모양은 길이 1 - 5의 모든 모양이다.
- * 새 메시지가 없는 주기에는 견주지 않으므로 판정은 새 메시지가 닿아야 나아간다. 그 대신 새 메시지가 너무 드물면
+ * 새 메시지가 없는 주기에는 견주지 않으므로 판정은 새 메시지가 도착해야 나아간다. 그 대신 새 메시지가 너무 드물면
  * 그것으로 끊는다. 그래서 손실의 모양이 무엇이든, 알린 토크가 범위를 벗어난 때부터 5주기 안에 끊는다.
  * inverter의 고장은 셋이다: 100 Nm 더 낸다 (FI-21의 것), 페달을 놓았는데 옛 토크를 계속 낸다 (FI-20의 되풀이.
  * 시간 예산표의 M4 줄을 정한 경우), 같은 것을 끝까지 밟은 데서 (250 Nm) 놓는다.
@@ -1862,7 +1862,7 @@ static void tc_135(void)
     static const time_ms_t starts[] = { 1000u, T_FAULT - 20u, T_FAULT, T_FAULT + 20u };
     /* 차단까지의 한계: 범위를 벗어나기까지 (더 내는 경우 한두 주기, 옛 토크는 기록에서 빠지는 50 ms) + 5주기 + 다음 주기 */
     static const int cut_limit_ms[] = { 70, 110, 110 };
-    /* 잰 값. 상태 메시지가 주기마다 닿으면 36, 70, 70 ms다 (TC-121, TC-120). 손실 때문에 20 ms까지 늦어진다.
+    /* 잰 값. 상태 메시지가 주기마다 도착하면 36, 70, 70 ms다 (TC-121, TC-120). 손실 때문에 20 ms까지 늦어진다.
      * 값으로 고정해 둔다. 바뀌면 시간의 예산을 다시 보아야 한다 */
     static const int cut_measured_ms[] = { 56, 90, 90 };
     /* "5% 아래"의 기준: 고장 전에 내던 토크 (75 Nm, 75 Nm, 250 Nm)의 5% */
@@ -1948,6 +1948,121 @@ static void tc_135(void)
     loss_reset();
 }
 
+
+/*
+ * TC-136: SWR-19 fault injection FI-35 (알려진 한계. SG-01을 어긴다)
+ * 운전자의 요구가 빠르게 오르내리는 동안 inverter가 더 낸다.
+ * inverter의 검사가 견주는 범위는 최근 50 ms에 보낸 토크 가운데 가장 큰 값에 30 Nm를 더한 데까지다.
+ * 요구가 50 ms 안에 오르내리기를 되풀이하면 높은 값이 늘 기록에 남아 있어서 범위가 넓고, inverter가
+ * 낮은 요구에 더 낸 토크가 그 범위 안에 든다. 초과가 가려지는 것이다. 판정 시간의 상한 (성질 15, TC-135)은
+ * "알린 토크가 범위를 벗어난 뒤"의 것이어서 이 경우를 막지 못한다.
+ * 상태 메시지를 받아들이는 만큼 잃으면 (5주기에 3번 넘게 도착하는 모양) 새 메시지가 범위 안에 드는 때에만
+ * 도착하는 일이 생겨 몇 배로 늦어진다. 이 틈은 검사를 처음 만들 때부터 있었고, 묶음 5의 검토자가 찾았다.
+ * 페달 10%와 100%를 half_ms마다 번갈아 밟는다.
+ */
+static driver_point_t swing_driver[80];
+
+static int make_swing_driver(time_ms_t half_ms, time_ms_t end_ms)
+{
+    int count = 0;
+    bool high = false;
+
+    swing_driver[count++] = (driver_point_t){ 0u, 0.0, false, GEAR_D };
+    for (time_ms_t t = 200u; (t < end_ms) && (count < 80); t += half_ms) {
+        swing_driver[count++] = (driver_point_t){ t, high ? 1.0 : 0.1, false, GEAR_D };
+        high = !high;
+    }
+    return count;
+}
+
+static void tc_136(void)
+{
+    /* 번갈아 밟는 간격, inverter가 더 내는 토크 (0.1 Nm), 상태 메시지를 잃는 모양 (0이면 잃지 않는다),
+     * 잰 값 (고장을 넣는 때와 손실이 시작하는 때를 옮겨 가며 가장 나쁜 것): 고장부터 차단까지,
+     * 가속의 차이가 1.0 m/s^2를 넘은 시간 */
+    static const struct {
+        time_ms_t half_ms;
+        int32_t offset;
+        int32_t pattern;
+        int cut_ms;
+        int over_ms;
+    } cases[] = {
+        { 40u, 600, 0, 158, 110 },                          /* 잃지 않으면 SG-01의 시간 안이다 */
+        { 40u, 600, SIM_DROP_PATTERN(7, 0x76), 638, 590 },  /* 받아들이는 손실을 겹치면 어긴다 */
+        { 30u, 700, 0, 610, 583 },                          /* 더 빨리 오르내리면 잃지 않아도 어긴다 */
+    };
+
+    for (int c = 0; c < 3; c++) {
+        const int count = make_swing_driver(cases[c].half_ms, 2900u);
+        scenario_t sc_ref = { "fi-35-ref", 3000u, swing_driver, count, NULL, 0, NULL };
+        scenario_t sc = { "fi-35", 3000u, swing_driver, count, NULL, 0, status_message_loss };
+        const time_ms_t pattern_phases = (cases[c].pattern != 0) ? 7u : 1u;
+        int worst_cut_ms = 0;
+        int worst_over_ms = 0;
+        double worst_excess = 0.0;
+        int not_cut = 0;
+        int n;
+
+        (void)scenario_run(&sc_ref, log_ref, LOG_CAP);
+        /* 고장이 없으면 이 운전에서 끊지 않는다 (손실을 겹쳐도) */
+        CHECK_EQ(count_bad_normal(log_ref, 3000), 0);
+        if (cases[c].pattern != 0) {
+            loss_reset();
+            loss_fault = FAULT_INVERTER_MSG_DROP;
+            loss_param = cases[c].pattern;
+            loss_on_ms = 1000u;
+            loss_off_ms = 100000u;
+            n = scenario_run(&sc, log_buf, LOG_CAP);
+            CHECK_EQ(count_bad_normal(log_buf, n), 0);
+            CHECK(log_buf[n - 1].inverter_msgs < 300u);
+        }
+        for (time_ms_t pp = 0u; pp < pattern_phases; pp++) {
+            for (time_ms_t phase = 0u; phase < (2u * cases[c].half_ms); phase++) {
+                const time_ms_t t_fault = T_FAULT + phase;
+                int over_ms = 0;
+                double max_excess;
+                int t_cut;
+
+                loss_reset();
+                if (cases[c].pattern != 0) {
+                    loss_fault = FAULT_INVERTER_MSG_DROP;
+                    loss_param = cases[c].pattern;
+                    loss_on_ms = 1000u + (pp * 10u);
+                    loss_off_ms = 100000u;
+                }
+                loss_torque_offset = cases[c].offset;
+                loss_torque_ms = t_fault;
+                n = scenario_run(&sc, log_buf, LOG_CAP);
+                max_excess = accel_excess(log_buf, log_ref, n, &over_ms);
+                t_cut = first_time(log_buf, n, 0u, is_latched);
+                if ((t_cut < (int)t_fault) || (bad_after_cut(log_buf, n, t_cut) != 0)) {
+                    not_cut++;
+                    continue;
+                }
+                if ((t_cut - (int)t_fault) > worst_cut_ms) {
+                    worst_cut_ms = t_cut - (int)t_fault;
+                }
+                if (over_ms > worst_over_ms) {
+                    worst_over_ms = over_ms;
+                }
+                if (max_excess > worst_excess) {
+                    worst_excess = max_excess;
+                }
+            }
+        }
+        /* 끝내는 끊는다. 그러나 늦다 */
+        CHECK_EQ(not_cut, 0);
+        CHECK_EQ(worst_cut_ms, cases[c].cut_ms);
+        CHECK_EQ(worst_over_ms, cases[c].over_ms);
+        printf("  측정 FI-35 (알려진 한계): 페달을 %u ms마다 번갈아, inverter가 %d Nm 더 냄, 상태 메시지 %s: "
+               "차단까지 가장 나쁜 경우 %d ms, 가속의 차이는 가장 클 때 %.2f m/s^2, 1.0 m/s^2를 넘은 시간 %d ms%s\n",
+               (unsigned)cases[c].half_ms, (int)(cases[c].offset / 10),
+               (cases[c].pattern != 0) ? "7개 가운데 5개만 도착함" : "모두 도착함",
+               worst_cut_ms, worst_excess, worst_over_ms, (worst_over_ms > 200) ? " (SG-01을 어긴다)" : "");
+    }
+    loss_reset();
+}
+
 int main(void)
 {
     static const test_case_t cases[] = {
@@ -1983,8 +2098,9 @@ int main(void)
         { "TC-131", "FI-31 줄여 가는 중에 남은 채널이 높은 값에 고착 (알아채지 못하지만 SG-01은 지킨다)", tc_131 },
         { "TC-132", "FI-32 줄여 가는 중에 남은 채널도 범위를 벗어남", tc_132 },
         { "TC-133", "켠 직후의 VCU의 상태는 memory에 남아 있던 값과 상관없이 정해져 있다", tc_133 },
-        { "TC-134", "상태 메시지를 받아들이는 만큼 잃으면 끊지 않고, 그보다 드물게 닿으면 끊고 경고한다", tc_134 },
+        { "TC-134", "상태 메시지를 받아들이는 만큼 잃으면 끊지 않고, 그보다 드물게 도착하면 끊고 경고한다", tc_134 },
         { "TC-135", "FI-34 inverter의 고장과 상태 메시지의 손실이 겹쳐도 정한 시간 안에 끊는다", tc_135 },
+        { "TC-136", "FI-35 요구가 빠르게 오르내리는 동안 inverter가 더 냄 (알려진 한계)", tc_136 },
     };
     return (test_run_all(cases, (int)(sizeof(cases) / sizeof(cases[0]))) == 0) ? 0 : 1;
 }

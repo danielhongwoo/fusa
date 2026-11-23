@@ -14,9 +14,9 @@ typedef struct {
     bool brake;
     gear_t gear;
 
-    /* VCU가 보낸 것. 지연 뒤에 inverter에 닿는다 */
+    /* VCU가 보낸 것. 지연 뒤에 inverter에 도착한다 */
     double torque_sent_nm;
-    time_ms_t torque_sent_wait_ms; /* 닿을 때까지 남은 시간. 0이면 보낸 것이 없다 */
+    time_ms_t torque_sent_wait_ms; /* 도착할 때까지 남은 시간. 0이면 보낸 것이 없다 */
     frame_t frame_sent;            /* 보호가 붙은 토크 요구 메시지 */
     time_ms_t frame_sent_wait_ms;
 
@@ -43,8 +43,8 @@ typedef struct {
 
 /* 가정값. docs/technical-safety-concept.md의 시간 예산표와 맞춘다 */
 #define PLANT_CMD_TIMEOUT_MS  50u  /* 토크 요구가 이 시간 넘게 오지 않으면 inverter는 토크를 내지 않는다 (A-06) */
-#define PLANT_CAN_DELAY_MS    2u   /* 토크 요구가 inverter에 닿는 데 걸리는 시간 */
-#define PLANT_ENABLE_DELAY_MS 1u   /* 구동 허용 신호의 변화가 inverter에 닿는 데 걸리는 시간 */
+#define PLANT_CAN_DELAY_MS    2u   /* 토크 요구가 inverter에 도착하는 데 걸리는 시간 */
+#define PLANT_ENABLE_DELAY_MS 1u   /* 구동 허용 신호의 변화가 inverter에 도착하는 데 걸리는 시간 */
 #define PLANT_INVERTER_TAU_MS 20u  /* inverter의 토크 응답의 시정수 (A-05) */
 #define PLANT_MASS_KG         1600.0
 #define PLANT_GEAR_RATIO      9.0

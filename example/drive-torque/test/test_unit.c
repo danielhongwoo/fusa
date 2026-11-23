@@ -1038,7 +1038,7 @@ static void tc_017(void)
     CHECK_EQ(frame_of(99u, 7u, 1234).crc, 0xEA);
 }
 
-/* 받는 쪽의 검사를 한 번 부른다. 새 메시지가 방금 닿은 경우다 */
+/* 받는 쪽의 검사를 한 번 부른다. 새 메시지가 방금 도착한 경우다 */
 static bool receive(e2e_rx_t *rx, uint8_t data_id, frame_t frame)
 {
     return e2e_check(rx, data_id, &frame, true, true, 0u);
@@ -1391,7 +1391,7 @@ static void tc_020(void)
     CHECK(!inverter_check_step(&st, true, 0));     /* 덜 내는 것은 벗어난 것이 아니다 */
     CHECK(!inverter_check_step(&st, true, 1050));  /* 105.0 Nm: 범위의 끝 */
     CHECK(!inverter_check_step(&st, true, -300));  /* -30.0 Nm: 범위의 끝 */
-    /* 범위를 벗어난 주기가 3번 이어지면 사건이다 */
+    /* 범위를 벗어난 새 메시지가 3번 이어지면 사건이다 */
     CHECK(!inverter_check_step(&st, true, 1051));
     CHECK(!inverter_check_step(&st, true, 1051));
     CHECK(inverter_check_step(&st, true, 1051));
@@ -1485,7 +1485,7 @@ static void tc_020(void)
     CHECK(!inverter_check_step(&st, true, 1050));
     CHECK_EQ(st.out_cycles, 0);
 
-    /* 새 상태 메시지가 너무 드물게 닿는 것도 사건이다 (변경 요청 CR-002): 최근 5주기 가운데 3번보다 적으면.
+    /* 새 상태 메시지가 너무 드물게 도착하는 것도 사건이다 (변경 요청 CR-002): 최근 5주기 가운데 3번보다 적으면.
      * 켠 직후에는 받아 온 것으로 치고 시작한다. 메시지가 한 번도 오지 않으면 3번째 주기에 사건이다 */
     inverter_check_init(&st);
     CHECK_EQ(st.fresh_bits, 0x1F);
@@ -1510,8 +1510,8 @@ static void tc_020(void)
     CHECK(!inverter_check_step(&st, false, 0));
     CHECK(!inverter_check_step(&st, false, 0));
     CHECK(inverter_check_step(&st, false, 0));
-    /* 5주기 가운데 3번 닿는 모양은 모두, 얼마나 이어지든 사건이 아니다 (모양은 열 가지다).
-     * 2번 닿는 모양은 모두 5주기 안에 사건이 된다 (열 가지) */
+    /* 5주기 가운데 3번 도착하는 모양은 모두, 얼마나 이어지든 사건이 아니다 (모양은 열 가지다).
+     * 2번 도착하는 모양은 모두 5주기 안에 사건이 된다 (열 가지) */
     for (unsigned pattern = 0u; pattern < 32u; pattern++) {
         int ones = 0;
         int events = 0;
@@ -1540,7 +1540,7 @@ static void tc_020(void)
             CHECK(first_event < 5);
         }
     }
-    /* 드물게 닿다가 다시 자주 닿으면 이 함수는 사건을 거둔다. 한 번 난 사건을 붙들어 두는 것은 상태 기계의 일이다 */
+    /* 드물게 도착하다가 다시 자주 도착하면 이 함수는 사건을 거둔다. 한 번 난 사건을 붙들어 두는 것은 상태 기계의 일이다 */
     inverter_check_init(&st);
     CHECK(!inverter_check_step(&st, false, 0));
     CHECK(!inverter_check_step(&st, false, 0));
@@ -1548,7 +1548,7 @@ static void tc_020(void)
     CHECK(inverter_check_step(&st, true, 0));
     CHECK(inverter_check_step(&st, true, 0));
     CHECK(!inverter_check_step(&st, true, 0));
-    /* 두 사건은 따로 센다. 드물게 닿는 동안에도 닿은 메시지는 견주고, 범위를 벗어난 횟수는 그대로 간다 */
+    /* 두 사건은 따로 센다. 드물게 도착하는 동안에도 도착한 메시지는 견주고, 범위를 벗어난 횟수는 그대로 간다 */
     inverter_check_init(&st);
     fill_sent(&st, 750);
     CHECK(!inverter_check_step(&st, true, 1051));
@@ -1560,7 +1560,7 @@ static void tc_020(void)
     CHECK_EQ(st.out_cycles, 2);
     CHECK(inverter_check_step(&st, true, 1051));
     CHECK_EQ(st.out_cycles, 3);
-    CHECK(inverter_check_step(&st, true, 1051));   /* 이제 자주 닿지만 범위 때문에 사건 */
+    CHECK(inverter_check_step(&st, true, 1051));   /* 이제 자주 도착하지만 범위 때문에 사건 */
     /* 기록의 값이 틀려도 (memory의 값이 틀려도) 창 밖의 bit는 세지 않는다 */
     inverter_check_init(&st);
     st.fresh_bits = 0xE0u;
@@ -1701,7 +1701,7 @@ static void tc_021(void)
     CHECK_EQ(f->count, 4);
     /* task가 남길 수 있는 표시 (1, 2, 3)의 모든 열을 일곱 개까지, 모든 질문의 번호에서 세어 본다.
      * 옳은 답이 나오는 열은 1, 2, 3 하나뿐이다. 답은 8 bit여서 우연히 같아지는 열이 있을 수 있는데,
-     * 닿을 수 있는 표시에서는 없다는 것을 여기에서 확인한다 */
+     * 도달할 수 있는 표시에서는 없다는 것을 여기에서 확인한다 */
     {
         long wrong_but_right = 0;
         long right_but_wrong = 0;

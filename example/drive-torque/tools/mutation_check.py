@@ -246,7 +246,7 @@ MUTANTS = [
      "hal_watchdog_write(flow_answer(&vcu->flow, TORQUE_MAX, vcu->torque_out));",
      "답을 만들 때 허용 토크 대신 최대 토크를 넘긴다"),
     ("src/vcu/vcu.c", "    flow_next(&vcu->flow);\n", "", "주기를 닫지 않는다 (표시가 쌓인다)"),
-    # 변경 요청 CR-002: 새 메시지가 너무 드물게 닿으면 사건이다 (docs/change-impact.md)
+    # 변경 요청 CR-002: 새 메시지가 너무 드물게 도착하면 사건이다 (docs/change-impact.md)
     ("src/monitor/inverter_check.c", "        st->fresh_bits |= 1u;\n", "",
      "새 메시지를 받은 것을 기록에 넣지 않는다 (늘 드문 것으로 본다)"),
     ("src/monitor/inverter_check.c", "(((uint32_t)st->fresh_bits << 1u) & (uint32_t)FRESH_MASK)",
@@ -254,7 +254,7 @@ MUTANTS = [
      "새 메시지의 기록을 밀지 않는다 (한 번 받은 것이 지워지지 않는다)"),
     ("src/monitor/inverter_check.c", "(fresh_count(st->fresh_bits) < INVERTER_FRESH_MIN);",
      "(fresh_count(st->fresh_bits) <= INVERTER_FRESH_MIN);",
-     "새 메시지가 드문지의 경계가 하나 어긋난다 (5주기에 3번 닿아도 사건)"),
+     "새 메시지가 드문지의 경계가 하나 어긋난다 (5주기에 3번 도착해도 사건)"),
     ("src/monitor/inverter_check.c", "    st->fresh_bits = FRESH_MASK;\n", "    st->fresh_bits = 0u;\n",
      "켠 직후에 받아 온 것으로 치지 않는다 (첫 주기에 사건이 된다)"),
     ("src/monitor/inverter_check.c", "            if (v < lo) {\n                lo = v;\n            }\n", "",
@@ -274,7 +274,7 @@ MUTANTS = [
     ("src/monitor/inverter_check.c",
      "return (st->out_cycles >= INVERTER_OUT_CYCLES) || (fresh_count(st->fresh_bits) < INVERTER_FRESH_MIN);",
      "return (st->out_cycles >= INVERTER_OUT_CYCLES) || (fresh_count(st->fresh_bits) < 1u);",
-     "새 메시지가 5주기에 한 번만 닿아도 사건을 알리지 않는다 (하나도 닿지 않을 때에만 알린다)"),
+     "새 메시지가 5주기에 한 번만 도착해도 사건을 알리지 않는다 (하나도 도착하지 않을 때에만 알린다)"),
     ("src/monitor/inverter_check.c",
      "return (st->out_cycles >= INVERTER_OUT_CYCLES) || (fresh_count(st->fresh_bits) < INVERTER_FRESH_MIN);",
      "return (fresh_count(st->fresh_bits) < INVERTER_FRESH_MIN);", "범위를 계속 벗어나도 사건을 알리지 않는다"),
@@ -308,12 +308,12 @@ MUTANTS = [
     ("src/monitor/inverter_check.c", "    if (fresh) {\n        /* SWR-19: 최근에 보낸", "    if (!fresh) {\n        /* SWR-19: 최근에 보낸",
      "새 메시지인지의 뜻을 뒤집는다 (묵은 값만 견준다)"),
     ("src/monitor/inverter_check.c",
-     "한계에 닿지 않는다 */\n    }\n",
-     "한계에 닿지 않는다 */\n        if (st->out_cycles < INVERTER_OUT_CYCLES) {\n            st->out_cycles++;\n        }\n    }\n",
+     "한계에 이르지 않는다 */\n    }\n",
+     "한계에 이르지 않는다 */\n        if (st->out_cycles < INVERTER_OUT_CYCLES) {\n            st->out_cycles++;\n        }\n    }\n",
      "새 메시지가 없는 주기를 벗어난 것으로 센다"),
     ("src/monitor/inverter_check.c",
-     "한계에 닿지 않는다 */\n    }\n",
-     "한계에 닿지 않는다 */\n        st->out_cycles = 0u;\n    }\n",
+     "한계에 이르지 않는다 */\n    }\n",
+     "한계에 이르지 않는다 */\n        st->out_cycles = 0u;\n    }\n",
      "새 메시지가 없는 주기에 벗어난 횟수를 지운다"),
     ("src/vcu/vcu.c", "    inverter_check_record(&vcu->inverter_check, vcu->torque_out);\n", "",
      "보낸 토크를 inverter의 검사에 기록하지 않는다"),
@@ -472,14 +472,14 @@ EQUIVALENT = [
      "        if (st->excess_cycles < EXCESS_LATCH_CYCLES) {\n            st->excess_cycles++;\n        }",
      "        st->excess_cycles++;",
      "이어진 횟수를 한계에서 멈추지 않는다",
-     "횟수가 한계에 닿은 주기에 고정되고, 고정은 풀리지 않는다. 그 뒤에 횟수가 넘쳐 0으로 돌아가도 "
+     "횟수가 한계에 이른 주기에 고정되고, 고정은 풀리지 않는다. 그 뒤에 횟수가 넘쳐 0으로 돌아가도 "
      "출력과 진단 메시지는 같다"),
     ("src/vcu/vcu.c", "    if (ok) {\n        hal_watchdog_write(", "    if (ok || !ok) {\n        hal_watchdog_write(",
      "task의 순서가 틀려도 외부 watchdog에 답을 쓴다",
      "보호가 겹쳐 있어서 밖에서 보이는 결과가 같다. 답은 그 주기에 남은 표시와 그 수에서 만들므로 (flow_answer), "
      "task가 빠지거나 더 실행되거나 순서가 틀리면 답도 틀리게 나오고 watchdog이 끊는다. task가 남길 수 있는 표시 "
      "(1, 2, 3의 열, 일곱 개까지)와 모든 질문의 번호에서 틀린 열이 옳은 답을 내는 경우가 없다는 것을 TC-021이 "
-     "모두 세어 확인한다. 그래서 닿을 수 있는 상태에서는 동등하다. 표시가 다른 값이 되는 경우 (memory가 "
+     "모두 세어 확인한다. 그래서 도달할 수 있는 상태에서는 동등하다. 표시가 다른 값이 되는 경우 (memory가 "
      "망가진 경우)에는 답이 우연히 같을 수 있고 (답이 8 bit다), 그때는 이 줄이 마지막 보호다. "
      "이 이유는 두 번 틀렸다. 처음에는 지난 주기의 표시가 남아 빈 자리를 채웠고 (변이 검사가 알렸다), 다음에는 "
      "task가 두 번 실행되어 넷째 표시가 버려지면 앞의 셋만으로 옳은 답이 나왔다 (검토자가 찾았다). "
@@ -496,6 +496,9 @@ BUILD_CAUGHT = {
     "inverter 검사의 구조체에서 배열 뒤에 필드를 더한다": "inverter_check_t: 배열은 구조체의 끝에 있어야 한다",
     # 판정에 필요한 새 메시지의 수를 올리면, 창 안에서 받아야 하는 수 (3)보다 커진다 (변경 요청 CR-002)
     "상수 INVERTER_OUT_CYCLES를 3에서 1 올린다": "창 안에서 받아야 하는 새 메시지의 수는 판정에 필요한 수보다 적으면 안 된다",
+    # 받는 쪽이 받아들이는 손실 (E2E_MAX_STEP - 1)과 inverter의 검사가 견디는 손실 (창 - 받아야 하는 수)의 관계
+    "상수 E2E_MAX_STEP를 3에서 1 올린다": "받는 쪽이 받아들이는 손실을 inverter의 검사가 끊으면 안 된다",
+    "상수 INVERTER_FRESH_MIN를 3에서 1 올린다": "받는 쪽이 받아들이는 손실을 inverter의 검사가 끊으면 안 된다",
 }
 
 # 상수를 자동으로 바꿀 파일. 안전 요구사항을 받는 부분의 상수와,
