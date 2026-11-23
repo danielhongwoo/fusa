@@ -204,6 +204,17 @@ def main():
             if u:
                 (err if FINAL else warn)(path, "-", "%s %d곳" % (UNCONFIRMED, u))
 
+    # 쓰지 않기로 한 표현 (RULES.md 1절). 자리는 tools/stylecheck.py가 보여 준다
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        import stylecheck
+        rs = stylecheck.rules()
+        style = sum(len(stylecheck.scan("chapters/" + n, rs)) for n in chapters)
+        if style:
+            warn("chapters/", "-", "쓰지 않기로 한 표현 %d곳 (tools/stylecheck.py로 자리를 본다)" % style)
+    except Exception as e:  # noqa: BLE001
+        warn("tools/stylecheck.py", "-", "표현 검사를 돌리지 못했다: %s" % e)
+
     for w in warnings:
         print("주의  " + w)
     for e in errors:
